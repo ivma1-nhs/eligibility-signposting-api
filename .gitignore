@@ -11,3 +11,27 @@
 !project.code-workspace
 
 # Please, add your custom content below!
+
+.direnv
+node_modules/
+bin/
+dist/
+build/
+public/
+newman/
+.idea
+.DS_Store
+.#*
+
+__pycache__/
+.envrc
+.idea/
+.venv/
+
+smoketest-report.xml
+env
+.dir-locals.el
+*.pyc
+poetry.lock
+package-lock.json
+test-report.xml
