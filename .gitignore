@@ -35,3 +35,5 @@ env
 poetry.lock
 package-lock.json
 test-report.xml
+
+localstack_data/
