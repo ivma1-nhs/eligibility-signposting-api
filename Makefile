@@ -25,11 +25,6 @@ lint:
 	npm run lint
 	find . -name '*.py' -not -path '**/.venv/*' | xargs poetry run flake8
 
-#Removes build/ + dist/ directories
-clean:
-	rm -rf build
-	rm -rf dist
-
 #Creates the fully expanded OAS spec in json
 publish: clean
 	mkdir -p build
