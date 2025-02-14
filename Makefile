@@ -1,8 +1,9 @@
 # This file is for you! Edit it to implement your own hooks (make targets) into
 # the project as automated steps to be executed on locally and in the CD pipeline.
 # ==============================================================================
-SHELL=/bin/bash -euo pipefail
+include scripts/init.mk
 
+SHELL=/bin/bash -euo pipefail
 #Installs dependencies using poetry.
 install-python:
 	poetry install
@@ -37,13 +38,6 @@ publish: clean
 #Files to loop over in release
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests"
 
-#Create /dist/ sub-directory and copy files into directory
-release: clean publish build-proxy
-	mkdir -p dist
-	for f in $(_dist_include); do cp -r $$f dist; done
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-qa-sandbox.yml
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-dev-sandbox.yml
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
