@@ -43,8 +43,7 @@ _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
 dependencies: # Install dependencies needed to build and test the project @Pipeline
-	pip install --user pipx
-	pipx install poetry
+	scripts/dependencies.sh
 
 build: # Build the project artefact @Pipeline
 	# TODO: Implement the artefact build step
