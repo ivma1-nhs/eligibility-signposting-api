@@ -23,7 +23,6 @@ newman/
 .idea
 .DS_Store
 .#*
-.pre-commit-config.yaml
 
 __pycache__/
 .envrc
