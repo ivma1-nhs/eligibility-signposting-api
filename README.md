@@ -72,7 +72,7 @@ The following software packages, or their equivalents, are expected to be instal
 Installation and configuration of the toolchain dependencies
 
 ```shell
-$ make install
+make install
 ```
 
 ## Usage
