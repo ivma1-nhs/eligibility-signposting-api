@@ -3,6 +3,8 @@
 terraform 1.7.0
 pre-commit 3.6.0
 vale 3.6.0
+poetry 2.1.1
+act 0.2.74
 
 # ==============================================================================
 # The section below is reserved for Docker image versions.

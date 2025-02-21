@@ -46,6 +46,7 @@ cd nhs-england-tools/repository-template
 The following software packages, or their equivalents, are expected to be installed and configured:
 
 - [Docker](https://www.docker.com/) container runtime or a compatible tool, e.g. [Podman](https://podman.io/),
+- [asdf](https://asdf-vm.com/) version manager,
 - [GNU make](https://www.gnu.org/software/make/) 3.82 or later,
 
 > [!NOTE]<br>
@@ -71,7 +72,7 @@ The following software packages, or their equivalents, are expected to be instal
 Installation and configuration of the toolchain dependencies
 
 ```shell
-$ make install
+make install
 ```
 
 ## Usage
