@@ -1,7 +1,7 @@
 # This file is for you! Edit it to implement your own hooks (make targets) into
 # the project as automated steps to be executed on locally and in the CD pipeline.
 # ==============================================================================
-SHELL=/bin/bash -euo pipefail
+include scripts/init.mk
 
 #Installs dependencies using poetry.
 install-python:
@@ -22,12 +22,14 @@ install: install-node install-python .git/hooks/pre-commit
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
 	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' | xargs poetry run flake8
+	poetry run ruff format . --check
+	poetry run ruff check .
+	poetry run pyright
 
-#Removes build/ + dist/ directories
-clean:
-	rm -rf build
-	rm -rf dist
+
+format: ## Format and fix code
+	poetry run ruff format .
+	poetry run ruff check . --fix-only
 
 #Creates the fully expanded OAS spec in json
 publish: clean
@@ -37,18 +39,11 @@ publish: clean
 #Files to loop over in release
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests"
 
-#Create /dist/ sub-directory and copy files into directory
-release: clean publish build-proxy
-	mkdir -p dist
-	for f in $(_dist_include); do cp -r $$f dist; done
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-qa-sandbox.yml
-	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-dev-sandbox.yml
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
 dependencies: # Install dependencies needed to build and test the project @Pipeline
-	# TODO: Implement installation of your project dependencies
+	scripts/dependencies.sh
 
 build: # Build the project artefact @Pipeline
 	# TODO: Implement the artefact build step
@@ -63,6 +58,8 @@ config:: # Configure development environment (main) @Configuration
 	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
 	make _install-dependencies
 
+precommit: lint test ## Pre-commit tasks
+
 # ==============================================================================
 
 ${VERBOSE}.SILENT: \
@@ -71,37 +68,3 @@ ${VERBOSE}.SILENT: \
 	config \
 	dependencies \
 	deploy \
-#################
-# Test commands #
-#################
-
-TEST_CMD := @APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN) \
-		poetry run pytest -v \
-		--color=yes \
-		--api-name=eligibility-signposting-api \
-		--proxy-name=$(PROXY_NAME) \
-		-s
-
-PROD_TEST_CMD := $(TEST_CMD) \
-		--apigee-app-id=$(APIGEE_APP_ID) \
-		--apigee-organization=nhsd-prod \
-		--status-endpoint-api-key=$(STATUS_ENDPOINT_API_KEY)
-
-#Command to run end-to-end smoketests post-deployment to verify the environment is working
-smoketest:
-	$(TEST_CMD) \
-	--junitxml=smoketest-report.xml \
-	-m smoketest
-
-test:
-	$(TEST_CMD) \
-	--junitxml=test-report.xml \
-
-smoketest-prod:
-	$(PROD_TEST_CMD) \
-	--junitxml=smoketest-report.xml \
-	-m smoketest
-
-test-prod:
-	$(PROD_CMD) \
-	--junitxml=test-report.xml \

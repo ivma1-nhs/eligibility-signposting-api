@@ -17,12 +17,12 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "terraform"
     directory: "/"
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "terraform"
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"

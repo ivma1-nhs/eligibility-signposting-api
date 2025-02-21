@@ -14,6 +14,7 @@
 
 .direnv
 node_modules/
+openapitools.json
 bin/
 dist/
 build/
@@ -32,6 +33,8 @@ smoketest-report.xml
 env
 .dir-locals.el
 *.pyc
-poetry.lock
-package-lock.json
+*/package-lock.json
 test-report.xml
+.coverage
+
+localstack_data/

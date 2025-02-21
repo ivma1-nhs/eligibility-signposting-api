@@ -1,37 +1,59 @@
 [project]
-python = "^3.8"
-
-[tool.poetry]
 name = "eligibility-signposting-api"
 version = "0.0.1-alpha"
 description = "TODO"
 authors = [
-    #TODO add authors
+  #TODO add authors
 ]
-readme = 'README.md'
-license = "MIT"
-repository = "https://github.com/NHSDigital/eligibility-signposting"
+readme = "README.md"
+requires-python = ">=3.13"
+dynamic = ["classifiers", "dependencies"]
+repository = "https://github.com/NHSDigital/eligibility-signposting-api"
 homepage = "https://digital.nhs.uk/developer/api-catalogue"
-keywords = ["healthcare", "uk", "nhs"] #TODO add additional keywords
+keywords = ["healthcare", "uk", "nhs", "vaccination", "api"] #TODO add additional keywords
 
+[tool.poetry]
+packages = [{include = "eligibility_signposting_api", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pytest-nhsd-apim = "^3.3.2"
+python = "^3.13"
+flask = {extras = ["async"], version = "^3.1.0"}
+httpx = "^0.28.1"
+yarl = "^1.18.3"
+pydantic = "^2.10.6"
 
-[tool.poetry.dev-dependencies]
-flake8 = "^3.7.9"
-black = "^20.8b1"
-pip-licenses = "^2.0.1"
-jinja2 = "^2.11.1"
-pyyaml = "^5.2"
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.6"
 docopt = "^0.6.2"
 jsonpath-rw = "^1.4.0"
-semver = "^2.9.0"
-gitpython = "^3.0.5"
-pytest = "^6.1.2"
-coverage = "^5.5"
-aiohttp = "^3.7.3"
-pytest-asyncio = "^0.14.0"
+semver = "^3.0.4"
+gitpython = "^3.1.44"
+pytest = "^8.3.4"
+pytest-asyncio = "^0.25.3"
+pytest-cov = "^6.0.0"
+#pytest-nhsd-apim = "^3.3.2"
+aiohttp = "^3.11.12"
+awscli = "^1.37.24"
+awscli-local = "^0.22.0"
+pyhamcrest = "^2.1.0"
+factory-boy = "^3.3.3"
+pyright = "^1.1.394"
 
-[tool.poetry.scripts]
+[tool.ruff]
+line-length = 120
+exclude = ["docs/", "scripts/"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["COM812", "D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "INP", "S101"]
+
+[tool.pyright]
+include = ["src/"]
+pythonVersion = "3.13"
