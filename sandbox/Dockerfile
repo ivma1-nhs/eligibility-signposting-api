@@ -1,11 +1,39 @@
-FROM node:12
+# First Stage
+FROM alpine:latest
 
-COPY . /sandbox
+# Create a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && apk add --no-cache jq
 
-WORKDIR /sandbox
+# Copying OAS spec file into the container
+COPY "specification/eligibility-signposting-api.json" ./
 
-RUN npm install
+# Copying HealthStatus OAS file into the container
+COPY "HealthStatusEndpoint.json" ./
 
-EXPOSE 9000
+# Copying whole specification directory to get inline examples and schemas
+COPY ./specification ./specification
 
-CMD ["npm", "start"]
+# Adding Health status endpoint to main spec file
+RUN jq ".paths += $(cat HealthStatusEndpoint.json)" eligibility-signposting-api.json > updated-spec.json
+
+# Second Stage
+FROM stoplight/prism:latest
+
+# Create a non-root user in the Prism container
+USER root
+RUN apk add --no-cache shadow && \
+    groupadd -r appgroup && \
+    useradd -r -g appgroup appuser
+
+# Inheriting from the previous image and copying updated OAS spec files
+COPY --from=0 /specification /usr/src/prism/packages/cli/eligibility-signposting-api/specification
+COPY --from=0 /updated-spec.json /usr/src/prism/packages/cli/eligibility-signposting-api/specification/eligibility-signposting-api.json
+
+# Set permissions for the non-root user
+RUN chown -R appuser:appgroup /usr/src/prism
+
+# Switch to the non-root user
+USER appuser
+
+# Running the Prism mock command with the OAS file
+CMD ["mock", "-h", "0.0.0.0", "-p", "9000", "eligibility-signposting-api/specification/eligibility-signposting-api.json"]
