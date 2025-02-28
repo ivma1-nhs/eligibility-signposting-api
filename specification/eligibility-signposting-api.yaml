@@ -67,11 +67,11 @@ paths:
                 properties:
                   responseId:
                     type: guid
-                    description: GUID assigned when the decisioning evaluation is carried out.  This will be useful if you ever need to request support for a particular request.  This will not change if you receive a cached response.
+                    description: GUID assigned when the decisioning evaluation is carried out. This will be useful if you ever need to request support for a particular request. This will not change if you receive a cached response.
                     example: 1a233ba5-e1eb-4080-a086-2962f6fc3473
                   processedDateTime:
                     type: string
-                    description: Timestamp of when the decisioning evaluation is carried out.  This will not change if you receive a cached response.
+                    description: Timestamp of when the decisioning evaluation is carried out. This will not change if you receive a cached response.
                     example: '2025-02-12T16:11:22Z'
                   processedSuggestions:
                     type: array
@@ -96,10 +96,10 @@ paths:
                               reasonText:
                                 type: string
                           example:
-                              - reasonCode: 'flu_coded_eligibility'
-                                reasonText: Our records indicate that you might be at a higher risk of illness if you were to catch Flu.
-                              - reasonCode: 'flu_65+_autumnwinter2023'
-                                reasonText: Our records indicate you are over 65
+                            - reasonCode: 'flu_coded_eligibility'
+                              reasonText: Our records indicate that you might be at a higher risk of illness if you were to catch Flu.
+                            - reasonCode: 'flu_65+_autumnwinter2023'
+                              reasonText: Our records indicate you are over 65
                         nextSteps:
                           type: array
                           description: List of next steps for the person.
@@ -108,9 +108,7 @@ paths:
                             properties:
                               actionType:
                                 type: string
-                                description: >-
-                                  The type of step (e.g., information, link,
-                                  button).
+                                description: The type of step (e.g., information, link, button).
                               actionCode:
                                 type: string
                                 description: Code representing the action to be taken
@@ -131,14 +129,58 @@ paths:
                                 actionCode: "BOOK"
                                 description: "Book an appointment here"
                                 markdownText: >-
-                                  [Click here](https://www.nhs.uk/nhs-services/pharmacies/book-flu-vaccination/) to book your
-                                  appointment.
+                                  [Click here](https://www.nhs.uk/nhs-services/pharmacies/book-flu-vaccination/) to book your appointment.
                                 actionDate: "2025-03-31"
                               - actionType: "INFO"
                                 actionCode: "NHS"
                                 description: "Visit the NHS website for more details."
                                 markdownText: "[Click here](https://www.nhs.uk/vaccinations/flu-vaccine/) to get more information"
                                 htmlText: "<a href='https://www.nhs.uk/vaccinations/flu-vaccine/'>Click here</a> to get more information."
+              examples:
+                example1:
+                  summary: Example 1
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3473
+                    processedDateTime: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: FLU
+                        status: Bookable
+                        reasons:
+                          - reasonCode: 'flu_coded_eligibility'
+                            reasonText: Our records indicate that you might be at a higher risk of illness if you were to catch Flu.
+                          - reasonCode: 'flu_65+_autumnwinter2023'
+                            reasonText: Our records indicate you are over 65
+                        nextSteps:
+                          - actionType: "Link"
+                            actionCode: "BOOK"
+                            description: "Book an appointment here"
+                            markdownText: >-
+                              [Click here](https://www.nhs.uk/nhs-services/pharmacies/book-flu-vaccination/) to book your appointment.
+                            actionDate: "2025-03-31"
+                          - actionType: "INFO"
+                            actionCode: "NHS"
+                            description: "Visit the NHS website for more details."
+                            markdownText: "[Click here](https://www.nhs.uk/vaccinations/flu-vaccine/) to get more information"
+                            htmlText: "<a href='https://www.nhs.uk/vaccinations/flu-vaccine/'>Click here</a> to get more information."
+                example2:
+                  summary: Example 2
+                  value:
+                    responseId: 2b344cb6-f2fc-5091-b197-4073f7fd4584
+                    processedDateTime: '2025-03-15T10:20:30Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: Not Bookable
+                        reasons:
+                          - reasonCode: 'rsv_coded_eligibility'
+                            reasonText: Our records indicate that you might be at a higher risk of illness if you were to catch RSV.
+                          - reasonCode: 'rsv_65+_autumnwinter2023'
+                            reasonText: Our records indicate you are over 65
+                        nextSteps:
+                          - actionType: "Link"
+                            actionCode: "INFO"
+                            description: "Visit the NHS website for more details."
+                            markdownText: "[Click here](https://www.nhs.uk/vaccinations/rsv-vaccine/) to get more information"
+                            htmlText: "<a href='https://www.nhs.uk/vaccinations/rsv-vaccine/'>Click here</a> to get more information."
         '400':
           description: Invalid input data.
           content:
