@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  combined-service:
+    container_name: combined-service
+    build:
+      context: .
+      dockerfile: Dockerfile  # This will use the combined Dockerfile
+    environment:
+      - UPSTREAM_HOST=http://localhost:9000  # Set the UPSTREAM_HOST environment variable
+    ports:
+      - "9000:9000"  # Port for your custom Prism service
+      - "5000:5000"  # Port for the proxy service
+    volumes:
+      - ./specification:/home/appuser/app/specification  # For hot-reloading the example-chooser (optional)

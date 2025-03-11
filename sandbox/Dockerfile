@@ -1,39 +1,42 @@
-# First Stage
-FROM alpine:latest
+# First Stage: Build Proxy service
+FROM python:3.10-alpine as deps
 
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && apk add --no-cache jq
+# Install pipenv and compilation dependencies
+RUN pip install pipenv
 
-# Copying OAS spec file into the container
-COPY "specification/eligibility-signposting-api.json" ./
+# Install python dependencies in /.venv
+COPY Pipfile .
+COPY Pipfile.lock .
+RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
 
-# Copying HealthStatus OAS file into the container
-COPY "HealthStatusEndpoint.json" ./
+FROM deps AS runtime
 
-# Copying whole specification directory to get inline examples and schemas
-COPY ./specification ./specification
+# Copy virtual env from python-deps stage
+COPY --from=deps /.venv /.venv
+ENV PATH="/.venv/bin:$PATH"
 
-# Adding Health status endpoint to main spec file
-RUN jq ".paths += $(cat HealthStatusEndpoint.json)" eligibility-signposting-api.json > updated-spec.json
-
-# Second Stage
-FROM stoplight/prism:latest
-
-# Create a non-root user in the Prism container
-USER root
-RUN apk add --no-cache shadow && \
-    groupadd -r appgroup && \
-    useradd -r -g appgroup appuser
-
-# Inheriting from the previous image and copying updated OAS spec files
-COPY --from=0 /specification /usr/src/prism/packages/cli/eligibility-signposting-api/specification
-COPY --from=0 /updated-spec.json /usr/src/prism/packages/cli/eligibility-signposting-api/specification/eligibility-signposting-api.json
-
-# Set permissions for the non-root user
-RUN chown -R appuser:appgroup /usr/src/prism
-
-# Switch to the non-root user
+# Create and switch to a new user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN mkdir /home/appuser/app
+WORKDIR /home/appuser/app
 USER appuser
 
-# Running the Prism mock command with the OAS file
-CMD ["mock", "-h", "0.0.0.0", "-p", "9000", "eligibility-signposting-api/specification/eligibility-signposting-api.json"]
+# Install application into container
+COPY . .
+
+# Install Prism
+USER root
+RUN apk add --no-cache nodejs npm
+RUN npm install -g @stoplight/prism-cli
+
+# Install supervisord
+RUN apk add --no-cache supervisor
+
+# Copy supervisord configuration
+COPY supervisord.conf /etc/supervisord.conf
+
+# Expose ports
+EXPOSE 9000 5000
+
+# Run supervisord
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
