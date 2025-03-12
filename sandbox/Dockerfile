@@ -23,16 +23,14 @@ WORKDIR /home/appuser/app
 USER appuser
 
 # Install application into container
-COPY . .
-
+COPY app.py __init__.py /home/appuser/app/
+# Copy supervisord configuration
+COPY supervisord.conf /etc/supervisord.conf
 # Install Prism
 USER root
 RUN apk add --no-cache nodejs npm && \
     npm install -g @stoplight/prism-cli && \
     apk add --no-cache supervisor
-
-# Copy supervisord configuration
-COPY supervisord.conf /etc/supervisord.conf
 
 # Expose ports
 EXPOSE 9000 5000

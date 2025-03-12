@@ -48,7 +48,7 @@ session = requests.Session()
 
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
-def proxy_to_upstream() -> Response:
+def proxy_to_upstream(path: str) -> Response:  # noqa: ARG001
     headers_to_upstream = {k: v for k, v in request.headers if k.lower() != "host"}
 
     prefer_header_value = example_name(request)
