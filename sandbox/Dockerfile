@@ -29,7 +29,7 @@ COPY supervisord.conf /etc/supervisord.conf
 # Install Prism
 USER root
 RUN apk add --no-cache nodejs npm && \
-    npm install -g @stoplight/prism-cli && \
+    npm install --ignore-scripts -g @stoplight/prism-cli && \
     apk add --no-cache supervisor
 
 # Expose ports
