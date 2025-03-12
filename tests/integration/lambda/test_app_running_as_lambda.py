@@ -38,7 +38,9 @@ def test_install_and_call_lambda_flask(lambda_client: BaseClient, flask_function
         "rawPath": "/",
         "rawQueryString": "",
         "headers": {"accept": "application/json", "content-type": "application/json"},
-        "requestContext": {"http": {"sourceIp": "192.0.0.1", "method": "GET", "path": "/", "protocol": "HTTP/1.1"}},
+        "requestContext": {
+            "http": {"sourceIp": "192.0.0.1", "method": "GET", "path": "/hello/", "protocol": "HTTP/1.1"}
+        },
         "body": None,
         "isBase64Encoded": False,
     }
@@ -60,7 +62,7 @@ def test_install_and_call_flask_lambda_over_http(flask_function_url: URL):
     # Given
 
     # When
-    response = httpx.get(str(flask_function_url))
+    response = httpx.get(str(flask_function_url / "hello" / ""))
 
     # Then
     assert_that(
@@ -76,7 +78,7 @@ def test_install_and_call_flask_lambda_with_nickname_over_http(flask_function_ur
     # Given
 
     # When
-    response = httpx.get(str(flask_function_url / "ayesh"), timeout=30)
+    response = httpx.get(str(flask_function_url / "hello" / "ayesh"), timeout=30)
 
     # Then
     assert_that(

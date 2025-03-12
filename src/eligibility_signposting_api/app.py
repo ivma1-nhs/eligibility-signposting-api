@@ -32,7 +32,7 @@ def create_app() -> Flask:
     app.logger.info("app created")
 
     # Register views & error handler
-    app.register_blueprint(hello)
+    app.register_blueprint(hello, url_prefix="/hello")
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
