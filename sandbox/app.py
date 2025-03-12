@@ -27,10 +27,12 @@ def example_name(request: Request) -> str | None:
     ## This can be as complex as you want.  You could load the OpenAPI
     ## document and invent your own DSL within it.  There are several
     ## ideas in https://github.com/stoplightio/prism/issues/1838.
-    if "nhsNumber=1" in request.full_path:
+    if "patient=0000000001" in request.full_path:
         return "example1"
-    if "nhsNumber=2" in request.full_path:
+    if "patient=0000000002" in request.full_path:
         return "example2"
+    if "patient=0000000003" in request.full_path:
+        return "code404"
     return None
 
 
@@ -52,8 +54,11 @@ def proxy_to_upstream(path: str) -> Response:  # noqa: ARG001
     headers_to_upstream = {k: v for k, v in request.headers if k.lower() != "host"}
 
     prefer_header_value = example_name(request)
-    if prefer_header_value:
+    if prefer_header_value.startswith("example"):  # pyright: ignore [reportOptionalMemberAccess]
         prefer_header_value = f"example={prefer_header_value}"
+        headers_to_upstream["prefer"] = prefer_header_value
+    elif prefer_header_value.startswith("code"):  # pyright: ignore [reportOptionalMemberAccess]
+        prefer_header_value = f"code={prefer_header_value[4:]}"  # pyright: ignore [reportOptionalSubscript]
         headers_to_upstream["prefer"] = prefer_header_value
 
     request_to_upstream = requests.Request(

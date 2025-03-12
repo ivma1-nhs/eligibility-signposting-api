@@ -6,8 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile  # This will use the combined Dockerfile
-    environment:
-      - UPSTREAM_HOST=http://localhost:9000  # Set the UPSTREAM_HOST environment variable
     ports:
       - "9000:9000"  # Port for your custom Prism service
       - "5000:5000"  # Port for the proxy service
