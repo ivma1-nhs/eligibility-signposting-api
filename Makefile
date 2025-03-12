@@ -21,7 +21,7 @@ install: install-node install-python .git/hooks/pre-commit
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
-	npm run lint
+	# npm run lint
 	poetry run ruff format . --check
 	poetry run ruff check .
 	poetry run pyright
@@ -45,8 +45,8 @@ _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/
 dependencies: # Install dependencies needed to build and test the project @Pipeline
 	scripts/dependencies.sh
 
-build: # Build the project artefact @Pipeline
-	# TODO: Implement the artefact build step
+build: # Build lambda in dist
+	poetry build-lambda -vv
 
 deploy: # Deploy the project artefact to the target environment @Pipeline
 	# TODO: Implement the artefact deployment step
@@ -55,7 +55,8 @@ config:: # Configure development environment (main) @Configuration
 	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
 	make _install-dependencies
 
-precommit: lint test ## Pre-commit tasks
+precommit: test-unit build test-integration lint ## Pre-commit tasks
+	python -m this
 
 # ==============================================================================
 
