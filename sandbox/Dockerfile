@@ -1,5 +1,5 @@
 # First Stage: Build Proxy service
-FROM python:3.10-alpine as deps
+FROM python:3.10-alpine AS deps
 
 # Install pipenv and compilation dependencies
 RUN pip install pipenv
@@ -16,8 +16,9 @@ COPY --from=deps /.venv /.venv
 ENV PATH="/.venv/bin:$PATH"
 
 # Create and switch to a new user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN mkdir /home/appuser/app
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    mkdir /home/appuser/app
 WORKDIR /home/appuser/app
 USER appuser
 
@@ -26,11 +27,9 @@ COPY . .
 
 # Install Prism
 USER root
-RUN apk add --no-cache nodejs npm
-RUN npm install -g @stoplight/prism-cli
-
-# Install supervisord
-RUN apk add --no-cache supervisor
+RUN apk add --no-cache nodejs npm && \
+    npm install -g @stoplight/prism-cli && \
+    apk add --no-cache supervisor
 
 # Copy supervisord configuration
 COPY supervisord.conf /etc/supervisord.conf
