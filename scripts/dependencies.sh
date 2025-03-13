@@ -9,3 +9,4 @@ if ! [ -x "$(command -v poetry)" ]; then
   fi
   pipx install poetry
 fi
+poetry self add poetry-plugin-lambda-build poetry-plugin-export
