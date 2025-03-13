@@ -8,8 +8,11 @@ list:
 build:
 	docker-compose -f docker-compose.yaml build
 
-run: build
+up: build
 	docker-compose -f docker-compose.yaml up -d
+
+down:
+	docker-compose -f docker-compose.yaml down
 
 clean:
 	rm -rf ./node_modules
@@ -24,9 +27,6 @@ spec:
 	make -C .. publish
 
 test:
-	NODE_ENV=test npx mocha --reporter spec
+	UPSTREAM_HOST=test poetry run pytest
 
-test-report:
-	NODE_ENV=test npx mocha --reporter mocha-junit-reporter --reporter-options mochaFile=../../reports/tests/$(dirname).xml || true
-
-.PHONY: build run spec
+.PHONY: build run spec test

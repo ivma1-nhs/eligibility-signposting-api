@@ -37,6 +37,12 @@ HOP_BY_HOP_HEADERS = [
     "upgrade",
 ]
 
+PATIENT_EXAMPLES = {
+    "patient=0000000001": "example1",
+    "patient=0000000002": "example2",
+    "patient=0000000003": "code404",
+}
+
 
 def exclude_hop_by_hop(headers: dict) -> list[tuple[str, str]]:
     """
@@ -47,17 +53,14 @@ def exclude_hop_by_hop(headers: dict) -> list[tuple[str, str]]:
     return [(k, v) for k, v in headers.items() if k.lower() not in HOP_BY_HOP_HEADERS]
 
 
-def example_name(request: Request) -> str | None:
+def get_prism_prompt_for_example(patient_examples: dict, request: Request) -> str | None:
     """
     Given the whole request, return the `Prefer:` header value if a specific
     example is desired. Otherwise, return `None`.
     """
-    if "patient=0000000001" in request.full_path:
-        return "example1"
-    if "patient=0000000002" in request.full_path:
-        return "example2"
-    if "patient=0000000003" in request.full_path:
-        return "code404"
+    for patient_id, example in patient_examples.items():
+        if patient_id in request.full_path:
+            return example
     return None
 
 
@@ -77,7 +80,7 @@ def parse_prefer_header_value(prefer_header_value: str) -> str:
 def proxy_to_upstream(path: str) -> Response:  # noqa: ARG001
     headers_to_upstream = {k: v for k, v in request.headers if k.lower() != "host"}
 
-    prefer_header_value = example_name(request)
+    prefer_header_value = get_prism_prompt_for_example(PATIENT_EXAMPLES, request)
     if prefer_header_value:
         headers_to_upstream["prefer"] = parse_prefer_header_value(prefer_header_value)
 
