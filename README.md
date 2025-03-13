@@ -1,22 +1,17 @@
-# Repository Template
+# Vaccination Eligibility Data Product
 
-[![CI/CD Pull Request](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml/badge.svg)](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=repository-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=repository-template)
+[![CI/CD Pull Request](https://github.com/NHSDigital/eligibility-signposting-api/actions/workflows/cicd-1-pull-request.yaml/badge.svg)](https://github.com/NHSDigital/eligibility-signposting-api/actions/workflows/cicd-1-pull-request.yaml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NHSDigital_eligibility-signposting-api&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=repository-template)
 
-Start with an overview or a brief description of what the project is about and what it does. For example -
+The Eligibility Signposting API and Eligibility Data Product are designed to be the single source of the truth for providing trustworthy assessments of an individual’s eligibility based upon clinically assured data sources, for one or more vaccinations. It will also provide details about whether the individual can book/get a vaccine and how they can get vaccinated where relevant.
 
-Welcome to our repository template designed to streamline your project setup! This robust template provides a reliable starting point for your new projects, covering an essential tech stack and encouraging best practices in documenting.
+Initially this will support inclusion of eligibility for Respiratory Syncytial Virus (RSV) vaccination for older adults within the NHS App (Vaccinations in the App).
 
-This repository template aims to foster a user-friendly development environment by ensuring that every included file is concise and adequately self-documented. By adhering to this standard, we can promote increased clarity and maintainability throughout your project's lifecycle. Bundled within this template are resources that pave the way for seamless repository creation. Currently supported technologies are:
-
-- Terraform
-- Docker
-
-Make use of this repository template to expedite your project setup and enhance your productivity right from the get-go. Enjoy the advantage of having a well-structured, self-documented project that reduces overhead and increases focus on what truly matters - coding!
+The software will only be used for signposting an individual to an appropriate service. Ultimately the eligibility for a particular vaccination will be decided by a healthcare professional at the point of care prior to giving the vaccination.
 
 ## Table of Contents
 
-- [Repository Template](#repository-template)
+- [Vaccination Eligibility Data Product](#vaccination-eligibility-data-product)
   - [Table of Contents](#table-of-contents)
   - [Setup](#setup)
     - [Prerequisites](#prerequisites)
@@ -32,20 +27,20 @@ Make use of this repository template to expedite your project setup and enhance 
 
 ## Setup
 
-By including preferably a one-liner or if necessary a set of clear CLI instructions we improve user experience. This should be a frictionless installation process that works on various operating systems (macOS, Linux, Windows WSL) and handles all the dependencies.
-
-Clone the repository
+First, ensure [Pprerequisites](#prerequisites) are met. Then clone the repository, and install dependencies.
 
 ```shell
-git clone https://github.com/nhs-england-tools/repository-template.git
-cd nhs-england-tools/repository-template
+git clone https://github.com/NHSDigital/eligibility-signposting-api.git
+cd eligibility-signposting-api
+make dependencies install-python
 ```
 
 ### Prerequisites
 
 The following software packages, or their equivalents, are expected to be installed and configured:
 
-- [Docker](https://www.docker.com/) container runtime or a compatible tool, e.g. [Podman](https://podman.io/),
+- [Python](http://python.org) version 3.13. (It may be easiest to use [pyenv](https://github.com/pyenv/pyenv) to manage Python versions.)
+- [Docker](https://www.docker.com/) container runtime or a compatible tool, e.g. [colima](https://github.com/abiosoft/colima) or  [Podman](https://podman.io/),
 - [asdf](https://asdf-vm.com/) version manager,
 - [GNU make](https://www.gnu.org/software/make/) 3.82 or later,
 
@@ -69,11 +64,7 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-Installation and configuration of the toolchain dependencies
-
-```shell
-make install
-```
+None so far!
 
 ## Usage
 
@@ -81,9 +72,21 @@ After a successful installation, provide an informative example of how this proj
 
 ### Testing
 
+Run all tests and linting:
+
+```shell
+make precommit
+```
+
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
 
 ## Design
+
+We'll be separating our [presentation](https://martinfowler.com/eaaDev/SeparatedPresentation.html) layer (where API logic lives, in [`views/`](src/eligibility_signposting_api/views)), [business services](https://martinfowler.com/eaaCatalog/serviceLayer.html) layer (where business logic lives, in [`services/`](src/eligibility_signposting_api/services)) and [repository](https://martinfowler.com/eaaCatalog/repository.html) layer (where database logic lives, [`repos/`](src/eligibility_signposting_api/repos)). We will be using [wireup](https://pypi.org/project/wireup/) for [dependency injection](https://pinboard.in/u:brunns/t:dependency-injection), so services get their dependencies given to them ("injection"), and wireup takes care of that. (We'll usually use the [`@service` annotation](https://maldoinc.github.io/wireup/latest/services/), but [factory functions](https://maldoinc.github.io/wireup/latest/factory_functions/) will be used where necessary, typically for creating resources from 3rd party libraries.)  We'll be using [Pydantic](https://pypi.org/project/pydantic/) for both response models and database models.
+
+[app.py](src/eligibility_signposting_api/app.py) is the best place to start exploring the code.
+
+Local tests will use [localstack](https://www.localstack.cloud/), started & stopped using [pytest-docker](https://pypi.org/project/pytest-docker/). We'll make extensive use of [pytest fixtures](https://docs.pytest.org/en/6.2.x/fixture.html), [builders](https://pypi.org/project/factory-boy/) and [matchers](https://pypi.org/project/pyhamcrest/) to keep our tests clean.
 
 ### Diagrams
 
@@ -119,7 +122,7 @@ Describe or link templates on how to raise an issue, feature request or make a c
 
 ## Contacts
 
-Provide a way to contact the owners of this project. It can be a team, an individual or information on the means of getting in touch via active communication channels, e.g. opening a GitHub discussion, raising an issue, etc.
+Please contact the team on [Slack](https://nhsdigitalcorporate.enterprise.slack.com/archives/C08ATG7TBDW)
 
 ## Licence
 
