@@ -16,3 +16,8 @@ Syft
 Terraform
 toolchain
 Trufflehog
+Syncytial
+pyenv
+colima
+wireup
+Pydantic
