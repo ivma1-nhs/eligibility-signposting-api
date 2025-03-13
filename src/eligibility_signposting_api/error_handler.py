@@ -4,14 +4,20 @@ from http import HTTPStatus
 
 from flask import make_response
 from flask.typing import ResponseReturnValue
+from werkzeug.exceptions import HTTPException
 
 from eligibility_signposting_api.views.response_models import Problem
 
 logger = logging.getLogger(__name__)
 
 
-def handle_exception(e: BaseException) -> ResponseReturnValue:
+def handle_exception(e: Exception) -> ResponseReturnValue | HTTPException:
     logger.exception("Unexpected Exception", exc_info=e)
+
+    # Let Flask handle its own exceptions for now.
+    if isinstance(e, HTTPException):
+        return e
+
     problem = Problem(
         title="Unexpected Exception",
         type=str(type(e)),

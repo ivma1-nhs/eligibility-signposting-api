@@ -39,23 +39,23 @@ class FakeUnexpectedErrorPersonService(PersonService):
 
 def test_name_given(app: Flask, client: FlaskClient):
     with get_container(app).override.service(PersonService, new=FakePersonService()):
-        response = client.get("/simon")
+        response = client.get("/hello/simon")
         assert_that(response, is_response().with_status_code(HTTPStatus.OK).and_text(contains_string("SIMON")))
 
 
 def test_default_name(app: Flask, client: FlaskClient):
     with get_container(app).override.service(PersonService, new=FakePersonService()):
-        response = client.get("/")
+        response = client.get("/hello/")
         assert_that(response, is_response().with_status_code(HTTPStatus.OK).and_text(contains_string("Default")))
 
 
 def test_unknown_name(app: Flask, client: FlaskClient):
     with get_container(app).override.service(PersonService, new=FakeUnknownPersonService()):
-        response = client.get("/fred")
+        response = client.get("/hello/fred")
         assert_that(response, is_response().with_status_code(HTTPStatus.NOT_FOUND))
 
 
 def test_unexpected_error(app: Flask, client: FlaskClient):
     with get_container(app).override.service(PersonService, new=FakeUnexpectedErrorPersonService()):
-        response = client.get("/fred")
+        response = client.get("/hello/fred")
         assert_that(response, is_response().with_status_code(HTTPStatus.INTERNAL_SERVER_ERROR))

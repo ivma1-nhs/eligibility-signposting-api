@@ -25,7 +25,7 @@ def test_no_name_given(client: FlaskClient):
     # Given
 
     # When
-    response = client.get("/")
+    response = client.get("/hello/")
 
     # Then
     assert_that(
@@ -40,7 +40,7 @@ def test_app_for_name_with_nickname(client: FlaskClient):
     # Given
 
     # When
-    response = client.get("/simon")
+    response = client.get("/hello/simon")
 
     # Then
     assert_that(
@@ -55,7 +55,7 @@ def test_app_for_nonexistent_name(client: FlaskClient):
     # Given
 
     # When
-    response = client.get("/fred")
+    response = client.get("/hello/fred")
 
     # Then
     assert_that(

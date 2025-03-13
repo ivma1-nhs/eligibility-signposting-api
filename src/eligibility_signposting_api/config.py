@@ -36,5 +36,8 @@ def init_logging() -> None:
                 "wsgi": {"class": "logging.StreamHandler", "stream": "ext://sys.stdout", "formatter": "default"}
             },
             "root": {"level": level, "handlers": ["wsgi"]},
+            "loggers": {
+                "eligibility_signposting_api.app": {"level": level, "handlers": ["wsgi"], "propagate": False},
+            },
         }
     )
