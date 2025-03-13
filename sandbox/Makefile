@@ -6,10 +6,10 @@ list:
 	@grep '^[^#[:space:]].*:' Makefile
 
 build:
-	docker build -t $(project_name) -f Dockerfile .
+	docker-compose -f docker-compose.yaml build
 
 run: build
-	docker run --rm -it -p 9000:9000 --name $(project_name) $(project_name)
+	docker-compose -f docker-compose.yaml up -d
 
 clean:
 	rm -rf ./node_modules
