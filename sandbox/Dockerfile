@@ -1,13 +1,12 @@
 # First Stage: Build Proxy service
-FROM python:3.10-alpine AS deps
+FROM python:3.13-alpine AS deps
 
-# Install pipenv and compilation dependencies
-RUN pip install pipenv
+# Install poetry
+RUN pip install poetry
 
 # Install python dependencies in /.venv
-COPY Pipfile .
-COPY Pipfile.lock .
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.in-project true && poetry install --no-root
 
 FROM deps AS runtime
 
