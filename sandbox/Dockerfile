@@ -32,7 +32,7 @@ RUN apk add --no-cache nodejs npm && \
     apk add --no-cache supervisor
 
 # Expose ports
-EXPOSE 9000 5000
-ENV UPSTREAM_HOST=http://localhost:9000
+EXPOSE 9000
+ENV UPSTREAM_HOST=http://localhost:5000
 # Run supervisord
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
