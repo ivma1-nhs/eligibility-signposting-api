@@ -86,24 +86,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage
-      - name: "Fix paths in coverage report"
-        run: |
-          # Install xmlstarlet to process XML
-          sudo apt-get install -y xmlstarlet
-
-          # Get the base path that needs to be removed
-          BASE_PATH="/home/runner/work/eligibility-signposting-api/eligibility-signposting-api/"
-
-          # Transform the paths in the coverage.xml file
-          xmlstarlet edit --inplace \
-            --update "//sources/source" --value "." \
-            coverage.xml
-
-          # Replace absolute paths in class filenames with relative paths
-          xmlstarlet edit --inplace \
-            --update "//class/@filename" \
-            --expr "substring-after(@filename, '$BASE_PATH')" \
-            coverage.xml
+          path: coverage
       - name: "Perform static analysis"
         uses: ./.github/actions/perform-static-analysis
         with:
