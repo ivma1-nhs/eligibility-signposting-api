@@ -40,3 +40,7 @@ test-report.xml
 localstack_data/
 /volume/*
 /coverage.xml
+/lines-of-code-report*
+/specification/tmp
+/specification/postman
+/sandbox/specification/*
