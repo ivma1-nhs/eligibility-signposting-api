@@ -3,10 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from eligibility_signposting_api.model.person import Person
-from eligibility_signposting_api.repos.exceptions import NotFoundError
-from eligibility_signposting_api.repos.person_repo import PersonRepo
-from eligibility_signposting_api.services import PersonService
-from eligibility_signposting_api.services.person_services import UnknownPersonError
+from eligibility_signposting_api.repos import NotFoundError, PersonRepo
+from eligibility_signposting_api.services import PersonService, UnknownPersonError
 
 
 def test_person_service_returns_default():

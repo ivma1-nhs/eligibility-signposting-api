@@ -10,8 +10,7 @@ from mangum.types import LambdaContext, LambdaEvent
 from eligibility_signposting_api import repos, services
 from eligibility_signposting_api.config import LOG_LEVEL, config, init_logging
 from eligibility_signposting_api.error_handler import handle_exception
-from eligibility_signposting_api.views.eligibility import eligibility
-from eligibility_signposting_api.views.hello import hello
+from eligibility_signposting_api.views import eligibility, hello
 
 init_logging()
 logger = logging.getLogger(__name__)
@@ -39,8 +38,8 @@ def create_app() -> Flask:
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
-    container = wireup.create_container(service_modules=[services, repos], parameters=config())
-    wireup.integration.flask.setup(container, app, import_flask_config=True)
+    container = wireup.create_sync_container(service_modules=[services, repos], parameters={**config(), **app.config})
+    wireup.integration.flask.setup(container, app)
 
     logger.info("app ready")
     return app
