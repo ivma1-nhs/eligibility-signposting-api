@@ -18,5 +18,4 @@ cd "$(git rev-parse --show-toplevel)"
 # tasks in scripts/test.mk.
 UPSTREAM_HOST=test
 make dependencies install-python
-UPSTREAM_HOST=$UPSTREAM_HOST poetry run pytest tests/unit/ --durations=10 --cov-report= --cov src/eligibility_signposting_api/
-poetry run python -m coverage xml
+UPSTREAM_HOST=$UPSTREAM_HOST poetry run pytest tests/unit/ --durations=10 --cov-report= --cov

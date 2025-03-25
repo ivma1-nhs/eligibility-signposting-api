@@ -3,8 +3,7 @@ import logging
 from wireup import service
 
 from eligibility_signposting_api.model.person import Name, Nickname
-from eligibility_signposting_api.repos.exceptions import NotFoundError
-from eligibility_signposting_api.repos.person_repo import PersonRepo
+from eligibility_signposting_api.repos import NotFoundError, PersonRepo
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +22,7 @@ class PersonService:
         if name:
             try:
                 person = self.person_repo.get_person(name)
+                logger.debug("got person %r", person, extra={"person": person, "person_name": name})
             except NotFoundError as e:
                 raise UnknownPersonError from e
             else:

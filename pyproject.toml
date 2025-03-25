@@ -30,7 +30,8 @@ boto3 = "^1.37.3"
 botocore = "^1.37.3"
 eval-type-backport = "^0.2.2"
 mangum = "^0.19.0"
-wireup = "^0.16.0"
+wireup = "^1.0.1"
+python-json-logger = "^3.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.0"
@@ -54,7 +55,7 @@ pytest-docker = "^3.2.0"
 stamina = "^25.1.0"
 
 [tool.poetry-plugin-lambda-build]
-docker-image = "public.ecr.aws/sam/build-python3.13:latest-x86_64"
+docker-image = "public.ecr.aws/sam/build-python3.13:1.135-x86_64"
 docker-network = "host"
 docker-platform = "linux/x86_64"
 package-artifact-path = "dist/lambda.zip"
@@ -83,17 +84,9 @@ log_format = "%(asctime)s %(levelname)s %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.coverage.run]
+relative_files = true
 branch = true
-source = ["src/eligibility_signposting_api"]
-omit = [
-  "tests/*",
-  "*/__init__.py",
-  "*/migrations/*",
-  "*/settings/*",
-  "*/venv/*",
-  "*/.venv/*",
-  "*/site-packages/*",
-]
+source = ["src"]
 
 [tool.coverage.report]
 show_missing = true

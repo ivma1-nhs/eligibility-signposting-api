@@ -16,9 +16,11 @@ The software will only be used for signposting an individual to an appropriate s
   - [Setup](#setup)
     - [Prerequisites](#prerequisites)
     - [Configuration](#configuration)
+      - [Environment variables](#environment-variables)
   - [Usage](#usage)
     - [Testing](#testing)
   - [Sandbox](#sandbox)
+  - [Conflict with yanai](#conflict-with-yanai)
   - [Design](#design)
     - [Diagrams](#diagrams)
     - [Modularity](#modularity)
@@ -65,7 +67,15 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-None so far!
+#### Environment variables
+
+| Variable                | Default                 | Description                                                                                                                                                            |
+|-------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DYNAMODB_ENDPOINT`     | `http://localhost:4566` | Endpoint for the app to access DynamoDB                                                                                                                                |
+| `AWS_REGION`            | `eu-west-1`             | AWS Region                                                                                                                                                             |
+| `AWS_ACCESS_KEY`        | `dummy_key`             | AWS Access Key                                                                                                                                                         |
+| `AWS_SECRET_ACCESS_KEY` | `dummy_secret`          | AWS Secret Access Key                                                                                                                                                  |
+| `LOG_LEVEL`             | `WARNING`               | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |
 
 ## Usage
 
@@ -84,6 +94,14 @@ There are `make` tasks for you to configure to run your tests.  Run `make test` 
 ## Sandbox
 
 There is a minimalist sandbox environment in `/sandbox` with an accompanying README with instructions on how to run it locally.
+
+## Conflict with yanai
+
+If you have previously built [yanai](https://nhsd-confluence.digital.nhs.uk/pages/viewpage.action?pageId=48826732), which is the platform we use to supply data to this project, that uses an old version of localstack that does not support our Python version. We have pinned the correct version here and yanai have their version pinned as well so it should work fine, but sometimes issues can arise - if so then removing the docker image can solve that, before then rebuilding.
+
+```shell
+ docker rmi localstack/localstack
+```
 
 ## Design
 

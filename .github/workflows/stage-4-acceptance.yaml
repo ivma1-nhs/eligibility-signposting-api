@@ -111,7 +111,7 @@ jobs:
     needs: environment-set-up
     timeout-minutes: 10
     env:
-      LOCALSTACK_INTERNAL_DYNAMODB_ENDPOINT: http://localstack:4566/
+      LOCALSTACK_INTERNAL_ENDPOINT: http://localstack:4566/
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -130,6 +130,28 @@ jobs:
       - name: "Save result"
         run: |
           echo "Nothing to save"
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: integration-test-results.xml
+      - name: Gather Integration Test Summaries
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          path: summary
+          pattern: ci-summary-*
+          merge-multiple: true
+      - name: Integration Test Report
+        if: always()
+        uses: phoenix-actions/test-reporting@v15
+        with:
+          name: Integration Test Summary
+          path: integration-test-results.xml
+          reporter: java-junit
+          output-to: step-summary
+
   test-accessibility:
     name: "Accessibility test"
     runs-on: ubuntu-latest
