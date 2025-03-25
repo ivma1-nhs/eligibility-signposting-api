@@ -61,7 +61,7 @@ precommit: test-unit build test-integration lint ## Pre-commit tasks
 SPEC_DIR := $(CURDIR)/specification
 POSTMAN_DIR := $(SPEC_DIR)/postman
 
-convert-postman:
+convert-postman: # Create Postman collection from OAS spec
 	docker build -t portman-converter -f $(POSTMAN_DIR)/Dockerfile $(SPEC_DIR)
 	docker run --rm -v $(SPEC_DIR):/app portman-converter \
 		portman -l /app/eligibility-signposting-api.yaml -o /app/postman/collection.json
