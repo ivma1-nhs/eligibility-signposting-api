@@ -64,7 +64,15 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-None so far!
+#### Environment variables
+
+| Variable                | Default                 | Description                                                                                                                                                            |
+|-------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DYNAMODB_ENDPOINT`     | `http://localhost:4566` | Endpoint for the app to access DynamoDB                                                                                                                                |
+| `AWS_REGION`            | `eu-west-1`             | AWS Region                                                                                                                                                             |
+| `AWS_ACCESS_KEY`        | `dummy_key`             | AWS Access Key                                                                                                                                                         |
+| `AWS_SECRET_ACCESS_KEY` | `dummy_secret`          | AWS Secret Access Key                                                                                                                                                  |
+| `LOG_LEVEL`             | `WARNING`               | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |
 
 ## Usage
 

@@ -13,5 +13,5 @@ eligibility = Blueprint("eligibility", __name__)
 
 @eligibility.get("/<nhs_number>")
 def check_eligibility(nhs_number: NHSNumber) -> ResponseReturnValue:
-    logger.info("nhs_number: %s", nhs_number)
+    logger.debug("checking nhs_number %r", nhs_number, extra={"nhs_number": nhs_number})
     return make_response({}, HTTPStatus.OK)
