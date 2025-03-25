@@ -8,7 +8,7 @@ from mangum import Mangum
 from mangum.types import LambdaContext, LambdaEvent
 
 from eligibility_signposting_api import repos, services
-from eligibility_signposting_api.config import LOG_LEVEL, config, init_logging
+from eligibility_signposting_api.config import config, init_logging
 from eligibility_signposting_api.error_handler import handle_exception
 from eligibility_signposting_api.views import eligibility, hello
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:  # pragma: no cover
     """Run the Flask app as a local process."""
     app = create_app()
-    app.run(debug=LOG_LEVEL == logging.DEBUG)
+    app.run(debug=config()["log_level"] == logging.DEBUG)
 
 
 def lambda_handler(event: LambdaEvent, context: LambdaContext) -> dict[str, Any]:  # pragma: no cover
