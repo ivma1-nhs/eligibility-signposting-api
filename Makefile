@@ -34,6 +34,7 @@ format: ## Format and fix code
 #Creates the fully expanded OAS spec in json
 publish: clean
 	mkdir -p build
+	mkdir -p sandbox/specification
 	npm run publish 2> /dev/null
 	cp build/eligibility-signposting-api.json sandbox/specification/eligibility-signposting-api.json
 #Files to loop over in release
