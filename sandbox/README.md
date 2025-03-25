@@ -1,5 +1,11 @@
 # Sandbox environment
 
+The sandbox environment uses:
+
+* [OpenAPI Generator CLI](https://github.com/OpenAPITools/openapi-generator-cli) to validate the specification and convert it from .yaml to .json for use in the sandbox.
+* [Prism](https://stoplight.io/open-source/prism) as a mock server.
+* A flask proxy to allow us to inject specific examples based on request attributes.
+
 ## Developer instructions
 
 Run the following command to start the sandbox environment:

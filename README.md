@@ -18,6 +18,7 @@ The software will only be used for signposting an individual to an appropriate s
     - [Configuration](#configuration)
   - [Usage](#usage)
     - [Testing](#testing)
+  - [Sandbox](#sandbox)
   - [Design](#design)
     - [Diagrams](#diagrams)
     - [Modularity](#modularity)
@@ -79,6 +80,10 @@ make precommit
 ```
 
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
+
+## Sandbox
+
+There is a minimalist sandbox environment in `/sandbox` with an accompanying README with instructions on how to run it locally.
 
 ## Design
 
