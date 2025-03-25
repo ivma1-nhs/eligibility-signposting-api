@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   combined-service:
     container_name: combined-service

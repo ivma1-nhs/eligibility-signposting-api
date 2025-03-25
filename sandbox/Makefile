@@ -24,6 +24,7 @@ update:
 	npm update
 
 spec:
+	mkdir -p specification
 	make -C .. publish
 
 test:
