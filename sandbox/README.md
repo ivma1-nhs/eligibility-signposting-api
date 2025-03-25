@@ -28,7 +28,7 @@ This will stop the sandbox environment.
 patient 0000000001 is a patient eligible and bookable for a Flu vaccination.
 
 ```bash
- curl -X GET "http://0.0.0.0:5000/eligibility?patient=0000000001" -H "Accept: application/json" -H "Authorization: Bearer sdvsd"
+ curl -X GET "http://0.0.0.0:9000/eligibility?patient=0000000001" -H "Accept: application/json" -H "Authorization: Bearer sdvsd"
 ```
 
 See [app.py](app.py) for more examples.
