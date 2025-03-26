@@ -1,13 +1,14 @@
+import json
 import logging
 import os
 from collections.abc import Generator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import boto3
 import httpx
 import pytest
 import stamina
+from boto3 import Session
 from boto3.resources.base import ServiceResource
 from botocore.client import BaseClient
 from httpx import RequestError
@@ -49,46 +50,84 @@ def is_responsive(url: URL) -> bool:
 
 
 @pytest.fixture(scope="session")
-def lambda_client(localstack: URL) -> BaseClient:
-    return boto3.client(
-        "lambda",
-        endpoint_url=str(localstack),
-        region_name=AWS_REGION,
-        aws_access_key_id="fake",
-        aws_secret_access_key="fake",
-    )
+def boto3_session() -> Session:
+    return Session(aws_access_key_id="fake", aws_secret_access_key="fake", region_name=AWS_REGION)
 
 
 @pytest.fixture(scope="session")
-def dynamodb_client(localstack: URL) -> BaseClient:
-    return boto3.client(
-        "dynamodb",
-        endpoint_url=str(localstack),
-        region_name=AWS_REGION,
-        aws_access_key_id="fake",
-        aws_secret_access_key="fake",
-    )
+def lambda_client(boto3_session: Session, localstack: URL) -> BaseClient:
+    return boto3_session.client("lambda", endpoint_url=str(localstack))
 
 
 @pytest.fixture(scope="session")
-def dynamodb_resource(localstack: URL) -> ServiceResource:
-    return boto3.resource(
-        "dynamodb",
-        endpoint_url=str(localstack),
-        region_name=AWS_REGION,
-        aws_access_key_id="fake",
-        aws_secret_access_key="fake",
-    )
+def dynamodb_client(boto3_session: Session, localstack: URL) -> BaseClient:
+    return boto3_session.client("dynamodb", endpoint_url=str(localstack))
 
 
 @pytest.fixture(scope="session")
-def flask_function(lambda_client: BaseClient) -> str:
-    function_name = "flask_function"
+def dynamodb_resource(boto3_session: Session, localstack: URL) -> ServiceResource:
+    return boto3_session.resource("dynamodb", endpoint_url=str(localstack))
+
+
+@pytest.fixture(scope="session")
+def logs_client(boto3_session: Session, localstack: URL) -> BaseClient:
+    return boto3_session.client("logs", endpoint_url=str(localstack))
+
+
+@pytest.fixture(scope="session")
+def iam_client(boto3_session: Session, localstack: URL) -> BaseClient:
+    return boto3_session.client("iam", endpoint_url=str(localstack))
+
+
+@pytest.fixture(scope="session")
+def iam_role(iam_client: BaseClient) -> str:
+    role_name = "LambdaExecutionRole"
+    policy_name = "LambdaCloudWatchPolicy"
+
+    # Define IAM Trust Policy for Lambda Execution Role
+    trust_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {"Effect": "Allow", "Principal": {"Service": "lambda.amazonaws.com"}, "Action": "sts:AssumeRole"}
+        ],
+    }
+
+    # Create IAM Role
+    role = iam_client.create_role(
+        RoleName=role_name,
+        AssumeRolePolicyDocument=json.dumps(trust_policy),
+        Description="Role for Lambda execution with CloudWatch logging permissions",
+    )
+
+    # Define IAM Policy for CloudWatch Logs
+    log_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+                "Resource": "arn:aws:logs:*:*:*",
+            }
+        ],
+    }
+
+    # Create the IAM Policy
+    policy = iam_client.create_policy(PolicyName=policy_name, PolicyDocument=json.dumps(log_policy))
+
+    # Attach Policy to Role
+    iam_client.attach_role_policy(RoleName=role_name, PolicyArn=policy["Policy"]["Arn"])
+
+    return role["Role"]["Arn"]
+
+
+@pytest.fixture(scope="session")
+def flask_function(lambda_client: BaseClient, iam_role: str) -> Generator[str]:
+    function_name = "eligibility_signposting_api"
     with Path("dist/lambda.zip").open("rb") as zipfile:
         lambda_client.create_function(
             FunctionName=function_name,
             Runtime="python3.13",
-            Role="arn:aws:iam::123456789012:role/test-role",
+            Role=iam_role,
             Handler="eligibility_signposting_api.app.lambda_handler",
             Code={"ZipFile": zipfile.read()},
             Architectures=["x86_64"],
@@ -97,13 +136,15 @@ def flask_function(lambda_client: BaseClient) -> str:
                 "Variables": {
                     "DYNAMODB_ENDPOINT": os.getenv("LOCALSTACK_INTERNAL_ENDPOINT", "http://localstack:4566/"),
                     "AWS_REGION": AWS_REGION,
+                    "LOG_LEVEL": "DEBUG",
                 }
             },
         )
     logger.info("loaded zip")
     wait_for_function_active(function_name, lambda_client)
     logger.info("function active")
-    return function_name
+    yield function_name
+    lambda_client.delete_function(FunctionName=function_name)
 
 
 @pytest.fixture(scope="session")

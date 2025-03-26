@@ -22,5 +22,6 @@ def hello_world(person_service: Injected[PersonService], name: Name | None = Non
         hello_response = HelloResponse(status=HTTPStatus.OK, message=f"Hello {nickname}!")
         return hello_response.model_dump()
     except UnknownPersonError:
+        logger.debug("name %r not found", name, extra={"name_": name})
         problem = Problem(title="Name not found", status=HTTPStatus.NOT_FOUND, detail=f"Name {name} not found.")
         return make_response(problem.model_dump(), HTTPStatus.NOT_FOUND)

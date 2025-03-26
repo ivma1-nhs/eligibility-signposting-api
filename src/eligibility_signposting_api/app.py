@@ -24,7 +24,9 @@ def main() -> None:  # pragma: no cover
 
 def lambda_handler(event: LambdaEvent, context: LambdaContext) -> dict[str, Any]:  # pragma: no cover
     """Run the Flask app as an AWS Lambda."""
-    handler = Mangum(WsgiToAsgi(create_app()))
+    app = create_app()
+    app.debug = config()["log_level"] == logging.DEBUG
+    handler = Mangum(WsgiToAsgi(app))
     return handler(event, context)
 
 
@@ -38,10 +40,11 @@ def create_app() -> Flask:
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
-    container = wireup.create_sync_container(service_modules=[services, repos], parameters={**config(), **app.config})
+    container = wireup.create_sync_container(service_modules=[services, repos], parameters=config())
     wireup.integration.flask.setup(container, app)
 
-    logger.info("app ready")
+    print(f"config {config()}")
+    logger.info("app ready", extra={"config": config()})
     return app
 
 
