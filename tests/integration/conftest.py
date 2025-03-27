@@ -124,7 +124,7 @@ def iam_role(iam_client: BaseClient) -> Generator[str]:
 
     yield role["Role"]["Arn"]
 
-    iam_client.delete_policy(PolicyName=policy_name)
+    iam_client.delete_policy(PolicyArn=policy["Policy"]["Arn"])
     iam_client.delete_role(RoleName=role_name)
 
 
