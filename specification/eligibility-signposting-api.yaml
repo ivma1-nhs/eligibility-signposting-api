@@ -82,9 +82,9 @@ paths:
                 type: object
                 properties:
                   responseId:
-                     type: string
-                     description: GUID assigned when the decisioning evaluation is carried out.  This will be useful if you ever need to request support for a particular request.  This will not change if you receive a cached response.
-                     example: 1a233ba5-e1eb-4080-a086-2962f6fc3473
+                    type: string
+                    description: GUID assigned when the decisioning evaluation is carried out.  This will be useful if you ever need to request support for a particular request.  This will not change if you receive a cached response.
+                    example: 1a233ba5-e1eb-4080-a086-2962f6fc3473
                   meta:
                     type: object
                     properties:
