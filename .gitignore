@@ -30,7 +30,7 @@ __pycache__/
 .venv/
 
 smoketest-report.xml
-env
+.env
 .dir-locals.el
 *.pyc
 */package-lock.json
@@ -38,9 +38,10 @@ test-report.xml
 .coverage
 
 localstack_data/
+sandbox/specification/*
 /volume/*
 /coverage.xml
 /lines-of-code-report*
-/specification/tmp
 /specification/postman
 /sandbox/specification/*
+/specification/tmp/*

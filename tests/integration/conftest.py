@@ -2,7 +2,7 @@ import logging
 import os
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
 import httpx
@@ -13,19 +13,22 @@ from botocore.client import BaseClient
 from httpx import RequestError
 from yarl import URL
 
+if TYPE_CHECKING:
+    from pytest_docker.plugin import Services
+
 logger = logging.getLogger(__name__)
 
 AWS_REGION = "eu-west-1"
 
 
 @pytest.fixture(scope="session")
-def localstack(request) -> URL:
+def localstack(request: pytest.FixtureRequest) -> URL:
     if url := os.getenv("RUNNING_LOCALSTACK_URL", None):
         logger.info("localstack already running on %s", url)
         return URL(url)
 
-    docker_ip = request.getfixturevalue("docker_ip")
-    docker_services = request.getfixturevalue("docker_services")
+    docker_ip: str = request.getfixturevalue("docker_ip")
+    docker_services: Services = request.getfixturevalue("docker_services")
 
     logger.info("Starting localstack")
     port = docker_services.port_for("localstack", 4566)
@@ -114,7 +117,7 @@ class FunctionNotActiveError(Exception):
 
 
 def wait_for_function_active(function_name, lambda_client):
-    for attempt in stamina.retry_context(on=FunctionNotActiveError):
+    for attempt in stamina.retry_context(on=FunctionNotActiveError, attempts=20, timeout=120):
         with attempt:
             logger.info("waiting")
             response = lambda_client.get_function(FunctionName=function_name)

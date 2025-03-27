@@ -10,7 +10,6 @@ install-python:
 #Installs dependencies using npm.
 install-node:
 	npm install --legacy-peer-deps
-	cd sandbox && npm install --legacy-peer-deps
 
 #Configures Git Hooks, which are scripts that run given a specified event.
 .git/hooks/pre-commit:
@@ -34,8 +33,9 @@ format: ## Format and fix code
 #Creates the fully expanded OAS spec in json
 publish: clean
 	mkdir -p build
+	mkdir -p sandbox/specification
 	npm run publish 2> /dev/null
-
+	cp build/eligibility-signposting-api.json sandbox/specification/eligibility-signposting-api.json
 #Files to loop over in release
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests"
 

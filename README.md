@@ -16,8 +16,10 @@ The software will only be used for signposting an individual to an appropriate s
   - [Setup](#setup)
     - [Prerequisites](#prerequisites)
     - [Configuration](#configuration)
+      - [Environment variables](#environment-variables)
   - [Usage](#usage)
     - [Testing](#testing)
+  - [Sandbox](#sandbox)
   - [Conflict with yanai](#conflict-with-yanai)
   - [Creating a Postman collection](#creating-a-postman-collection)
   - [Design](#design)
@@ -66,7 +68,15 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-None so far!
+#### Environment variables
+
+| Variable                | Default                 | Description                                                                                                                                                            |
+|-------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DYNAMODB_ENDPOINT`     | `http://localhost:4566` | Endpoint for the app to access DynamoDB                                                                                                                                |
+| `AWS_REGION`            | `eu-west-1`             | AWS Region                                                                                                                                                             |
+| `AWS_ACCESS_KEY`        | `dummy_key`             | AWS Access Key                                                                                                                                                         |
+| `AWS_SECRET_ACCESS_KEY` | `dummy_secret`          | AWS Secret Access Key                                                                                                                                                  |
+| `LOG_LEVEL`             | `WARNING`               | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |
 
 ## Usage
 
@@ -81,6 +91,10 @@ make precommit
 ```
 
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
+
+## Sandbox
+
+There is a minimalist sandbox environment in `/sandbox` with an accompanying README with instructions on how to run it locally.
 
 ## Conflict with yanai
 

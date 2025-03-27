@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @service(qualifier="people_table")
 def people_table_factory(dynamodb_resource: Annotated[ServiceResource, Inject(qualifier="dynamodb")]) -> Any:
     table = dynamodb_resource.Table("People")  # type: ignore[reportAttributeAccessIssue]
-    logger.info("built people_table: %r", table)
+    logger.info("people_table %r", table, extra={"table": table})
     return table
 
 
@@ -25,6 +25,12 @@ class PersonRepo:
 
     def get_person(self, name: Name) -> Person:
         dynamo_response = self.people_table.get_item(Key={"name": name})
+        logger.debug(
+            "dynamo_response %r for %s",
+            dynamo_response,
+            name,
+            extra={"dynamo_response": dynamo_response, "person_name": name},
+        )
 
         if "Item" not in dynamo_response:
             message = f"Person not found with name {name}"

@@ -16,6 +16,6 @@ cd "$(git rev-parse --show-toplevel)"
 # or whatever is appropriate to your project. You should *only* run your fast
 # tests from here. If you want to run other test suites, see the predefined
 # tasks in scripts/test.mk.
-
+UPSTREAM_HOST=test
 make dependencies install-python
-poetry run pytest tests/unit/ --durations=10 --cov-report=xml --cov=src/
+UPSTREAM_HOST=$UPSTREAM_HOST poetry run pytest tests/unit/ sandbox/tests/ --durations=10 --cov-report=xml --cov=src/
