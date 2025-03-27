@@ -80,7 +80,12 @@ def iam_client(boto3_session: Session, localstack: URL) -> BaseClient:
 
 
 @pytest.fixture(scope="session")
-def iam_role(iam_client: BaseClient) -> str:
+def s3_client(boto3_session: Session, localstack: URL) -> BaseClient:
+    return boto3_session.client("s3", endpoint_url=str(localstack))
+
+
+@pytest.fixture(scope="session")
+def iam_role(iam_client: BaseClient) -> Generator[str]:
     role_name = "LambdaExecutionRole"
     policy_name = "LambdaCloudWatchPolicy"
 
@@ -117,7 +122,10 @@ def iam_role(iam_client: BaseClient) -> str:
     # Attach Policy to Role
     iam_client.attach_role_policy(RoleName=role_name, PolicyArn=policy["Policy"]["Arn"])
 
-    return role["Role"]["Arn"]
+    yield role["Role"]["Arn"]
+
+    iam_client.delete_policy(PolicyName=policy_name)
+    iam_client.delete_role(RoleName=role_name)
 
 
 @pytest.fixture(scope="session")
