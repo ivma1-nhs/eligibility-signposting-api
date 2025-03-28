@@ -26,7 +26,7 @@ def lambda_handler(event: LambdaEvent, context: LambdaContext) -> dict[str, Any]
     """Run the Flask app as an AWS Lambda."""
     app = create_app()
     app.debug = config()["log_level"] == logging.DEBUG
-    handler = Mangum(WsgiToAsgi(app))
+    handler = Mangum(WsgiToAsgi(app), lifespan="off")
     return handler(event, context)
 
 
