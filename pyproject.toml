@@ -86,7 +86,7 @@ log_date_format = "%Y-%m-%d %H:%M:%S"
 [tool.coverage.run]
 relative_files = true
 branch = true
-source = ["src"]
+source = ["src", "sandbox"]
 
 [tool.coverage.report]
 show_missing = true

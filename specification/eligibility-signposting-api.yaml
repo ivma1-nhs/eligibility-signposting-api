@@ -1,46 +1,511 @@
-# This is an OpenAPI Specification (https://swagger.io/specification/)
-# for eligibility-signposting-api owned by NHS Digital (https://digital.nhs.uk/)
-openapi: '3.0.0'
+openapi: 3.0.1
 info:
-  title: 'eligibility-signposting-api'
-  version: 'Computed and injected at build time by `scripts/set_version.py`'
-  description: |
-    ## Overview
-    Add a fully fledged description here with markdown syntax.
-    For help completing the content of your API spec, see [our guidance](https://nhsd-confluence.digital.nhs.uk/display/APM/Documenting+your+API).
-    You should also base your content on our exemplar API - [PDS FHIR](https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir).
-    ## Who can use this API
-    To be completed.
-    ## Related APIs
-    To be completed.
-    ## API status and roadmap
-    To be completed.
-    ## Service level
-    To be completed.
-    ## Technology
-    To be completed.
-    ## Network access
-    To be completed.
-    ## Security and authorisation
-    To be completed.
-    ## Errors
-    To be completed.
-    ### Open source
-    To be completed.
-    ## Environments and testing
-    To be completed.
-    ## Onboarding
-    To be completed.
-
+  title: Eligibility Signposting API
+  version: 1.0.5-alpha
+  description: API to assess eligibility based on category, condition and NHS number.
   contact:
-    name: 'eligibility-signposting-api API Support'
-    url: 'https://digital.nhs.uk/developer/help-and-support'
-    email: api.management@nhs.net
+    url: https://developer.nhs.uk/apis/eligibility-signposting-api
+  termsOfService: https://developer.nhs.uk/apis/eligibility-signposting-api
+tags:
+  - name: Eligibility
+  - name: Signposting
+  - name: NextActions
 servers:
-  - url: 'https://sandbox.api.service.nhs.uk/eligibility-signposting-api'
-    description: Sandbox environment.
-  - url: 'https://int.api.service.nhs.uk/eligibility-signposting-api'
-    description: Integration test environment.
-  - url: 'https://api.service.nhs.uk/eligibility-signposting-api'
-    description: Production environment.
-paths: {}
+  - url: https://sandbox.api.service.nhs.uk/eligibility-signposting
+    description: Sandbox Server
+  - url: https://int.api.service.nhs.uk/eligibility-signposting
+    description: Integration Server
+  - url: https://api.service.nhs.uk/eligibility-signposting
+    description: Production Server
+paths:
+  /eligibility-check:
+    get:
+      summary: Check Eligibility
+      description: >-
+        Determines which suggestions a person is eligible for and which they are
+        not, including reasons and next steps.
+      security:
+        - nhs-login-p9: []
+      operationId: checkEligibility
+      parameters:
+        - name: patient
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '9876543210'
+          description: The NHS number of the person.
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            example: VACCINATIONS
+            default: ALL
+            enum:
+              - VACCINATIONS
+              - SCREENING
+              - ALL
+          description: >-
+            The category for which the caller is checking eligibility
+            suggestions. If not provided, eligibility for all supported
+            categories will be checked.
+        - name: conditions
+          in: query
+          required: false
+          schema:
+            type: string
+            example: FLU,RSV
+            default: ALL
+          description: >-
+            The diseases or conditions for which the caller is checking
+            eligibility suggestions in a comma separated list. If not provided, eligibility for all
+            supported diseases will be checked.
+        - name: includeActions
+          in: query
+          required: false
+          schema:
+            type: string
+            example: Y
+            default: Y
+            enum:
+              - Y
+              - N
+          description: >-
+            When Y is passed in, the API will include one or more actions as applicable.  Passing in N will result in no actions being calculated or returned.
+      responses:
+        '200':
+          description: Eligibility response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  responseId:
+                    type: string
+                    description: GUID assigned when the decisioning evaluation is carried out.  This will be useful if you ever need to request support for a particular request.  This will not change if you receive a cached response.
+                    example: 1a233ba5-e1eb-4080-a086-2962f6fc3473
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        description: Timestamp of when the decisioning evaluation is carried out.  This will not change if you receive a cached response.
+                        example: '2025-02-12T16:11:22+00:00'
+                  processedSuggestions:
+                    type: array
+                    description: List of suggestions the person is eligible for.
+                    items:
+                      type: object
+                      properties:
+                        condition:
+                          type: string
+                          example: RSV
+                          description: String representing the vaccine target disease, screening target or other scenario requiring decision based suggestions, that this suggestion relates to
+                        status:
+                          type: string
+                          example: Actionable
+                          description: String representing an overall summary of the persons status for this processedSuggestion
+                          enum:
+                            - NotEligible
+                            - NotActionable
+                            - Actionable
+                        statusText:
+                          type: string
+                          example: Actionable - Individual is eligible and we suggest that they follow one or more of the provided actions
+                        eligibilityCohorts:
+                          type: array
+                          description: Cohorts that drove the eligibility status returned.
+                          items:
+                            type: object
+                            properties:
+                              cohortCode:
+                                type: string
+                                description: Machine readable code signifying the cohort/cohort group that lead to a person's eligibility for this suggestion
+                              cohortText:
+                                type: string
+                                description: Human readable (render-able) text describing the meaning of a cohort/cohort group that lead to a person's eligibility for this suggestion
+                              cohortStatus:
+                                type: string
+                                description: String representing the persons status for this processedSuggestion in respect of this particular cohort or cohort group
+                                enum:
+                                  - NotEligible
+                                  - NotActionable
+                                  - Actionable
+                          example:
+                              - cohortCode: 'rsv_75-79_initial'
+                                cohortText: You turned 80 after 1 September 2024, so are eligible for the RSV vaccine until 31 August 2025
+                                cohortStatus: NotEligible
+                              - cohortCode: 'rsv_75-79_ongoing'
+                                cohortText: You're aged 75 to 79
+                                cohortStatus: Actionable
+                        suitablityRules:
+                          type: array
+                          description: Reasons that the eligibility status was changed from the base eligibility to result in it's status to not be eligible or to be acted on
+                          items:
+                            type: object
+                            properties:
+                              ruleType:
+                                type: string
+                                description: The type of a rule that triggered to amend the status of the suggestion
+                                enum:
+                                  - F
+                                  - S
+                              ruleCode:
+                                type: string
+                                description: Machine readable code signifying a rule that amended the status of the suggestion
+                              ruleText:
+                                type: string
+                                description: Human readable (render-able) text describing a rule that amended the status of the suggestion
+                        actions:
+                          type: array
+                          description: List of actions to be shown to the person.
+                          items:
+                            type: object
+                            properties:
+                              actionType:
+                                type: string
+                                description: Type of action to render.  E.g. A primary button, a link, text etc
+                              actionCode:
+                                type: string
+                                description: Code representing the action to be taken
+                              description:
+                                type: string
+                                description: A brief description of the step.
+                              urlLink:
+                                type: string
+                                description: URL to invoke if action selected.
+              examples:
+                example_50000000001:
+                  summary: RSV - Actionable CP Booking
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3473
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: Actionable
+                        statusText: Actionable - Individual is eligible and we suggest that they follow one or more of the provided actions
+                        eligibilityCohorts:
+                          - cohortCode: rsv_75-79_initial
+                            cohortText: You turned 80 after 1 September 2024, so are eligible for the RSV vaccine until 31 August 2025
+                            cohortStatus: NotEligible
+                          - cohortCode: rsv_75-79_ongoing
+                            cohortText: You're aged 75 to 79
+                            cohortStatus: Actionable
+                        actions:
+                          - actionType: PrimaryButton
+                            actionCode: NationalCPBook
+                            description: Book or Amend an RSV vaccinations appointment
+                            urlLink: http://www.nhs.uk/book-rsv
+                          - actionType: InfoText
+                            actionCode: AwaitGPContact
+                            description: You can wait for your GP surgery to contact you about getting the RSV vaccine. This may be by letter, text, phone call or email.
+                example_50000000002:
+                  summary: RSV - Actionable Not CP Booking
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3002
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: Actionable
+                        statusText: Actionable - Individual is eligible and we suggest that they follow one or more of the provided actions
+                        eligibilityCohorts:
+                          - cohortCode: rsv_75-79_ongoing
+                            cohortText: You're aged 75 to 79
+                            cohortStatus: Actionable
+                        actions:
+                          - actionType: InfoText
+                            actionCode: AwaitGPContact
+                            description: You can wait for your GP surgery to contact you about getting the RSV vaccine. This may be by letter, text, phone call or email.
+                          - actionType: InfoText
+                            actionCode: InfoCPBook
+                            description: People in some parts of England are able to book for an RSV vaccination in Community Pharmacies.  Unfortunately, your area does not yet offer RSV vaccinations in that way.  You may be able to receive other vaccinations in pharmacies (such as Flu or COVID)
+                example_50000000003:
+                  summary: RSV - Eligible, not actionable
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3003
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: NotActionable
+                        statusText: Actionable - Individual is eligible but suggest that they need not take any action at this time
+                        eligibilityCohorts:
+                          - cohortCode: rsv_75-79_ongoing
+                            cohortText: You're aged 75 to 79
+                            cohortStatus: NotActionable
+                        suitablityRules:
+                          - ruleType: S
+                            ruleCode: AwaitVaccination
+                            ruleText: You are in a setting or organisation that will arrange your vaccination for you.  For example, if you are in a Care Home or a member of some government organisations.
+                example_50000000004:
+                  summary: RSV - Not Eligible Due to Vaccination
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3004
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: NotEligible
+                        statusText: NotEligible - Individual is not currently eligible
+                        eligibilityCohorts:
+                          - cohortCode: rsv_75-79_ongoing
+                            cohortText: You're aged 75 to 79
+                            cohortStatus: NotEligible
+                        suitablityRules:
+                          - ruleType: F
+                            ruleCode: AlreadyVaccinated
+                            ruleText: You have already have an RSV vaccination recorded
+                example_50000000005:
+                  summary: RSV - Not Eligible Due to not being cohorted
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3005
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+                    processedSuggestions:
+                      - condition: RSV
+                        status: NotEligible
+                        statusText: NotEligible - Individual is not currently eligible
+                        eligibilityCohorts:
+                          - cohortCode: rsv_75-79_ongoing
+                            cohortText: You're aged 75 to 79
+                            cohortStatus: NotEligible
+                          - cohortCode: rsv_75-79_initial
+                            cohortText: You turned 80 after 1 September 2024, so are eligible for the RSV vaccine until 31 August 2025
+                            cohortStatus: NotEligible
+                example_50000000006:
+                  summary: RSV - No rules
+                  value:
+                    responseId: 1a233ba5-e1eb-4080-a086-2962f6fc3006
+                    meta:
+                      lastUpdated: '2025-02-12T16:11:22Z'
+        '400':
+          description: Invalid input data.
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: OperationOutcome
+                  id:
+                    type: string
+                    example: rrt-2959959087381887325-c-geu2-24001-99999999-1
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        example: 2025-02-11T14:40:00+00:00
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: value
+                        details:
+                          type: object
+                          properties:
+                            coding:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  system:
+                                    type: string
+                                    example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
+                                  code:
+                                    type: string
+                                    example: VALIDATION_ERROR
+                                  display:
+                                    type: string
+                                    example: The given conditions were not not in the expected format.
+                        diagnostics:
+                          type: string
+                          example: 'FLU&COVID should be a single or comma separated list of condition strings with no other punctuation or special characters'
+                        location:
+                          type: array
+                          items:
+                            type: string
+                            example: 'parameters/conditions'
+        '404':
+          description: Person not found.
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: OperationOutcome
+                  id:
+                    type: string
+                    example: rrt-2959959087381887325-c-geu2-24001-82918062-1
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        example: 2025-02-14T11:35:00+00:00
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: processing
+                        details:
+                          type: object
+                          properties:
+                            coding:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  system:
+                                    type: string
+                                    example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
+                                  code:
+                                    type: string
+                                    example: RESOURCE_NOT_FOUND
+                                  display:
+                                    type: string
+                                    example: The given NHS number was not found in our datasets.  This could be because the number is incorrect or some other reason we cannot process that number.
+                        diagnostics:
+                          type: string
+                          example: 'NHS Number 9000000404 was not recognised by the Eligibilty Signposting API'
+                        location:
+                          type: array
+                          items:
+                            type: string
+                            example: 'parameters/patient'
+        '422':
+          description: 'Unrecognised input data. (Unprocessable Content)'
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: OperationOutcome
+                  id:
+                    type: string
+                    example: rrt-2959959087381887325-c-geu2-24001-88888888-1
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        example: 2025-02-11T14:40:00+00:00
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: value
+                        details:
+                          type: object
+                          properties:
+                            coding:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  system:
+                                    type: string
+                                    example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
+                                  code:
+                                    type: string
+                                    example: VALIDATION_ERROR
+                                  display:
+                                    type: string
+                                    example: The supplied category was not recognised by the API.
+                        diagnostics:
+                          type: string
+                          example: 'HEALTHCHECKS is not a category that is supported by the API'
+                        location:
+                          type: array
+                          items:
+                            type: string
+                            example: 'parameters/category'
+        '500':
+          description: Internal server error.
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: OperationOutcome
+                  id:
+                    type: string
+                    example: rrt-2959959087381887325-c-geu2-24001-77777777-1
+                  meta:
+                    type: object
+                    properties:
+                      lastUpdated:
+                        type: string
+                        example: 2025-02-10T13:40:00+00:00
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: processing
+                        details:
+                          type: object
+                          properties:
+                            coding:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  system:
+                                    type: string
+                                    example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
+                                  code:
+                                    type: string
+                                    example: SERVICE_ERROR
+                                  display:
+                                    type: string
+                                    example: 'An unknown error occurred processing this request. Contact us for assistance diagnosing this issue: https://digital.nhs.uk/developer/help-and-support quoting the id included in this message'
+                        diagnostics:
+                          type: string
+                          example: 'No diagnostics available'
+                        location:
+                          type: array
+                          items:
+                            type: string
+                            example: 'parameters/category'
+
+################################################################################
+#                                 Components                                  #
+################################################################################
+components:
+    securitySchemes:
+      nhs-login-p9:
+        $ref: https://proxygen.prod.api.platform.nhs.uk/components/securitySchemes/nhs-login-p9
