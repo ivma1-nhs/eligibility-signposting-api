@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 
 @service
 def boto3_session_factory(
-    aws_region: Annotated[AwsRegion, Inject(param="aws_region")],
+    aws_default_region: Annotated[AwsRegion, Inject(param="aws_default_region")],
     aws_access_key_id: Annotated[AwsAccessKey, Inject(param="aws_access_key_id")],
     aws_secret_access_key: Annotated[AwsSecretAccessKey, Inject(param="aws_secret_access_key")],
 ) -> Session:
     return Session(
-        aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region
+        aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_default_region
     )
 
 
 @service(qualifier="dynamodb")
 def dynamodb_resource_factory(
-    session: Session, dynamodb_endpoint: Annotated[URL, Inject(param="dynamodb_endpoint")]
+    session: Session, aws_endpoint_url: Annotated[URL, Inject(param="aws_endpoint_url")]
 ) -> ServiceResource:
-    return session.resource("dynamodb", endpoint_url=str(dynamodb_endpoint))
+    return session.resource("dynamodb", endpoint_url=str(aws_endpoint_url))

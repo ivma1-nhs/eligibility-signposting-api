@@ -40,11 +40,10 @@ def create_app() -> Flask:
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
-    container = wireup.create_sync_container(service_modules=[services, repos], parameters=config())
+    container = wireup.create_sync_container(service_modules=[services, repos], parameters={**app.config, **config()})
     wireup.integration.flask.setup(container, app)
 
-    print(f"config {config()}")
-    logger.info("app ready", extra={"config": config()})
+    logger.info("app ready", extra={"config": {**app.config, **config()}})
     return app
 
 
