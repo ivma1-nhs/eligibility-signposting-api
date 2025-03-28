@@ -118,13 +118,15 @@ def iam_role(iam_client: BaseClient) -> Generator[str]:
 
     # Create the IAM Policy
     policy = iam_client.create_policy(PolicyName=policy_name, PolicyDocument=json.dumps(log_policy))
+    policy_arn = policy["Policy"]["Arn"]
 
     # Attach Policy to Role
-    iam_client.attach_role_policy(RoleName=role_name, PolicyArn=policy["Policy"]["Arn"])
+    iam_client.attach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
 
     yield role["Role"]["Arn"]
 
-    iam_client.delete_policy(PolicyArn=policy["Policy"]["Arn"])
+    iam_client.detach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
+    iam_client.delete_policy(PolicyArn=policy_arn)
     iam_client.delete_role(RoleName=role_name)
 
 
