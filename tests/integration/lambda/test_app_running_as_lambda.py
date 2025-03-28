@@ -118,7 +118,7 @@ def test_install_and_call_flask_lambda_with_unknown_name(
     )
 
     messages = get_log_messages(flask_function, logs_client)
-    assert_that(messages, has_item(contains_string("name fred not found")))
+    assert_that(messages, has_item(contains_string("name 'fred' not found")))
 
 
 def get_log_messages(flask_function: str, logs_client: BaseClient) -> list[str]:
