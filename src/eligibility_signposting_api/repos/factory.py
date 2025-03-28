@@ -24,6 +24,6 @@ def boto3_session_factory(
 
 @service(qualifier="dynamodb")
 def dynamodb_resource_factory(
-    session: Session, aws_endpoint_url: Annotated[URL, Inject(param="aws_endpoint_url")]
+    session: Session, dynamodb_endpoint: Annotated[URL, Inject(param="dynamodb_endpoint")]
 ) -> ServiceResource:
-    return session.resource("dynamodb", endpoint_url=str(aws_endpoint_url))
+    return session.resource("dynamodb", endpoint_url=str(dynamodb_endpoint))
