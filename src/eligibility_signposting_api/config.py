@@ -24,7 +24,7 @@ def config() -> dict[str, Any]:
     }
 
 
-def init_logging() -> None:
+def init_logging(quieten: tuple[str] = ("asyncio", "botocore", "boto3", "mangum")) -> None:
     log_format = "%(asctime)s %(levelname)-8s %(name)s %(module)s.py:%(funcName)s():%(lineno)d %(message)s"
     formatter = JsonFormatter(log_format)
     handler = logging.StreamHandler()
@@ -32,3 +32,6 @@ def init_logging() -> None:
     logging.root.handlers = []  # Clear any existing handlers
     logging.root.setLevel(LOG_LEVEL)  # Set log level
     logging.root.addHandler(handler)  # Add handler
+
+    for q in quieten:
+        logging.getLogger(q).setLevel(logging.WARNING)

@@ -36,4 +36,6 @@ class PersonRepo:
             message = f"Person not found with name {name}"
             raise NotFoundError(message)
 
-        return Person.model_validate(dynamo_response.get("Item"))
+        person = Person.model_validate(dynamo_response.get("Item"))
+        logger.debug("returning person %s", person, extra={"person": person})
+        return person
