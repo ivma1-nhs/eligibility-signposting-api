@@ -1,5 +1,6 @@
 import logging
 import os
+from collections.abc import Sequence
 from functools import lru_cache
 from typing import Any, NewType
 
@@ -16,17 +17,22 @@ AwsSecretAccessKey = NewType("AwsSecretAccessKey", str)
 @lru_cache
 def config() -> dict[str, Any]:
     return {
+        "aws_access_key_id": AwsAccessKey(os.getenv("AWS_ACCESS_KEY_ID", "dummy_key")),
+        "aws_default_region": AwsRegion(os.getenv("AWS_DEFAULT_REGION", "eu-west-1")),
         "dynamodb_endpoint": URL(os.getenv("DYNAMODB_ENDPOINT", "http://localhost:4566")),
-        "aws_region": AwsRegion(os.getenv("AWS_REGION", "eu-west-1")),
-        "aws_access_key_id": AwsAccessKey(os.getenv("AWS_ACCESS_KEY", "dummy_key")),
         "aws_secret_access_key": AwsSecretAccessKey(os.getenv("AWS_SECRET_ACCESS_KEY", "dummy_secret")),
         "log_level": LOG_LEVEL,
     }
 
 
-def init_logging() -> None:
+def init_logging(quieten: Sequence[str] = ("asyncio", "botocore", "boto3", "mangum", "urllib3")) -> None:
     log_format = "%(asctime)s %(levelname)-8s %(name)s %(module)s.py:%(funcName)s():%(lineno)d %(message)s"
     formatter = JsonFormatter(log_format)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    logging.basicConfig(level=LOG_LEVEL, format=log_format, handlers=[handler])
+    logging.root.handlers = []  # Clear any existing handlers
+    logging.root.setLevel(LOG_LEVEL)  # Set log level
+    logging.root.addHandler(handler)  # Add handler
+
+    for q in quieten:
+        logging.getLogger(q).setLevel(logging.WARNING)
