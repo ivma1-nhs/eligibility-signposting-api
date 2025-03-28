@@ -29,4 +29,6 @@ def init_logging() -> None:
     formatter = JsonFormatter(log_format)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    logging.basicConfig(level=LOG_LEVEL, format=log_format, handlers=[handler])
+    logging.root.handlers = []  # Clear any existing handlers
+    logging.root.setLevel(LOG_LEVEL)  # Set log level
+    logging.root.addHandler(handler)  # Add handler
