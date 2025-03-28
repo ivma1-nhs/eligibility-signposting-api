@@ -58,6 +58,23 @@ config:: # Configure development environment (main) @Configuration
 precommit: test-unit build test-integration lint ## Pre-commit tasks
 	python -m this
 
+##################
+#### Proxygen ####
+##################
+
+retrieve-proxygen-key:
+	mkdir -p ~/.proxygen && \
+	aws ssm get-parameter --name /proxygen/private_key_temp --with-decryption | jq ".Parameter.Value" --raw-output \
+	> ~/.proxygen/eligibility-signposting-api.pem
+
+setup-proxygen-credentials:
+	cd specification && cp -r .proxygen ~
+
+get-spec:
+	$(MAKE) setup-proxygen-credentials
+	proxygen spec get
+
+
 # ==============================================================================
 
 ${VERBOSE}.SILENT: \
