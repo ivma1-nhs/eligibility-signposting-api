@@ -270,7 +270,7 @@ paths:
                             actionCode: InfoCPBook
                             description: >-
                               People in some parts of England are able to book
-                              for an RSV vaccination in Community Pharmacies. 
+                              for an RSV vaccination in Community Pharmacies.
                               Unfortunately, your area does not yet offer RSV
                               vaccinations in that way.  You may be able to
                               receive other vaccinations in pharmacies (such as
@@ -591,4 +591,3 @@ components:
     nhs-login-p9:
       $ref: >-
         https://proxygen.prod.api.platform.nhs.uk/components/securitySchemes/nhs-login-p9
-      
