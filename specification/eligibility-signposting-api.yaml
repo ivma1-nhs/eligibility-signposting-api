@@ -16,7 +16,7 @@ servers:
   - url: https://int.api.service.nhs.uk/eligibility-signposting
     description: Integration Server
   - url: https://api.service.nhs.uk/eligibility-signposting
-    description: Production Server 
+    description: Production Server
 paths:
   /eligibility-check:
     get:
