@@ -14,9 +14,9 @@ servers:
   - url: https://sandbox.api.service.nhs.uk/eligibility-signposting
     description: Sandbox Server
   - url: https://int.api.service.nhs.uk/eligibility-signposting
-    description: Integration Server    
+    description: Integration Server
   - url: https://api.service.nhs.uk/eligibility-signposting
-    description: Production Server  
+    description: Production Server 
 paths:
   /eligibility-check:
     get:
@@ -81,14 +81,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  responseId: 
+                  responseId:
                     type: string
                     description: GUID assigned when the decisioning evaluation is carried out.  This will be useful if you ever need to request support for a particular request.  This will not change if you receive a cached response.
                     example: 1a233ba5-e1eb-4080-a086-2962f6fc3473
                   meta:
                     type: object
                     properties:
-                      lastUpdated: 
+                      lastUpdated:
                         type: string
                         description: Timestamp of when the decisioning evaluation is carried out.  This will not change if you receive a cached response.
                         example: '2025-02-12T16:11:22+00:00'
@@ -264,7 +264,7 @@ paths:
                     processedSuggestions:
                       - condition: RSV
                         status: NotEligible
-                        statusText: NotEligible - Individual is not currently eligible 
+                        statusText: NotEligible - Individual is not currently eligible
                         eligibilityCohorts:
                           - cohortCode: rsv_75-79_ongoing
                             cohortText: You're aged 75 to 79
@@ -301,7 +301,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      properties: 
+                      properties:
                         severity:
                           type: string
                           example: "error"
@@ -316,14 +316,14 @@ paths:
                               items:
                                 type: object
                                 properties:
-                                  system: 
+                                  system:
                                     type: string
                                     example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
                                   code:
-                                    type: string 
+                                    type: string
                                     example: VALIDATION_ERROR
                                   display:
-                                    type: string 
+                                    type: string
                                     example: The given conditions were not not in the expected format.
                         diagnostics:
                           type: string
@@ -356,7 +356,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      properties: 
+                      properties:
                         severity:
                           type: string
                           example: "error"
@@ -371,14 +371,14 @@ paths:
                               items:
                                 type: object
                                 properties:
-                                  system: 
+                                  system:
                                     type: string
                                     example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
                                   code:
-                                    type: string 
+                                    type: string
                                     example: RESOURCE_NOT_FOUND
                                   display:
-                                    type: string 
+                                    type: string
                                     example: The given NHS number was not found in our datasets.  This could be because the number is incorrect or some other reason we cannot process that number.
                         diagnostics:
                           type: string
@@ -411,7 +411,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      properties: 
+                      properties:
                         severity:
                           type: string
                           example: "error"
@@ -426,14 +426,14 @@ paths:
                               items:
                                 type: object
                                 properties:
-                                  system: 
+                                  system:
                                     type: string
                                     example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
                                   code:
-                                    type: string 
+                                    type: string
                                     example: VALIDATION_ERROR
                                   display:
-                                    type: string 
+                                    type: string
                                     example: The supplied category was not recognised by the API.
                         diagnostics:
                           type: string
@@ -466,7 +466,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      properties: 
+                      properties:
                         severity:
                           type: string
                           example: "error"
@@ -481,14 +481,14 @@ paths:
                               items:
                                 type: object
                                 properties:
-                                  system: 
+                                  system:
                                     type: string
                                     example: https://fhir.nhs.uk/CodeSystem/Spine-ErrorOrWarningCode
                                   code:
-                                    type: string 
+                                    type: string
                                     example: SERVICE_ERROR
                                   display:
-                                    type: string 
+                                    type: string
                                     example: 'An unknown error occurred processing this request. Contact us for assistance diagnosing this issue: https://digital.nhs.uk/developer/help-and-support quoting the id included in this message'
                         diagnostics:
                           type: string
