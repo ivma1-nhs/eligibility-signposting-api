@@ -12,6 +12,7 @@ import stamina
 from boto3 import Session
 from boto3.resources.base import ServiceResource
 from botocore.client import BaseClient
+from faker import Faker
 from httpx import RequestError
 from yarl import URL
 
@@ -218,3 +219,8 @@ def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     yield table
     table.delete()
     table.wait_until_not_exists()
+
+
+@pytest.fixture(scope="session")
+def faker() -> Faker:
+    return Faker("en_UK")
