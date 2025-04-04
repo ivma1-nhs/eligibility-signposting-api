@@ -20,7 +20,7 @@ def test_eligibility_service_returns_from_repo():
     assert actual == Eligibility(processed_suggestions=[])
 
 
-def test_eligibility_service_for_nonexistent_name():
+def test_eligibility_service_for_nonexistent_nhs_number():
     # Given
     eligibility_repo = MagicMock(spec=EligibilityRepo)
     eligibility_repo.get_eligibility_data = MagicMock(side_effect=NotFoundError)

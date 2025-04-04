@@ -79,7 +79,7 @@ def test_install_and_call_flask_lambda_over_http(
 def test_install_and_call_flask_lambda_with_unknown_nhs_number(
     flask_function_url: URL, flask_function: str, logs_client: BaseClient, faker: Faker
 ):
-    """Given lambda installed into localstack, run it via http, with a name nonexistent specified"""
+    """Given lambda installed into localstack, run it via http, with a nonexistent NHS number specified"""
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 

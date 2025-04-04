@@ -195,19 +195,6 @@ def wait_for_function_active(function_name, lambda_client):
 
 
 @pytest.fixture(scope="session")
-def people_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
-    table = dynamodb_resource.create_table(
-        TableName="People",
-        KeySchema=[{"AttributeName": "name", "KeyType": "HASH"}],
-        AttributeDefinitions=[{"AttributeName": "name", "AttributeType": "S"}],
-        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-    )
-    table.wait_until_exists()
-    yield table
-    table.delete()
-
-
-@pytest.fixture(scope="session")
 def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     table = dynamodb_resource.create_table(
         TableName="eligibility_data_store",
