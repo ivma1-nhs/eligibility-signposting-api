@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.0.1
 info:
   title: Eligibility Signposting API
   version: 1.0.5-alpha
@@ -25,7 +25,7 @@ paths:
         Determines which suggestions a person is eligible for and which they are
         not, including reasons and next steps.
       security:
-        - app-level0: []
+        - $ref: "../specification/components/security/security.yaml"
       operationId: checkEligibility
       parameters:
         - name: patient
@@ -510,14 +510,9 @@ components:
       app-level0:
           $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level0
 x-nhsd-apim:
+    access:
+        $ref: "x-nhsd-apim/access.yaml"
     target:
-      type: hosted
-      healthcheck: /_status
-      containers:
-        - name: eligibility-signposting-api
-          image:
-            name: eligibility-signposting-api
-            tag: latest
-          environment:
-            LOG_LEVEL: info
-            NODE_ENV: development
+        $ref: "x-nhsd-apim/target.yaml"
+    ratelimiting:
+        $ref: "x-nhsd-apim/ratelimit.yaml"

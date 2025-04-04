@@ -74,7 +74,53 @@ get-spec: # Get the most recent specification live in proxygen
 	$(MAKE) setup-proxygen-credentials
 	proxygen spec get
 
+# Specification
 
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Variable $* not set"; \
+		exit 1; \
+	fi
+
+set-target: guard-APIM_ENV
+	@ TARGET=target-$$APIM_ENV.yaml \
+	envsubst '$${TARGET}' \
+	< specification/x-nhsd-apim/target-template.yaml > specification/x-nhsd-apim/target.yaml
+
+set-access: guard-APIM_ENV
+	@ ACCESS=access-$$APIM_ENV.yaml \
+	envsubst '$${ACCESS}' \
+	< specification/x-nhsd-apim/access-template.yaml > specification/x-nhsd-apim/access.yaml
+
+set-security: guard-APIM_ENV
+	@ SECURITY=security-$$APIM_ENV.yaml \
+	envsubst '$${SECURITY}' \
+	< specification/components/security/security-template.yaml > specification/components/security/security.yaml
+
+set-ratelimit: guard-APIM_ENV
+	@ RATELIMIT=ratelimit-$$APIM_ENV.yaml \
+	envsubst '$${RATELIMIT}' \
+	< specification/x-nhsd-apim/ratelimit-template.yaml > specification/x-nhsd-apim/ratelimit.yaml
+
+update-spec-template: guard-APIM_ENV
+ifeq ($(APIM_ENV), $(filter $(APIM_ENV), sandbox internal-dev int ref prod ))
+	@ $(MAKE) set-target APIM_ENV=$$APIM_ENV
+	@ $(MAKE) set-access APIM_ENV=$$APIM_ENV
+	@ $(MAKE) set-security APIM_ENV=$$APIM_ENV
+	@ $(MAKE) set-ratelimit APIM_ENV=$$APIM_ENV
+else
+	@ echo ERROR: $$APIM_ENV is not a valid environment. Please use one of [sandbox, internal-dev, int, ref, prod]
+	@ exit 1;
+endif
+
+construct-spec: guard-APIM_ENV
+	@ $(MAKE) update-spec-template APIM_ENV=$$APIM_ENV
+	mkdir -p build/specification && \
+	npx redocly bundle specification/eligibility-signposting-api.yaml --remove-unused-components --keep-url-references --ext yaml \
+	> build/specification/eligibility-signposting-api.yaml
+ifeq ($(APIM_ENV), sandbox)
+	@ $(MAKE) publish
+endif
 # ==============================================================================
 
 ${VERBOSE}.SILENT: \
