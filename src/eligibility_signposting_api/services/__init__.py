@@ -1,3 +1,4 @@
-from .person_services import PersonService, UnknownPersonError
+from .eligibility_services import EligibilityService, UnknownPersonError
+from .person_services import PersonService
 
-__all__ = ["PersonService", "UnknownPersonError"]
+__all__ = ["EligibilityService", "PersonService", "UnknownPersonError"]

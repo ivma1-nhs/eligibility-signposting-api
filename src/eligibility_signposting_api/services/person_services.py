@@ -4,12 +4,9 @@ from wireup import service
 
 from eligibility_signposting_api.model.person import Name, Nickname
 from eligibility_signposting_api.repos import NotFoundError, PersonRepo
+from eligibility_signposting_api.services import UnknownPersonError
 
 logger = logging.getLogger(__name__)
-
-
-class UnknownPersonError(Exception):
-    pass
 
 
 @service

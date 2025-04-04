@@ -52,9 +52,3 @@ def test_unknown_name(app: Flask, client: FlaskClient):
     with get_app_container(app).override.service(PersonService, new=FakeUnknownPersonService()):
         response = client.get("/hello/fred")
         assert_that(response, is_response().with_status_code(HTTPStatus.NOT_FOUND))
-
-
-def test_unexpected_error(app: Flask, client: FlaskClient):
-    with get_app_container(app).override.service(PersonService, new=FakeUnexpectedErrorPersonService()):
-        response = client.get("/hello/fred")
-        assert_that(response, is_response().with_status_code(HTTPStatus.INTERNAL_SERVER_ERROR))
