@@ -63,6 +63,6 @@ def test_no_nhs_number_given(app: Flask, client: FlaskClient):
 
 def test_unexpected_error(app: Flask, client: FlaskClient):
     # Given
-    with get_app_container(app).override.service(EligibilityService, new=FakeUnknownPersonEligibilityService()):
+    with get_app_container(app).override.service(EligibilityService, new=FakeUnexpectedErrorEligibilityService()):
         response = client.get("/eligibility/?nhs_number=12345")
         assert_that(response, is_response().with_status_code(HTTPStatus.INTERNAL_SERVER_ERROR))
