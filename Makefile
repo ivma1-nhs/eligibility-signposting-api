@@ -62,15 +62,15 @@ precommit: test-unit build test-integration lint ## Pre-commit tasks
 #### Proxygen ####
 ##################
 
-retrieve-proxygen-key:
+retrieve-proxygen-key: # Obtain the 'machine user' credentials from AWS SSM (Development environment)
 	mkdir -p ~/.proxygen && \
 	aws ssm get-parameter --name /proxygen/private_key_temp --with-decryption | jq ".Parameter.Value" --raw-output \
 	> ~/.proxygen/eligibility-signposting-api.pem
 
-setup-proxygen-credentials:
+setup-proxygen-credentials: # Copy Proxygen templated credentials to where it expected them
 	cd specification && cp -r .proxygen ~
 
-get-spec:
+get-spec: # Get the most recent specification live in proxygen
 	$(MAKE) setup-proxygen-credentials
 	proxygen spec get
 
