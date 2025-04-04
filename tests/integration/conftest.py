@@ -25,6 +25,11 @@ AWS_REGION = "eu-west-1"
 
 
 @pytest.fixture(scope="session")
+def faker() -> Faker:
+    return Faker("en_UK")
+
+
+@pytest.fixture(scope="session")
 def localstack(request: pytest.FixtureRequest) -> URL:
     if url := os.getenv("RUNNING_LOCALSTACK_URL", None):
         logger.info("localstack already running on %s", url)
@@ -198,7 +203,6 @@ def people_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     table.wait_until_exists()
     yield table
     table.delete()
-    table.wait_until_not_exists()
 
 
 @pytest.fixture(scope="session")
@@ -218,9 +222,3 @@ def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     table.wait_until_exists()
     yield table
     table.delete()
-    table.wait_until_not_exists()
-
-
-@pytest.fixture(scope="session")
-def faker() -> Faker:
-    return Faker("en_UK")

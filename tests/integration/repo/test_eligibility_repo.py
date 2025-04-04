@@ -6,6 +6,7 @@ from faker import Faker
 from hamcrest import assert_that, contains_inanyorder
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
+from eligibility_signposting_api.repos import NotFoundError
 from eligibility_signposting_api.repos.eligibility_repo import EligibilityRepo
 
 
@@ -27,6 +28,7 @@ def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NH
     )
     yield nhs_number, date_of_birth, postcode
     eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}"})
+    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS"})
 
 
 def test_person_found(eligibility_table: Any, persisted_person: tuple[NHSNumber, DateOfBirth, Postcode]):
@@ -50,3 +52,13 @@ def test_person_found(eligibility_table: Any, persisted_person: tuple[NHSNumber,
             {"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS", "COHORT_MAP": {}},
         ),
     )
+
+
+def test_person_not_found(eligibility_table: Any, faker: Faker):
+    # Given
+    nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
+    repo = EligibilityRepo(eligibility_table)
+
+    # When, Then
+    with pytest.raises(NotFoundError):
+        repo.get_person(nhs_number)
