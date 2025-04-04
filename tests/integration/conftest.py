@@ -198,3 +198,23 @@ def people_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     yield table
     table.delete()
     table.wait_until_not_exists()
+
+
+@pytest.fixture(scope="session")
+def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
+    table = dynamodb_resource.create_table(
+        TableName="eligibility_data_store",
+        KeySchema=[
+            {"AttributeName": "NHS_NUMBER", "KeyType": "HASH"},
+            {"AttributeName": "ATTRIBUTE_TYPE", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "NHS_NUMBER", "AttributeType": "S"},
+            {"AttributeName": "ATTRIBUTE_TYPE", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+    table.wait_until_exists()
+    yield table
+    table.delete()
+    table.wait_until_not_exists()
