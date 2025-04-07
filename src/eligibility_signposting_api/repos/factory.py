@@ -3,6 +3,7 @@ from typing import Annotated
 
 from boto3 import Session
 from boto3.resources.base import ServiceResource
+from botocore.client import BaseClient
 from wireup import Inject, service
 from yarl import URL
 
@@ -27,3 +28,10 @@ def dynamodb_resource_factory(
     session: Session, dynamodb_endpoint: Annotated[URL, Inject(param="dynamodb_endpoint")]
 ) -> ServiceResource:
     return session.resource("dynamodb", endpoint_url=str(dynamodb_endpoint))
+
+
+@service(qualifier="s3")
+def s3_service_factory(
+    session: Session, dynamodb_endpoint: Annotated[URL, Inject(param="dynamodb_endpoint")]
+) -> BaseClient:
+    return session.client("s3", endpoint_url=str(dynamodb_endpoint))
