@@ -20,5 +20,5 @@ class RulesRepo:
 
     def get_campaign_config(self, campaign: Campaign) -> CampaignConfig:
         response = self.s3_client.get_object(Bucket=self.bucket_name, Key=f"{campaign}.json")
-        body = response["Body"].read().decode("utf-8")
+        body = response["Body"].read()
         return Rules.model_validate(json.loads(body)).campaign_config
