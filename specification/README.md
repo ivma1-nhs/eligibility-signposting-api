@@ -17,7 +17,7 @@ Contains environment-specific security configurations for each endpoint.
 Contains APIM extensions to the OpenAPI specification with deployment requirements:
 
 - **access**: Environment-specific access patterns
-- **ratelimit**: API rate limiting configurations
+- **rate-limit**: API rate limiting configurations
 - **target**: API backend details for proxy configuration
 
 ## Generating Environment-Specific Specifications

@@ -48,16 +48,16 @@ There are a number of examples of responses which can be returned by passing spe
 
 See [app.py](app.py) for current examples.
 
-## Deployment of sandbox image to APIM AWS ECR repo
+## Deployment of sandbox image to APIM AWS ECR repository
 
 In order for our sandbox to be deployed correctly, both the specification for the sandbox and the accompanying backend
 need to be deployed.
 
-Instructions for creation and deployment of the sandbox specification can be found in the [specification readme](/specification/README.md)
+Instructions for creation and deployment of the sandbox specification can be found in the [specification README](/specification/README.md)
 
 To deploy the sandbox Docker image to AWS ECR, we use Proxygen CLI as follows:
 
-1. Follow the instructions in the [specification readme](/specification/README.md) to set up Proxygen authentication.
+1. Follow the instructions in the [specification README](/specification/README.md) to set up Proxygen authentication.
 2. Run `proxygen docker get-login` and copy the command provided in the response.
 3. Run the command to authenticate with our ECR repository.
 4. Build the sandbox container - `make build` in this directory.

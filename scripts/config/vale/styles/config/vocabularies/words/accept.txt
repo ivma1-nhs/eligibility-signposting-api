@@ -10,7 +10,9 @@ OAuth
 Octokit
 onboarding
 Podman
+Proxygen
 Python
+README
 sed
 Syft
 Terraform

@@ -7,7 +7,7 @@ to deploy our OAS specification to different environments, deploy a sandbox back
 
 ### Install proxygen-cli
 
-The proxygen-cli package currently requires python v3.9 or greater, but not v3.13.
+The `proxygen-cli` package currently requires Python v3.9 or greater, but not v3.13.
 
 ```bash
 pyenv install 3.11.1
@@ -29,7 +29,7 @@ in the development environment account. You need to set up your AWS cli with you
 There are `make` commands available in the main Makefile:
 
 * `retrieve-proxygen-key` - this retrieves the private key for our APIM machine account and places it in `~/.proxygen/`. This location is where proxygen-cli stores it's configuration.
-* `setup-proxygen-credentials` - this copies the configuration in `/specification/.proxygen` to `~/.proxygen/`, to pre-configure the cli with details of our api.
+* `setup-proxygen-credentials` - this copies the configuration in `/specification/.proxygen` to `~/.proxygen/`, to pre-configure proxygen-cli with details of our API.
 * `get-spec` - this retrieves the specification we have published in the API catalogue (production environment)
 
 ## Further Usage
