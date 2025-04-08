@@ -1,11 +1,11 @@
-# Proxygen CLI usage
+# Proxygen-CLI usage
 
 The [Proxygen-CLI](https://github.com/NHSDigital/proxygen-cli/tree/main) is a tool which can be used to interact with the APIM proxy layer,
 to deploy our OAS specification to different environments, deploy a sandbox backend and store secrets and certificates.
 
 ## Pre-requisites
 
-### Install proxygen-cli
+### Install Proxygen-CLI
 
 The `proxygen-cli` package currently requires Python v3.9 or greater, but not v3.13.
 
