@@ -22,24 +22,25 @@ def bucket(s3_client: BaseClient) -> Generator[BucketName]:
 
 
 @pytest.fixture
-def campaign(s3_client: BaseClient, bucket: BucketName) -> Generator[tuple[Campaign, str]]:
+def campaign(s3_client: BaseClient, bucket: BucketName) -> Generator[tuple[Campaign, str, str]]:
     campaign_name = Campaign(random_str(10))
     id_ = f"{uuid.uuid4()}"
-    campaign_data = {"CampaignConfig": {"ID": id_, "Version": random_int(maximum=10), "Name": random_str(10)}}
+    version = random_int(maximum=10)
+    campaign_data = {"CampaignConfig": {"ID": id_, "Version": version, "Name": campaign_name}}
     s3_client.put_object(
         Bucket=bucket, Key=f"{campaign_name}.json", Body=json.dumps(campaign_data), ContentType="application/json"
     )
-    yield campaign_name, id_
+    yield campaign_name, id_, version
     s3_client.delete_object(Bucket=bucket, Key=f"{campaign_name}.json")
 
 
-def test_get_campaign_config(s3_client: BaseClient, bucket: BucketName, campaign: tuple[Campaign, str]):
+def test_get_campaign_config(s3_client: BaseClient, bucket: BucketName, campaign: tuple[Campaign, str, str]):
     # Given
-    campaign_name, id_ = campaign
+    campaign_name, id_, version = campaign
     repo = RulesRepo(s3_client, bucket)
 
     # When
     actual = repo.get_campaign_config(campaign_name)
 
     # Then
-    assert_that(actual, is_campaign_config().with_id(id_))
+    assert_that(actual, is_campaign_config().with_id(id_).and_name(campaign_name).and_version(version))

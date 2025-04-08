@@ -14,21 +14,29 @@ class CampaignConfigMatcher(BaseMatcher[CampaignConfig]):
     def __init__(self):
         super().__init__()
         self.id_: Matcher[str] = ANYTHING
+        self.name: Matcher[str] = ANYTHING
+        self.version: Matcher[str] = ANYTHING
 
     def describe_to(self, description: Description) -> None:
         description.append_text("CampaignConfig with")
         append_matcher_description(self.id_, "id", description)
+        append_matcher_description(self.name, "name", description)
+        append_matcher_description(self.version, "version", description)
 
     def _matches(self, item: CampaignConfig) -> bool:
-        return self.id_.matches(item.id)
+        return self.id_.matches(item.id) and self.name.matches(item.name) and self.version.matches(item.version)
 
     def describe_mismatch(self, item: CampaignConfig, mismatch_description: Description) -> None:
         mismatch_description.append_text("was CampaignConfig with")
         describe_field_mismatch(self.id_, "id", item.id, mismatch_description)
+        describe_field_mismatch(self.name, "name", item.name, mismatch_description)
+        describe_field_mismatch(self.version, "version", item.version, mismatch_description)
 
     def describe_match(self, item: CampaignConfig, match_description: Description) -> None:
         match_description.append_text("was CampaignConfig with")
         describe_field_match(self.id_, "id", item.id, match_description)
+        describe_field_match(self.name, "name", item.name, match_description)
+        describe_field_match(self.version, "version", item.version, match_description)
 
     def with_id(self, id_: str | Matcher[str]):
         self.id_ = wrap_matcher(id_)
@@ -36,6 +44,20 @@ class CampaignConfigMatcher(BaseMatcher[CampaignConfig]):
 
     def and_id(self, id_: str | Matcher[str]):
         return self.with_id(id_)
+
+    def with_name(self, name: str | Matcher[str]):
+        self.name = wrap_matcher(name)
+        return self
+
+    def and_name(self, name: str | Matcher[str]):
+        return self.with_name(name)
+
+    def with_version(self, version: str | Matcher[str]):
+        self.version = wrap_matcher(version)
+        return self
+
+    def and_version(self, version: str | Matcher[str]):
+        return self.with_version(version)
 
 
 def is_campaign_config() -> Matcher[CampaignConfig]:
