@@ -47,7 +47,6 @@ jobs:
       - name: "Build lambda artefact"
         run: |
           make dependencies install-python
-          poetry self add poetry-plugin-lambda-build poetry-plugin-export
           make build
       - name: "Upload lambda artefact"
         uses: actions/upload-artifact@v4
