@@ -12,6 +12,8 @@ class IterationCohort(BaseModel):
     cohort_label: str | None = Field(None, alias="CohortLabel")
     priority: int | None = Field(None, alias="Priority")
 
+    model_config = {"populate_by_name": True}
+
 
 class IterationRule(BaseModel):
     type: str | None = Field(None, alias="Type")
@@ -24,6 +26,8 @@ class IterationRule(BaseModel):
     comparator: str | None = Field(None, alias="Comparator")
     attribute_target: str | None = Field(None, alias="AttributeTarget")
     comms_routing: str | None = Field(None, alias="CommsRouting")
+
+    model_config = {"populate_by_name": True}
 
 
 class Iteration(BaseModel):
@@ -39,6 +43,8 @@ class Iteration(BaseModel):
     type: str | None = Field(None, alias="Type")
     iteration_cohorts: list[IterationCohort] | None = Field(None, alias="IterationCohorts")
     iteration_rules: list[IterationRule] | None = Field(None, alias="IterationRules")
+
+    model_config = {"populate_by_name": True}
 
 
 class CampaignConfig(BaseModel):
@@ -60,6 +66,10 @@ class CampaignConfig(BaseModel):
     approval_maximum: int | None = Field(None, alias="ApprovalMaximum")
     iterations: list[Iteration] | None = Field(None, alias="Iterations")
 
+    model_config = {"populate_by_name": True}
+
 
 class Rules(BaseModel):
     campaign_config: CampaignConfig = Field(..., alias="CampaignConfig")
+
+    model_config = {"populate_by_name": True}
