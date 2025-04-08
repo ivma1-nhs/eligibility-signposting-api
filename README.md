@@ -22,6 +22,7 @@ The software will only be used for signposting an individual to an appropriate s
   - [Sandbox](#sandbox)
   - [Specification](#specification)
   - [Conflict with yanai](#conflict-with-yanai)
+  - [Creating a Postman collection](#creating-a-postman-collection)
   - [Design](#design)
     - [Diagrams](#diagrams)
     - [Modularity](#modularity)
@@ -72,10 +73,10 @@ The following software packages, or their equivalents, are expected to be instal
 
 | Variable                | Default                 | Description                                                                                                                                                            |
 |-------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `DYNAMODB_ENDPOINT`     | `http://localhost:4566` | Endpoint for the app to access DynamoDB                                                                                                                                |
-| `AWS_REGION`            | `eu-west-1`             | AWS Region                                                                                                                                                             |
-| `AWS_ACCESS_KEY`        | `dummy_key`             | AWS Access Key                                                                                                                                                         |
+| `AWS_ACCESS_KEY_ID`     | `dummy_key`             | AWS Access Key                                                                                                                                                         |
+| `AWS_DEFAULT_REGION`    | `eu-west-1`             | AWS Region                                                                                                                                                             |
 | `AWS_SECRET_ACCESS_KEY` | `dummy_secret`          | AWS Secret Access Key                                                                                                                                                  |
+| `DYNAMODB_ENDPOINT`     | `http://localhost:4566` | Endpoint for the app to access DynamoDB                                                                                                                                |
 | `LOG_LEVEL`             | `WARNING`               | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |
 
 ## Usage
@@ -108,6 +109,17 @@ If you have previously built [yanai](https://nhsd-confluence.digital.nhs.uk/page
 ```shell
  docker rmi localstack/localstack
 ```
+
+## Creating a Postman collection
+
+A Postman collection can be generated from the Open API specification in `specification/` by running the following make command:
+
+```shell
+make convert-postman
+```
+
+The conversion is done using the [Portman CLI](https://github.com/apideck-libraries/portman). The resulting Postman collection
+is saved to `specification/postman/`.
 
 ## Design
 
