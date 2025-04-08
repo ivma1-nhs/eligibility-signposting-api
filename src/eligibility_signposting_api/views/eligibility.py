@@ -29,9 +29,9 @@ def check_eligibility(eligibility_service: Injected[EligibilityService]) -> Resp
                     severity="information",
                     code="nhs-number-not-found",
                     diagnostics=f'NHS Number "{nhs_number}" not found.',
-                )
+                )  # pyright: ignore[reportCallIssue]
             ]
-        )
+        )  # pyright: ignore[reportCallIssue]
         return make_response(problem.model_dump(), HTTPStatus.NOT_FOUND)
     else:
         eligibility_response = build_eligibility_response(eligibility)

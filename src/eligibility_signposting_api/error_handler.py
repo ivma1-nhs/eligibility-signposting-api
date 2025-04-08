@@ -21,7 +21,7 @@ def handle_exception(e: Exception) -> ResponseReturnValue | HTTPException:
         issue=[
             OperationOutcomeIssue(
                 severity="severe", code="unexpected", diagnostics="".join(traceback.format_exception(e))
-            )
-        ]
+            )  # pyright: ignore[reportCallIssue]
+        ]  # pyright: ignore[reportCallIssue]
     )
     return make_response(problem.model_dump(), HTTPStatus.INTERNAL_SERVER_ERROR)
