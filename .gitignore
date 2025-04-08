@@ -44,4 +44,5 @@ sandbox/specification/*
 /lines-of-code-report*
 /specification/postman
 /sandbox/specification/*
+/integration-test-results.xml
 /specification/tmp/*

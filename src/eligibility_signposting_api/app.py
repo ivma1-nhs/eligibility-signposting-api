@@ -10,7 +10,7 @@ from mangum.types import LambdaContext, LambdaEvent
 from eligibility_signposting_api import repos, services
 from eligibility_signposting_api.config import config, init_logging
 from eligibility_signposting_api.error_handler import handle_exception
-from eligibility_signposting_api.views import eligibility, hello
+from eligibility_signposting_api.views import eligibility_blueprint
 
 init_logging()
 logger = logging.getLogger(__name__)
@@ -24,7 +24,9 @@ def main() -> None:  # pragma: no cover
 
 def lambda_handler(event: LambdaEvent, context: LambdaContext) -> dict[str, Any]:  # pragma: no cover
     """Run the Flask app as an AWS Lambda."""
-    handler = Mangum(WsgiToAsgi(create_app()))
+    app = create_app()
+    app.debug = config()["log_level"] == logging.DEBUG
+    handler = Mangum(WsgiToAsgi(app), lifespan="off")
     return handler(event, context)
 
 
@@ -33,15 +35,14 @@ def create_app() -> Flask:
     logger.info("app created")
 
     # Register views & error handler
-    app.register_blueprint(eligibility, url_prefix="/eligibility")
-    app.register_blueprint(hello, url_prefix="/hello")
+    app.register_blueprint(eligibility_blueprint, url_prefix="/eligibility")
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
-    container = wireup.create_sync_container(service_modules=[services, repos], parameters={**config(), **app.config})
+    container = wireup.create_sync_container(service_modules=[services, repos], parameters={**app.config, **config()})
     wireup.integration.flask.setup(container, app)
 
-    logger.info("app ready")
+    logger.info("app ready", extra={"config": {**app.config, **config()}})
     return app
 
 

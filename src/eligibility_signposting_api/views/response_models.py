@@ -20,3 +20,7 @@ class Problem(BaseModel):
     detail: str | None = None
     instance: str | None = None
     errors: list[Error] | None = None
+
+
+class EligibilityResponse(BaseModel):
+    processed_suggestions: list[dict]
