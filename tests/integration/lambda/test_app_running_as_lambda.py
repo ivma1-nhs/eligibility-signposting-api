@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 from brunns.matchers.data import json_matching as is_json_that
 from brunns.matchers.response import is_response
 from faker import Faker
-from hamcrest import assert_that, contains_string, has_entries, has_item
+from hamcrest import assert_that, contains_exactly, contains_string, has_entries, has_item
 from yarl import URL
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
@@ -94,9 +94,14 @@ def test_install_and_call_flask_lambda_with_unknown_nhs_number(
         .and_body(
             is_json_that(
                 has_entries(
-                    title="nhs_number not found",
-                    detail=f"nhs_number {nhs_number} not found.",
-                    status=HTTPStatus.NOT_FOUND,
+                    resourceType="OperationOutcome",
+                    issue=contains_exactly(
+                        has_entries(
+                            severity="information",
+                            code="nhs-number-not-found",
+                            diagnostics=f'NHS Number "{nhs_number}" not found.',
+                        )
+                    ),
                 )
             )
         ),

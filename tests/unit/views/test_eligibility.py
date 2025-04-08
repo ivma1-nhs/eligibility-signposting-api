@@ -5,7 +5,7 @@ from brunns.matchers.data import json_matching as is_json_that
 from brunns.matchers.werkzeug import is_werkzeug_response as is_response
 from flask import Flask
 from flask.testing import FlaskClient
-from hamcrest import assert_that, has_entries
+from hamcrest import assert_that, contains_exactly, has_entries
 from wireup.integration.flask import get_app_container
 
 from eligibility_signposting_api.model.eligibility import Eligibility, NHSNumber
@@ -58,11 +58,39 @@ def test_no_nhs_number_given(app: Flask, client: FlaskClient):
         response = client.get("/eligibility/")
 
     # Then
-    assert_that(response, is_response().with_status_code(HTTPStatus.NOT_FOUND))
+    assert_that(
+        response,
+        is_response()
+        .with_status_code(HTTPStatus.NOT_FOUND)
+        .and_text(
+            is_json_that(
+                has_entries(
+                    resourceType="OperationOutcome",
+                    issue=contains_exactly(
+                        has_entries(
+                            severity="information", code="nhs-number-not-found", diagnostics='NHS Number "" not found.'
+                        )
+                    ),
+                )
+            )
+        ),
+    )
 
 
 def test_unexpected_error(app: Flask, client: FlaskClient):
     # Given
     with get_app_container(app).override.service(EligibilityService, new=FakeUnexpectedErrorEligibilityService()):
         response = client.get("/eligibility/?nhs_number=12345")
-        assert_that(response, is_response().with_status_code(HTTPStatus.INTERNAL_SERVER_ERROR))
+        assert_that(
+            response,
+            is_response()
+            .with_status_code(HTTPStatus.INTERNAL_SERVER_ERROR)
+            .and_text(
+                is_json_that(
+                    has_entries(
+                        resourceType="OperationOutcome",
+                        issue=contains_exactly(has_entries(severity="severe", code="unexpected")),
+                    )
+                )
+            ),
+        )
