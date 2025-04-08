@@ -1,6 +1,6 @@
 # Proxygen CLI usage
 
-The [proxygen-cli](https://github.com/NHSDigital/proxygen-cli/tree/main) is a tool which can be used to interact with the APIM proxy layer,
+The [Proxygen-CLI](https://github.com/NHSDigital/proxygen-cli/tree/main) is a tool which can be used to interact with the APIM proxy layer,
 to deploy our OAS specification to different environments, deploy a sandbox backend and store secrets and certificates.
 
 ## Pre-requisites
@@ -21,15 +21,15 @@ pip install proxygen-cli
 
 ### AWS login
 
-The AWS Portal for logging into the eligibility-signposting-api provides information about access keys for your respective accounts. Any secrets related to proxygen are stored
-in the development environment account. You need to set up your AWS cli with your developer credentials to use the related `make` commands.
+The AWS Portal for logging into the eligibility-signposting-api provides information about access keys for your respective accounts. Any secrets related to Proxygen are stored
+in the development environment account. You need to set up your AWS CLI with your developer credentials to use the related `make` commands.
 
 ## Getting credentials
 
 There are `make` commands available in the main Makefile:
 
-* `retrieve-proxygen-key` - this retrieves the private key for our APIM machine account and places it in `~/.proxygen/`. This location is where proxygen-cli stores it's configuration.
-* `setup-proxygen-credentials` - this copies the configuration in `/specification/.proxygen` to `~/.proxygen/`, to pre-configure proxygen-cli with details of our API.
+* `retrieve-proxygen-key` - this retrieves the private key for our APIM machine account and places it in `~/.proxygen/`. This location is where Proxygen-CLI stores it's configuration.
+* `setup-proxygen-credentials` - this copies the configuration in `/specification/.proxygen` to `~/.proxygen/`, to pre-configure Proxygen-CLI with details of our API.
 * `get-spec` - this retrieves the specification we have published in the API catalogue (production environment)
 
 ## Further Usage

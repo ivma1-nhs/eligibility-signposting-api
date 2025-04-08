@@ -6,6 +6,7 @@ Dependabot
 Gitleaks
 Grype
 idempotence
+Makefile
 OAuth
 Octokit
 onboarding
@@ -13,6 +14,7 @@ Podman
 Proxygen
 Python
 README
+Redocly
 sed
 Syft
 Terraform
