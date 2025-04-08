@@ -4,7 +4,7 @@ from typing import Annotated
 from botocore.client import BaseClient
 from wireup import Inject, service
 
-from eligibility_signposting_api.model.rules import BucketName, Campaign, CampaignConfig, Rules
+from eligibility_signposting_api.model.rules import BucketName, CampaignConfig, CampaignName, Rules
 
 
 @service
@@ -18,7 +18,7 @@ class RulesRepo:
         self.s3_client = s3_client
         self.bucket_name = bucket_name
 
-    def get_campaign_config(self, campaign: Campaign) -> CampaignConfig:
+    def get_campaign_config(self, campaign: CampaignName) -> CampaignConfig:
         response = self.s3_client.get_object(Bucket=self.bucket_name, Key=f"{campaign}.json")
         body = response["Body"].read()
         return Rules.model_validate(json.loads(body)).campaign_config

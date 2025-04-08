@@ -17,8 +17,8 @@ class IterationRuleFactory(ModelFactory[IterationRule]):
 
 class IterationFactory(ModelFactory[Iteration]):
     __model__ = Iteration
-    iteration_cohorts: Use(IterationCohortFactory.batch, size=2)
-    iteration_rules: Use(IterationRuleFactory.batch, size=2)
+    iteration_cohorts = Use(IterationCohortFactory.batch, size=2)
+    iteration_rules = Use(IterationRuleFactory.batch, size=2)
 
 
 class CampaignConfigFactory(ModelFactory[CampaignConfig]):

@@ -9,7 +9,7 @@ from eligibility_signposting_api.model.rules import BucketName, CampaignConfig
 from eligibility_signposting_api.repos.rules_repo import RulesRepo
 from tests.integration.conftest import AWS_REGION
 from tests.utils.builders import CampaignConfigFactory, random_str
-from tests.utils.rules.campaign import is_campaign_config
+from tests.utils.rules.rules import is_campaign_config
 
 
 @pytest.fixture

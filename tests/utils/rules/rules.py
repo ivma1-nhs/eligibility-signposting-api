@@ -5,7 +5,7 @@ from hamcrest.core.description import Description
 from hamcrest.core.helpers.wrap_matcher import wrap_matcher
 from hamcrest.core.matcher import Matcher
 
-from eligibility_signposting_api.model.rules import CampaignConfig
+from eligibility_signposting_api.model.rules import CampaignConfig, CampaignID, CampaignName, CampaignVersion
 
 ANYTHING = anything()
 
@@ -13,9 +13,9 @@ ANYTHING = anything()
 class CampaignConfigMatcher(BaseMatcher[CampaignConfig]):
     def __init__(self):
         super().__init__()
-        self.id_: Matcher[str] = ANYTHING
-        self.name: Matcher[str] = ANYTHING
-        self.version: Matcher[str] = ANYTHING
+        self.id_: Matcher[CampaignID] = ANYTHING
+        self.name: Matcher[CampaignName] = ANYTHING
+        self.version: Matcher[CampaignVersion] = ANYTHING
 
     def describe_to(self, description: Description) -> None:
         description.append_text("CampaignConfig with")
@@ -38,25 +38,25 @@ class CampaignConfigMatcher(BaseMatcher[CampaignConfig]):
         describe_field_match(self.name, "name", item.name, match_description)
         describe_field_match(self.version, "version", item.version, match_description)
 
-    def with_id(self, id_: str | Matcher[str]):
+    def with_id(self, id_: CampaignID | Matcher[CampaignID]):
         self.id_ = wrap_matcher(id_)
         return self
 
-    def and_id(self, id_: str | Matcher[str]):
+    def and_id(self, id_: CampaignID | Matcher[CampaignID]):
         return self.with_id(id_)
 
-    def with_name(self, name: str | Matcher[str]):
+    def with_name(self, name: CampaignName | Matcher[CampaignName]):
         self.name = wrap_matcher(name)
         return self
 
-    def and_name(self, name: str | Matcher[str]):
+    def and_name(self, name: CampaignName | Matcher[CampaignName]):
         return self.with_name(name)
 
-    def with_version(self, version: str | Matcher[str]):
+    def with_version(self, version: CampaignVersion | Matcher[CampaignVersion]):
         self.version = wrap_matcher(version)
         return self
 
-    def and_version(self, version: str | Matcher[str]):
+    def and_version(self, version: CampaignVersion | Matcher[CampaignVersion]):
         return self.with_version(version)
 
 
