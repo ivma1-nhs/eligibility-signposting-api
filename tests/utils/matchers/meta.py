@@ -71,6 +71,13 @@ class BaseAutoMatcher(BaseMatcher, metaclass=AutoMatcherMeta):
         msg = f"{type(self).__name__} object has no attribute {name}"
         raise AttributeError(msg)
 
+    def __dir__(self):
+        dynamic_methods = []
+        for field_name in self.__domain_class__.__annotations__:
+            method_base = field_name.rstrip("_") if field_name in {"id", "type"} else field_name
+            dynamic_methods.extend([f"with_{method_base}", f"and_{method_base}"])
+        return list(super().__dir__()) + dynamic_methods
+
     @staticmethod
     def append_matcher_description(field_matcher: Matcher[Any], field_name: str, description: Description) -> None:
         if not isinstance(field_matcher, IsAnything):
