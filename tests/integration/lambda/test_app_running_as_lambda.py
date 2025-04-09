@@ -57,7 +57,7 @@ def test_install_and_call_lambda_flask(
     logger.info(response_payload)
     assert_that(
         response_payload,
-        has_entries(statusCode=HTTPStatus.OK, body=is_json_that(has_entries(processed_suggestions=[]))),
+        has_entries(statusCode=HTTPStatus.OK, body=is_json_that(has_entries(resourceType="Bundle"))),
     )
 
     assert_that(log_output, contains_string("person_data"))
@@ -78,7 +78,7 @@ def test_install_and_call_flask_lambda_over_http(
     # Then
     assert_that(
         response,
-        is_response().with_status_code(HTTPStatus.OK).and_body(is_json_that(has_entries(processed_suggestions=[]))),
+        is_response().with_status_code(HTTPStatus.OK).and_body(is_json_that(has_entries(resourceType="Bundle"))),
     )
 
 

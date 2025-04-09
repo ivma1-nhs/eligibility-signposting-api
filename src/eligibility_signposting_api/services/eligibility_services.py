@@ -2,7 +2,7 @@ import logging
 
 from wireup import service
 
-from eligibility_signposting_api.model.eligibility import Eligibility, NHSNumber
+from eligibility_signposting_api.model.eligibility import EligibilityStatus, NHSNumber
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class EligibilityService:
         self.eligibility_repo = eligibility_repo
         self.rules_repo = rules_repo
 
-    def get_eligibility(self, nhs_number: NHSNumber | None = None) -> Eligibility:
+    def get_eligibility_status(self, nhs_number: NHSNumber | None = None) -> EligibilityStatus:
         if nhs_number:
             try:
                 person_data = self.eligibility_repo.get_eligibility_data(nhs_number)
@@ -47,6 +47,6 @@ class EligibilityService:
                         "nhs_number": nhs_number,
                     },
                 )
-                return Eligibility(processed_suggestions=[])
+                return EligibilityStatus(eligible=True, reasons=[], actions=[])
 
         raise UnknownPersonError

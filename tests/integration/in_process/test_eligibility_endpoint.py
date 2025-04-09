@@ -23,7 +23,7 @@ def test_nhs_number_given(
     # Then
     assert_that(
         response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(processed_suggestions=[]))),
+        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(resourceType="Bundle"))),
     )
 
 

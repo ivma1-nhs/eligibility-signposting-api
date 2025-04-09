@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, get_args, get_origin
 
 from hamcrest import anything
 from hamcrest.core.base_matcher import BaseMatcher
@@ -14,8 +14,21 @@ class AutoMatcherMeta(type):
             return super().__new__(cls, name, bases, namespace)
 
         domain_class = namespace.get("__domain_class__")
+
         if domain_class is None:
-            msg = f"{name} must define __domain_class__"
+            orig_bases = namespace.get("__orig_bases__", [])
+            for orig in orig_bases:
+                origin = get_origin(orig)
+                args = get_args(orig)
+                if origin is BaseAutoMatcher and args:
+                    inferred_type = args[0]
+                    if hasattr(inferred_type, "__annotations__"):
+                        domain_class = inferred_type
+                        namespace["__domain_class__"] = domain_class
+                        break
+
+        if domain_class is None or not hasattr(domain_class, "__annotations__"):
+            msg = f"{name} must define or infer __domain_class__ with annotations"
             raise TypeError(msg)
 
         for field_name in domain_class.__annotations__:
@@ -25,8 +38,27 @@ class AutoMatcherMeta(type):
         return super().__new__(cls, name, bases, namespace)
 
 
-class BaseAutoMatcher(BaseMatcher, metaclass=AutoMatcherMeta):
-    __domain_class__ = None  # must be overridden
+class BaseAutoMatcher[T](BaseMatcher, metaclass=AutoMatcherMeta):
+    """Create matchers for classes. Use like so:
+
+    ```python
+    from hamcrest import assert_that, equal_to
+
+    class EligibilityStatus(BaseModel):
+        status: str
+        reason: str | None = None
+
+    class EligibilityStatusMatcher(BaseAutoMatcher[EligibilityStatus]): ...
+    def is_eligibility_status() -> Matcher[EligibilityStatus]: return EligibilityStatusMatcher()
+
+    assert_that(EligibilityStatus(status="ACTIVE"), is_eligibility_status().with_status("ACTIVE").and_reason(None))
+    ```
+
+    Works only for classes with `__annotations__`; manually annotated classes, dataclasses.dataclass and
+    pydantic.BaseModel instances.
+    """
+
+    __domain_class__ = None  # Will be inferred when subclassed generically
 
     def __init__(self):
         super().__init__()
@@ -37,24 +69,24 @@ class BaseAutoMatcher(BaseMatcher, metaclass=AutoMatcherMeta):
             attr_name = f"{field_name}_" if field_name in {"id", "type"} else field_name
             self.append_matcher_description(getattr(self, attr_name), field_name, description)
 
-    def _matches(self, item) -> bool:
+    def _matches(self, item: T) -> bool:
         return all(
             getattr(self, f"{field}_" if field in {"id", "type"} else field).matches(getattr(item, field))
             for field in self.__domain_class__.__annotations__
         )
 
-    def describe_mismatch(self, item, mismatch_description: Description) -> None:
+    def describe_mismatch(self, item: T, mismatch_description: Description) -> None:
         mismatch_description.append_text(f"was {self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
-            value = getattr(item, field_name)
             matcher = getattr(self, f"{field_name}_" if field_name in {"id", "type"} else field_name)
+            value = getattr(item, field_name)
             self.describe_field_mismatch(matcher, field_name, value, mismatch_description)
 
-    def describe_match(self, item, match_description: Description) -> None:
+    def describe_match(self, item: T, match_description: Description) -> None:
         match_description.append_text(f"was {self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
-            value = getattr(item, field_name)
             matcher = getattr(self, f"{field_name}_" if field_name in {"id", "type"} else field_name)
+            value = getattr(item, field_name)
             self.describe_field_match(matcher, field_name, value, match_description)
 
     def __getattr__(self, name: str):
@@ -74,8 +106,8 @@ class BaseAutoMatcher(BaseMatcher, metaclass=AutoMatcherMeta):
     def __dir__(self):
         dynamic_methods = []
         for field_name in self.__domain_class__.__annotations__:
-            method_base = field_name.rstrip("_") if field_name in {"id", "type"} else field_name
-            dynamic_methods.extend([f"with_{method_base}", f"and_{method_base}"])
+            base = field_name.rstrip("_") if field_name in {"id", "type"} else field_name
+            dynamic_methods.extend([f"with_{base}", f"and_{base}"])
         return list(super().__dir__()) + dynamic_methods
 
     @staticmethod

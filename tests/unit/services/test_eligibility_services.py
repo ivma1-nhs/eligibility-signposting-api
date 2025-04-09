@@ -1,13 +1,16 @@
 from unittest.mock import MagicMock
 
 import pytest
+from brunns.matchers.object import true
 from faker import Faker
+from hamcrest import assert_that
 
-from eligibility_signposting_api.model.eligibility import DateOfBirth, Eligibility, NHSNumber, Postcode
+from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
 from eligibility_signposting_api.model.rules import RuleOperator, RuleType
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
 from tests.utils.builders import CampaignConfigFactory, IterationFactory, IterationRuleFactory
+from tests.utils.matchers.eligibility import is_eligibility_status
 
 
 @pytest.fixture(scope="session")
@@ -23,10 +26,10 @@ def test_eligibility_service_returns_from_repo():
     ps = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility(NHSNumber("1234567890"))
+    actual = ps.get_eligibility_status(NHSNumber("1234567890"))
 
     # Then
-    assert actual == Eligibility(processed_suggestions=[])
+    assert_that(actual, is_eligibility_status().with_eligible(true()))
 
 
 def test_eligibility_service_for_nonexistent_nhs_number():
@@ -38,7 +41,7 @@ def test_eligibility_service_for_nonexistent_nhs_number():
 
     # When
     with pytest.raises(UnknownPersonError):
-        ps.get_eligibility(NHSNumber("1234567890"))
+        ps.get_eligibility_status(NHSNumber("1234567890"))
 
 
 def test_simple_rule(faker: Faker):
@@ -72,7 +75,7 @@ def test_simple_rule(faker: Faker):
     ps = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility(NHSNumber(nhs_number))
+    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
-    assert actual == Eligibility(processed_suggestions=[])
+    assert_that(actual, is_eligibility_status().with_eligible(true()))
