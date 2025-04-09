@@ -4,7 +4,7 @@ locals {
   # tflint-ignore: terraform_unused_declarations
   workspace = lower(terraform.workspace)
   # tflint-ignore: terraform_unused_declarations
-  runtime = "python3.31.1"
+  runtime = "python3.13.1"
 
   # tflint-ignore: terraform_unused_declarations
   tags = {
