@@ -60,11 +60,8 @@ class BaseAutoMatcher[T](BaseMatcher, metaclass=AutoMatcherMeta):
 
     __domain_class__ = None  # Will be inferred when subclassed generically
 
-    def __init__(self):
-        super().__init__()
-
     def describe_to(self, description: Description) -> None:
-        description.append_text(f"{self.__class__.__name__.removesuffix('Matcher')} with")
+        description.append_text(f"{self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
             attr_name = f"{field_name}_" if field_name in {"id", "type"} else field_name
             self.append_matcher_description(getattr(self, attr_name), field_name, description)
