@@ -1,5 +1,7 @@
 # Provisioning a New AWS Account
 
+Adapted from the [demographics serverless template](https://github.com/NHSDigital/demographics-serverless-template).
+
 This guide explains how to initialize an AWS environment for use with Terraform. Specifically, it covers creating an S3 bucket for storing Terraform state (`.tfstate` file) and enabling state locking (`.tflock` file).
 
 The Terraform code for this process is defined in the `bootstrap` module (`infrastructure/modules/bootstrap`) and invoked within the `bootstrap` stack (`infrastructure/stacks/bootstrap`).
@@ -129,8 +131,7 @@ The default VPC should be deleted from each region. This can be done via the AWS
 
 - Use `args=` to target specific modules during Terraform commands, e.g., `args="-target=module.tfstate -target=module.terraform_base_role"`.
 - Always verify the environment and workspace before applying changes to avoid accidental modifications.
-- If you want to test a new Terraform configuration in `dev` then you can set up a workspace linked to your branch/PR e.g. `dev-PR123` and
-  deploy as per the instructions.
+- If you want to test a new Terraform configuration in `dev`, set up a workspace linked to your branch/PR (e.g., `dev-PR123`), and then deploy according to the instructions.
 
 ---
 
