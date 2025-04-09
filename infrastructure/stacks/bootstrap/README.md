@@ -11,7 +11,8 @@ This step should only need to be performed *once* per environment.
 ## Prerequisites
 
 - **Terraform Installed**: Ensure Terraform is installed locally (see project prerequisites).
-- **AWS Admin Role**: Access to an admin role for the AWS account where Terraform changes will be applied.
+- **AWS Admin Role**: Access to an admin role for the AWS account where Terraform changes will be applied. You need to have
+                      credentials set up to run this locally.
 - **Environment-Specific Variables**: A `tfvars` file must exist for the environment in `infrastructure/stacks/_shared/tfvars`.
 
 ---
