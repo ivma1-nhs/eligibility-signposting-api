@@ -6,9 +6,14 @@ from flask.testing import FlaskClient
 from hamcrest import assert_that, has_entries
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
+from eligibility_signposting_api.model.rules import CampaignConfig
 
 
-def test_nhs_number_given(client: FlaskClient, persisted_person: tuple[NHSNumber, DateOfBirth, Postcode]):
+def test_nhs_number_given(
+    client: FlaskClient,
+    persisted_person: tuple[NHSNumber, DateOfBirth, Postcode],
+    campaign_config: CampaignConfig,  # noqa: ARG001
+):
     # Given
     nhs_number, date_of_birth, postcode = persisted_person
 

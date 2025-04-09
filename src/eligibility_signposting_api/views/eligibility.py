@@ -32,10 +32,10 @@ def check_eligibility(eligibility_service: Injected[EligibilityService]) -> Resp
                 )  # pyright: ignore[reportCallIssue]
             ]
         )
-        return make_response(problem.model_dump(), HTTPStatus.NOT_FOUND)
+        return make_response(problem.model_dump(by_alias=True), HTTPStatus.NOT_FOUND)
     else:
         eligibility_response = build_eligibility_response(eligibility)
-        return make_response(eligibility_response.model_dump(), HTTPStatus.OK)
+        return make_response(eligibility_response.model_dump(by_alias=True), HTTPStatus.OK)
 
 
 def build_eligibility_response(eligibility: Eligibility) -> EligibilityResponse:
