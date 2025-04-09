@@ -22,6 +22,7 @@ def config() -> dict[str, Any]:
         "dynamodb_endpoint": URL(os.getenv("DYNAMODB_ENDPOINT", "http://localhost:4566")),
         "aws_secret_access_key": AwsSecretAccessKey(os.getenv("AWS_SECRET_ACCESS_KEY", "dummy_secret")),
         "log_level": LOG_LEVEL,
+        "rules_bucket_name": AwsAccessKey(os.getenv("RULES_BUCKET_NAME", "test-rules-bucket")),
     }
 
 
