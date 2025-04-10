@@ -13,7 +13,11 @@ resource "aws_vpc" "main" {
 resource "aws_default_security_group" "default_vpc" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Stack = local.stack_name
-  }
+  tags = merge(
+    local.tags,
+    {
+      Name  = "main-vpc"
+      Stack = local.stack_name
+    }
+  )
 }
