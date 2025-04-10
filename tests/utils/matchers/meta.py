@@ -42,19 +42,25 @@ class BaseAutoMatcher[T](BaseMatcher, metaclass=AutoMatcherMeta):
     """Create matchers for classes. Use like so:
 
     ```python
-    from hamcrest import assert_that, equal_to
+    from hamcrest import assert_that
+    from hamcrest.core.matcher import Matcher
+    from pydantic import BaseModel
 
-    class EligibilityStatus(BaseModel):
-        status: str
+    class Status(BaseModel):
+        status_code: str
         reason: str | None = None
+        count: int
 
-    class EligibilityStatusMatcher(BaseAutoMatcher[EligibilityStatus]): ...
-    def is_eligibility_status() -> Matcher[EligibilityStatus]: return EligibilityStatusMatcher()
+    class StatusMatcher(BaseAutoMatcher[Status]): ...
 
-    assert_that(EligibilityStatus(status="ACTIVE"), is_eligibility_status().with_status("ACTIVE").and_reason(None))
+    def is_status() -> Matcher[Status]: return StatusMatcher()
+
+    actual = Status(status_code="ACTIVE", count=99)
+    assert_that(actual, is_status().with_status_code("ACTIVE").and_reason(None))
+    assert_that(actual, is_status().with_count(42))  # Will fail
     ```
 
-    Works only for classes with `__annotations__`; manually annotated classes, dataclasses.dataclass and
+    Works only for classes with `__annotations__`; typically manually annotated classes, dataclasses.dataclass and
     pydantic.BaseModel instances.
     """
 
