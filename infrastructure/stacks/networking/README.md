@@ -4,9 +4,9 @@ The networking stack contains the networking resources that are securing the Eli
 
 No concept of workspaces exists. This stack should only ever be deployed once per account.
 
-## Deployment to AWS Dev Environment
+## Deployment to AWS Development Environment
 
-Deployment to Dev is done through ...
+Deployment to the Development environment is done through ...
 
 ## Release Deployment to AWS (Int, Ref and Prod)
 
