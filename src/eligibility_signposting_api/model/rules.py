@@ -17,10 +17,10 @@ CampaignID = NewType("CampaignID", str)
 IterationName = NewType("IterationName", str)
 IterationVersion = NewType("IterationVersion", str)
 IterationID = NewType("IterationID", str)
+IterationDate = NewType("IterationDate", date)
 RuleName = NewType("RuleName", str)
 RuleDescription = NewType("RuleDescription", str)
 RulePriority = NewType("RulePriority", int)
-RuleAttributeLevel = NewType("RuleAttributeLevel", str)
 RuleAttributeName = NewType("RuleAttributeName", str)
 RuleComparator = NewType("RuleComparator", str)
 StartDate = NewType("StartDate", date)
@@ -34,15 +34,22 @@ class RuleType(str, Enum):
 
 
 class RuleOperator(str, Enum):
+    equals = "="
+    ne = "!="
     lt = "<"
+    lte = "<="
     gt = ">"
+    gte = ">="
     year_gt = "Y>"
     not_in = "not_in"
-    equals = "="
-    lte = "<="
-    ne = "!="
     date_gte = "D>="
     member_of = "MemberOf"
+
+
+class RuleAttributeLevel(str, Enum):
+    PERSON = "PERSON"
+    TARGET = "TARGET"
+    COHORT = "COHORT"
 
 
 class IterationCohort(BaseModel):
@@ -62,26 +69,38 @@ class IterationRule(BaseModel):
     operator: RuleOperator = Field(..., alias="Operator")
     comparator: RuleComparator = Field(..., alias="Comparator")
     attribute_target: str | None = Field(None, alias="AttributeTarget")
-    comms_routing: str | None = Field(None, alias="CommsRouting")
 
     model_config = {"populate_by_name": True}
 
 
 class Iteration(BaseModel):
     id: IterationID = Field(..., alias="ID")
-    default_comms_routing: str | None = Field(None, alias="DefaultCommsRouting")
     version: IterationVersion = Field(..., alias="Version")
     name: IterationName = Field(..., alias="Name")
-    iteration_date: str | None = Field(None, alias="IterationDate")
+    iteration_date: IterationDate = Field(..., alias="IterationDate")
     iteration_number: int | None = Field(None, alias="IterationNumber")
-    comms_type: Literal["I", "R"] = Field(..., alias="CommsType")
     approval_minimum: int | None = Field(None, alias="ApprovalMinimum")
     approval_maximum: int | None = Field(None, alias="ApprovalMaximum")
     type: Literal["A", "M", "S"] = Field(..., alias="Type")
-    iteration_cohorts: list[IterationCohort] | None = Field(None, alias="IterationCohorts")
-    iteration_rules: list[IterationRule] | None = Field(None, alias="IterationRules")
+    iteration_cohorts: list[IterationCohort] = Field(..., alias="IterationCohorts")
+    iteration_rules: list[IterationRule] = Field(..., alias="IterationRules")
 
-    model_config = {"populate_by_name": True}
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True,
+    }
+
+    @field_validator("iteration_date", mode="before")
+    @classmethod
+    def parse_dates(cls, v: str | date) -> date:
+        if isinstance(v, date):
+            return v
+        return datetime.strptime(v, "%Y%m%d").date()  # noqa: DTZ007
+
+    @field_serializer("iteration_date", when_used="always")
+    @staticmethod
+    def serialize_dates(v: date, _info: SerializationInfo) -> str:
+        return v.strftime("%Y%m%d")
 
 
 class CampaignConfig(BaseModel):
@@ -101,7 +120,7 @@ class CampaignConfig(BaseModel):
     end_date: EndDate = Field(..., alias="EndDate")
     approval_minimum: int | None = Field(None, alias="ApprovalMinimum")
     approval_maximum: int | None = Field(None, alias="ApprovalMaximum")
-    iterations: list[Iteration] | None = Field(None, alias="Iterations")
+    iterations: list[Iteration] = Field(..., alias="Iterations")
 
     model_config = {
         "populate_by_name": True,

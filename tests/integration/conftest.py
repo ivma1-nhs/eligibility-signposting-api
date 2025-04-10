@@ -17,7 +17,13 @@ from httpx import RequestError
 from yarl import URL
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
-from eligibility_signposting_api.model.rules import BucketName, CampaignConfig, RuleOperator, RuleType
+from eligibility_signposting_api.model.rules import (
+    BucketName,
+    CampaignConfig,
+    RuleAttributeLevel,
+    RuleOperator,
+    RuleType,
+)
 from tests.utils.builders import CampaignConfigFactory, IterationFactory, IterationRuleFactory
 
 if TYPE_CHECKING:
@@ -249,7 +255,14 @@ def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[Camp
     campaign: CampaignConfig = CampaignConfigFactory.build(
         iterations=[
             IterationFactory.build(
-                iteration_rules=[IterationRuleFactory.build(type=RuleType.filter, operator=RuleOperator.gt)]
+                iteration_rules=[
+                    IterationRuleFactory.build(
+                        type=RuleType.filter,
+                        operator=RuleOperator.lt,
+                        attribute_level=RuleAttributeLevel.PERSON,
+                        attribute_name="DATE_OF_BIRTH",
+                    )
+                ]
             )
         ]
     )
