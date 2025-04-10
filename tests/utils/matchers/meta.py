@@ -1,3 +1,5 @@
+import builtins
+import types
 from typing import Any, get_args, get_origin
 
 from hamcrest import anything
@@ -6,6 +8,8 @@ from hamcrest.core.core.isanything import IsAnything
 from hamcrest.core.description import Description
 from hamcrest.core.helpers.wrap_matcher import wrap_matcher
 from hamcrest.core.matcher import Matcher
+
+BUILTINS = {name for name in dir(builtins) if isinstance(getattr(builtins, name), (types.BuiltinFunctionType, type))}
 
 
 class AutoMatcherMeta(type):
@@ -32,7 +36,7 @@ class AutoMatcherMeta(type):
             raise TypeError(msg)
 
         for field_name in domain_class.__annotations__:
-            attr_name = f"{field_name}_" if field_name in {"id", "type"} else field_name
+            attr_name = f"{field_name}_" if field_name in BUILTINS else field_name
             namespace[attr_name] = anything()
 
         return super().__new__(cls, name, bases, namespace)
@@ -69,33 +73,33 @@ class BaseAutoMatcher[T](BaseMatcher, metaclass=AutoMatcherMeta):
     def describe_to(self, description: Description) -> None:
         description.append_text(f"{self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
-            attr_name = f"{field_name}_" if field_name in {"id", "type"} else field_name
+            attr_name = f"{field_name}_" if field_name in BUILTINS else field_name
             self.append_matcher_description(getattr(self, attr_name), field_name, description)
 
     def _matches(self, item: T) -> bool:
         return all(
-            getattr(self, f"{field}_" if field in {"id", "type"} else field).matches(getattr(item, field))
+            getattr(self, f"{field}_" if field in BUILTINS else field).matches(getattr(item, field))
             for field in self.__domain_class__.__annotations__
         )
 
     def describe_mismatch(self, item: T, mismatch_description: Description) -> None:
         mismatch_description.append_text(f"was {self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
-            matcher = getattr(self, f"{field_name}_" if field_name in {"id", "type"} else field_name)
+            matcher = getattr(self, f"{field_name}_" if field_name in BUILTINS else field_name)
             value = getattr(item, field_name)
             self.describe_field_mismatch(matcher, field_name, value, mismatch_description)
 
     def describe_match(self, item: T, match_description: Description) -> None:
         match_description.append_text(f"was {self.__domain_class__.__name__} with")
         for field_name in self.__domain_class__.__annotations__:
-            matcher = getattr(self, f"{field_name}_" if field_name in {"id", "type"} else field_name)
+            matcher = getattr(self, f"{field_name}_" if field_name in BUILTINS else field_name)
             value = getattr(item, field_name)
             self.describe_field_match(matcher, field_name, value, match_description)
 
     def __getattr__(self, name: str):
         if name.startswith(("with_", "and_")):
             base = name.removeprefix("with_").removeprefix("and_")
-            attr = f"{base}_" if base in {"id", "type"} else base
+            attr = f"{base}_" if base in BUILTINS else base
             if hasattr(self, attr):
 
                 def setter(value):
@@ -109,7 +113,7 @@ class BaseAutoMatcher[T](BaseMatcher, metaclass=AutoMatcherMeta):
     def __dir__(self):
         dynamic_methods = []
         for field_name in self.__domain_class__.__annotations__:
-            base = field_name.rstrip("_") if field_name in {"id", "type"} else field_name
+            base = field_name.rstrip("_") if field_name in BUILTINS else field_name
             dynamic_methods.extend([f"with_{base}", f"and_{base}"])
         return list(super().__dir__()) + dynamic_methods
 
