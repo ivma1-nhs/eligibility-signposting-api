@@ -34,4 +34,9 @@ def test_no_nhs_number_given(client: FlaskClient):
     response = client.get("/eligibility/")
 
     # Then
-    assert_that(response, is_response().with_status_code(HTTPStatus.NOT_FOUND))
+    assert_that(
+        response,
+        is_response()
+        .with_status_code(HTTPStatus.NOT_FOUND)
+        .and_text(is_json_that(has_entries(resourceType="OperationOutcome"))),
+    )
