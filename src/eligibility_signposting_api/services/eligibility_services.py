@@ -62,9 +62,25 @@ class EligibilityService:
         return EligibilityStatus(eligible=eligible, reasons=reasons, actions=actions)
 
     @staticmethod
-    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> bool:  # noqa: PLR0911
+    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> bool:
         attribute_value = EligibilityService.get_attribute_value(iteration_rule, person_data)
+        return EligibilityService.evaluate_rule(iteration_rule, attribute_value)
 
+    @staticmethod
+    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> Any:  # noqa: ANN401
+        match iteration_rule.attribute_level:
+            case RuleAttributeLevel.PERSON:
+                person: dict[str, Any] | None = next(
+                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "").startswith("PERSON")), None
+                )
+                attribute_value = person.get(iteration_rule.attribute_name) if person else None
+            case _:
+                msg = f"{iteration_rule.attribute_level} not implemented"
+                raise NotImplementedError(msg)
+        return attribute_value
+
+    @staticmethod
+    def evaluate_rule(iteration_rule: IterationRule, attribute_value: Any) -> bool:  # noqa: PLR0911, ANN401
         match iteration_rule.operator:
             case RuleOperator.equals:
                 return attribute_value == iteration_rule.comparator
@@ -86,16 +102,3 @@ class EligibilityService:
             case _:
                 msg = f"{iteration_rule.operator} not implemented"
                 raise NotImplementedError(msg)
-
-    @staticmethod
-    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> Any:  # noqa: ANN401
-        match iteration_rule.attribute_level:
-            case RuleAttributeLevel.PERSON:
-                person: dict[str, Any] | None = next(
-                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "").startswith("PERSON")), None
-                )
-                attribute_value = person.get(iteration_rule.attribute_name) if person else None
-            case _:
-                msg = f"{iteration_rule.attribute_level} not implemented"
-                raise NotImplementedError(msg)
-        return attribute_value
