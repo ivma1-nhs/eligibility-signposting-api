@@ -87,18 +87,18 @@ class EligibilityService:
             case RuleOperator.ne:
                 return attribute_value != iteration_rule.comparator
             case RuleOperator.lt:
-                return attribute_value < iteration_rule.comparator
+                return int(attribute_value) < int(iteration_rule.comparator)
             case RuleOperator.lte:
-                return attribute_value <= iteration_rule.comparator
+                return int(attribute_value) <= int(iteration_rule.comparator)
             case RuleOperator.gt:
-                return attribute_value > iteration_rule.comparator
+                return int(attribute_value) > int(iteration_rule.comparator)
             case RuleOperator.gte:
-                return attribute_value >= iteration_rule.comparator
+                return int(attribute_value) >= int(iteration_rule.comparator)
             case RuleOperator.year_gt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d")  # noqa: DTZ007
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
                 today = datetime.today()  # noqa: DTZ002
                 cutoff = today + relativedelta(years=int(iteration_rule.comparator))
-                return (attribute_date > cutoff) if attribute_value else False
+                return (attribute_date > cutoff) if attribute_date else False
             case _:
                 msg = f"{iteration_rule.operator} not implemented"
                 raise NotImplementedError(msg)

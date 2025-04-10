@@ -261,6 +261,7 @@ def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[Camp
                         operator=RuleOperator.lt,
                         attribute_level=RuleAttributeLevel.PERSON,
                         attribute_name="DATE_OF_BIRTH",
+                        comparator="-75",
                     )
                 ]
             )

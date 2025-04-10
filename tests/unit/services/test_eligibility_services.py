@@ -1,7 +1,9 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
 from brunns.matchers.object import false, true
+from dateutil.relativedelta import relativedelta
 from faker import Faker
 from hamcrest import assert_that
 
@@ -152,3 +154,74 @@ def test_simple_rule_ineligible(faker: Faker):
 
     # Then
     assert_that(actual, is_eligibility_status().with_eligible(false()))
+
+
+def test_equals_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.equals, comparator="42")
+    assert EligibilityService.evaluate_rule(rule, "42")
+    assert not EligibilityService.evaluate_rule(rule, "99")
+
+
+def test_not_equals_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.ne, comparator="42")
+    assert EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "42")
+
+
+def test_less_than_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.lt, comparator="100")
+    assert EligibilityService.evaluate_rule(rule, "42")
+    assert EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "100")
+    assert not EligibilityService.evaluate_rule(rule, "101")
+
+
+def test_less_than_or_equal_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.lte, comparator="100")
+    assert EligibilityService.evaluate_rule(rule, "99")
+    assert EligibilityService.evaluate_rule(rule, "100")
+    assert not EligibilityService.evaluate_rule(rule, "101")
+
+
+def test_greater_than_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.gt, comparator="100")
+    assert EligibilityService.evaluate_rule(rule, "101")
+    assert not EligibilityService.evaluate_rule(rule, "100")
+    assert not EligibilityService.evaluate_rule(rule, "99")
+
+
+def test_greater_than_or_equal_rule():
+    rule = IterationRuleFactory.build(operator=RuleOperator.gte, comparator="100")
+    assert EligibilityService.evaluate_rule(rule, "100")
+    assert EligibilityService.evaluate_rule(rule, "101")
+    assert not EligibilityService.evaluate_rule(rule, "99")
+
+
+def test_year_gt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    future_date = today + relativedelta(years=years_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+
+
+def test_year_gt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    past_date = today + relativedelta(years=years_offset - 1)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+
+
+def test_year_gt_rule_empty_value():
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator="2")
+    assert not EligibilityService.evaluate_rule(rule, None)
+    assert not EligibilityService.evaluate_rule(rule, "")
+
+
+def test_unimplemented_operator():
+    rule = IterationRuleFactory.build(operator=RuleOperator.member_of, comparator="something")
+    with pytest.raises(NotImplementedError, match="not implemented"):
+        EligibilityService.evaluate_rule(rule, "any_value")
