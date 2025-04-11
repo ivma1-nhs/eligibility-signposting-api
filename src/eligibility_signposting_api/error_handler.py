@@ -24,4 +24,4 @@ def handle_exception(e: Exception) -> ResponseReturnValue | HTTPException:
             )  # pyright: ignore[reportCallIssue]
         ]
     )
-    return make_response(problem.model_dump(), HTTPStatus.INTERNAL_SERVER_ERROR)
+    return make_response(problem.model_dump(by_alias=True), HTTPStatus.INTERNAL_SERVER_ERROR)
