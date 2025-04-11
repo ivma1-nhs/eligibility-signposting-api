@@ -58,10 +58,11 @@ def test_simple_rule_eligible(faker: Faker):
         return_value=[
             {
                 "NHS_NUMBER": f"PERSON#{nhs_number}",
-                "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+                "ATTRIBUTE_TYPE": "PERSON",
                 "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
                 "POSTCODE": postcode,
-            }
+            },
+            {"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORT", "COHORT_MAP": {}},
         ]
     )
     rules_repo.get_campaign_configs = MagicMock(
@@ -113,10 +114,11 @@ def test_simple_rule_ineligible(faker: Faker):
         return_value=[
             {
                 "NHS_NUMBER": f"PERSON#{nhs_number}",
-                "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+                "ATTRIBUTE_TYPE": "PERSON",
                 "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
                 "POSTCODE": postcode,
-            }
+            },
+            {"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORT", "COHORT_MAP": {}},
         ]
     )
     rules_repo.get_campaign_configs = MagicMock(

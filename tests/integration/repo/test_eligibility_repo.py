@@ -23,7 +23,7 @@ def test_person_found(eligibility_table: Any, persisted_person: tuple[NHSNumber,
         contains_inanyorder(
             {
                 "NHS_NUMBER": f"PERSON#{nhs_number}",
-                "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+                "ATTRIBUTE_TYPE": "PERSON",
                 "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
                 "POSTCODE": postcode,
             },

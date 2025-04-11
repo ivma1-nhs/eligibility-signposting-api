@@ -71,7 +71,7 @@ class EligibilityService:
         match iteration_rule.attribute_level:
             case RuleAttributeLevel.PERSON:
                 person: dict[str, Any] | None = next(
-                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "").startswith("PERSON")), None
+                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(iteration_rule.attribute_name) if person else None
             case _:
