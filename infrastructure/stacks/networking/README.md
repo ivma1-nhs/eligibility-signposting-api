@@ -47,7 +47,7 @@ Private subnets: Route to NAT Gateways for outbound-only access
 
 ## Deployment to AWS Development Environment
 
-This stack should only ever be deployed once per account (e.g. the use of Terraform workspaces is explicitly not recommended beyond specifying 'dev' as the environment).
+This stack should only ever be deployed once per account (e.g. the use of Terraform workspaces is explicitly not recommended beyond specifying `dev` as the environment).
 
 Deployment to the Development environment is done through use of `make` commands
 
