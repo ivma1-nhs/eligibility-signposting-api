@@ -56,13 +56,13 @@ Deployment to the Development environment is done through use of `make` commands
 Run the following command to initialize Terraform and generate a plan. Replace `<env>` with the target environment:
 
 ```bash
-make terraform env=dev stack=networking tf-command=init workspace=dev
+make terraform env=dev stack=networking tf-command=init workspace=<env>
 ```
 
 then
 
 ```bash
-make terraform env=dev stack=networking tf-command=plan workspace=dev
+make terraform env=dev stack=networking tf-command=plan workspace=<env>
 ```
 
 ### 1.4 Apply Terraform Changes
@@ -70,7 +70,7 @@ make terraform env=dev stack=networking tf-command=plan workspace=dev
 Deploy the Terraform configuration using the following command:
 
 ```bash
-make terraform env=dev stack=networking tf-command=apply workspace=dev
+make terraform env=dev stack=networking tf-command=apply workspace=<env>
 ```
 
 ## Release Deployment to AWS (Int, Ref and Prod)
