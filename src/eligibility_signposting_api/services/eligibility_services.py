@@ -87,13 +87,13 @@ class EligibilityService:
             case RuleOperator.ne:
                 return attribute_value != iteration_rule.comparator
             case RuleOperator.lt:
-                return int(attribute_value) < int(iteration_rule.comparator)
+                return int(attribute_value or 0) < int(iteration_rule.comparator)
             case RuleOperator.lte:
-                return int(attribute_value) <= int(iteration_rule.comparator)
+                return int(attribute_value or 0) <= int(iteration_rule.comparator)
             case RuleOperator.gt:
-                return int(attribute_value) > int(iteration_rule.comparator)
+                return int(attribute_value or 0) > int(iteration_rule.comparator)
             case RuleOperator.gte:
-                return int(attribute_value) >= int(iteration_rule.comparator)
+                return int(attribute_value or 0) >= int(iteration_rule.comparator)
             case RuleOperator.year_gt:
                 attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
                 today = datetime.today()  # noqa: DTZ002
