@@ -229,7 +229,7 @@ def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NH
     eligibility_table.put_item(
         Item={
             "NHS_NUMBER": f"PERSON#{nhs_number}",
-            "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+            "ATTRIBUTE_TYPE": "PERSON",
             "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
             "POSTCODE": postcode,
         }
@@ -238,7 +238,7 @@ def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NH
         Item={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS", "COHORT_MAP": {}}
     )
     yield nhs_number, date_of_birth, postcode
-    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}"})
+    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "PERSON"})
     eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS"})
 
 

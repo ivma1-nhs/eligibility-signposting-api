@@ -71,7 +71,7 @@ class EligibilityService:
         match iteration_rule.attribute_level:
             case RuleAttributeLevel.PERSON:
                 person: dict[str, Any] | None = next(
-                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "").startswith("PERSON")), None
+                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(iteration_rule.attribute_name) if person else None
             case _:
@@ -87,13 +87,13 @@ class EligibilityService:
             case RuleOperator.ne:
                 return attribute_value != iteration_rule.comparator
             case RuleOperator.lt:
-                return int(attribute_value) < int(iteration_rule.comparator)
+                return int(attribute_value or 0) < int(iteration_rule.comparator)
             case RuleOperator.lte:
-                return int(attribute_value) <= int(iteration_rule.comparator)
+                return int(attribute_value or 0) <= int(iteration_rule.comparator)
             case RuleOperator.gt:
-                return int(attribute_value) > int(iteration_rule.comparator)
+                return int(attribute_value or 0) > int(iteration_rule.comparator)
             case RuleOperator.gte:
-                return int(attribute_value) >= int(iteration_rule.comparator)
+                return int(attribute_value or 0) >= int(iteration_rule.comparator)
             case RuleOperator.year_gt:
                 attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
                 today = datetime.today()  # noqa: DTZ002

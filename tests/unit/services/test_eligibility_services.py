@@ -58,10 +58,11 @@ def test_simple_rule_eligible(faker: Faker):
         return_value=[
             {
                 "NHS_NUMBER": f"PERSON#{nhs_number}",
-                "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+                "ATTRIBUTE_TYPE": "PERSON",
                 "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
                 "POSTCODE": postcode,
-            }
+            },
+            {"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORT", "COHORT_MAP": {}},
         ]
     )
     rules_repo.get_campaign_configs = MagicMock(
@@ -113,10 +114,11 @@ def test_simple_rule_ineligible(faker: Faker):
         return_value=[
             {
                 "NHS_NUMBER": f"PERSON#{nhs_number}",
-                "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+                "ATTRIBUTE_TYPE": "PERSON",
                 "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
                 "POSTCODE": postcode,
-            }
+            },
+            {"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORT", "COHORT_MAP": {}},
         ]
     )
     rules_repo.get_campaign_configs = MagicMock(
@@ -160,12 +162,16 @@ def test_equals_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.equals, comparator="42")
     assert EligibilityService.evaluate_rule(rule, "42")
     assert not EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_not_equals_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.ne, comparator="42")
     assert EligibilityService.evaluate_rule(rule, "99")
     assert not EligibilityService.evaluate_rule(rule, "42")
+    assert EligibilityService.evaluate_rule(rule, "")
+    assert EligibilityService.evaluate_rule(rule, None)
 
 
 def test_less_than_rule():
@@ -174,6 +180,8 @@ def test_less_than_rule():
     assert EligibilityService.evaluate_rule(rule, "99")
     assert not EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "101")
+    assert EligibilityService.evaluate_rule(rule, "")
+    assert EligibilityService.evaluate_rule(rule, None)
 
 
 def test_less_than_or_equal_rule():
@@ -181,6 +189,8 @@ def test_less_than_or_equal_rule():
     assert EligibilityService.evaluate_rule(rule, "99")
     assert EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "101")
+    assert EligibilityService.evaluate_rule(rule, "")
+    assert EligibilityService.evaluate_rule(rule, None)
 
 
 def test_greater_than_rule():
@@ -188,6 +198,8 @@ def test_greater_than_rule():
     assert EligibilityService.evaluate_rule(rule, "101")
     assert not EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_greater_than_or_equal_rule():
@@ -195,6 +207,8 @@ def test_greater_than_or_equal_rule():
     assert EligibilityService.evaluate_rule(rule, "100")
     assert EligibilityService.evaluate_rule(rule, "101")
     assert not EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_year_gt_rule_future_date():
@@ -204,6 +218,8 @@ def test_year_gt_rule_future_date():
     attribute_value = future_date.strftime("%Y%m%d")
     rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
     assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_year_gt_rule_past_date():
@@ -213,12 +229,8 @@ def test_year_gt_rule_past_date():
     attribute_value = past_date.strftime("%Y%m%d")
     rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
     assert not EligibilityService.evaluate_rule(rule, attribute_value)
-
-
-def test_year_gt_rule_empty_value():
-    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator="2")
-    assert not EligibilityService.evaluate_rule(rule, None)
     assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_unimplemented_operator():
