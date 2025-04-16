@@ -8,5 +8,7 @@ DateOfBirth = NewType("DateOfBirth", date)
 Postcode = NewType("Postcode", str)
 
 
-class Eligibility(BaseModel):
-    processed_suggestions: list[dict]
+class EligibilityStatus(BaseModel):
+    eligible: bool
+    reasons: list[dict]
+    actions: list[dict]

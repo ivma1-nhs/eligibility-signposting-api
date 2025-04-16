@@ -17,6 +17,14 @@ from httpx import RequestError
 from yarl import URL
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
+from eligibility_signposting_api.model.rules import (
+    BucketName,
+    CampaignConfig,
+    RuleAttributeLevel,
+    RuleOperator,
+    RuleType,
+)
+from tests.utils.builders import CampaignConfigFactory, IterationFactory, IterationRuleFactory
 
 if TYPE_CHECKING:
     from pytest_docker.plugin import Services
@@ -221,7 +229,7 @@ def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NH
     eligibility_table.put_item(
         Item={
             "NHS_NUMBER": f"PERSON#{nhs_number}",
-            "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}",
+            "ATTRIBUTE_TYPE": "PERSON",
             "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
             "POSTCODE": postcode,
         }
@@ -230,5 +238,38 @@ def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NH
         Item={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS", "COHORT_MAP": {}}
     )
     yield nhs_number, date_of_birth, postcode
-    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": f"PERSON#{nhs_number}"})
+    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "PERSON"})
     eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS"})
+
+
+@pytest.fixture(scope="session")
+def bucket(s3_client: BaseClient) -> Generator[BucketName]:
+    bucket_name = BucketName("test-rules-bucket")
+    s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": AWS_REGION})
+    yield bucket_name
+    s3_client.delete_bucket(Bucket=bucket_name)
+
+
+@pytest.fixture(scope="session")
+def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[CampaignConfig]:
+    campaign: CampaignConfig = CampaignConfigFactory.build(
+        iterations=[
+            IterationFactory.build(
+                iteration_rules=[
+                    IterationRuleFactory.build(
+                        type=RuleType.filter,
+                        operator=RuleOperator.lt,
+                        attribute_level=RuleAttributeLevel.PERSON,
+                        attribute_name="DATE_OF_BIRTH",
+                        comparator="-75",
+                    )
+                ]
+            )
+        ]
+    )
+    campaign_data = {"CampaignConfig": campaign.model_dump(by_alias=True)}
+    s3_client.put_object(
+        Bucket=bucket, Key=f"{campaign.name}.json", Body=json.dumps(campaign_data), ContentType="application/json"
+    )
+    yield campaign
+    s3_client.delete_object(Bucket=bucket, Key=f"{campaign.name}.json")

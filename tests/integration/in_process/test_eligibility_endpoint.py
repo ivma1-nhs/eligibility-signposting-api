@@ -6,9 +6,14 @@ from flask.testing import FlaskClient
 from hamcrest import assert_that, has_entries
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
+from eligibility_signposting_api.model.rules import CampaignConfig
 
 
-def test_nhs_number_given(client: FlaskClient, persisted_person: tuple[NHSNumber, DateOfBirth, Postcode]):
+def test_nhs_number_given(
+    client: FlaskClient,
+    persisted_person: tuple[NHSNumber, DateOfBirth, Postcode],
+    campaign_config: CampaignConfig,  # noqa: ARG001
+):
     # Given
     nhs_number, date_of_birth, postcode = persisted_person
 
@@ -18,7 +23,7 @@ def test_nhs_number_given(client: FlaskClient, persisted_person: tuple[NHSNumber
     # Then
     assert_that(
         response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(processed_suggestions=[]))),
+        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(resourceType="Bundle"))),
     )
 
 
@@ -29,4 +34,9 @@ def test_no_nhs_number_given(client: FlaskClient):
     response = client.get("/eligibility/")
 
     # Then
-    assert_that(response, is_response().with_status_code(HTTPStatus.NOT_FOUND))
+    assert_that(
+        response,
+        is_response()
+        .with_status_code(HTTPStatus.NOT_FOUND)
+        .and_text(is_json_that(has_entries(resourceType="OperationOutcome"))),
+    )
