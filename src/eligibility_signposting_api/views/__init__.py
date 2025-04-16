@@ -1,4 +1,3 @@
-from .eligibility import eligibility
-from .hello import hello
+from .eligibility import eligibility_blueprint
 
-__all__ = ["eligibility", "hello"]
+__all__ = ["eligibility_blueprint"]

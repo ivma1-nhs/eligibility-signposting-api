@@ -2,11 +2,10 @@ import logging
 import traceback
 from http import HTTPStatus
 
+from fhir.resources.operationoutcome import OperationOutcome, OperationOutcomeIssue
 from flask import make_response
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import HTTPException
-
-from eligibility_signposting_api.views.response_models import Problem
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +17,11 @@ def handle_exception(e: Exception) -> ResponseReturnValue | HTTPException:
     if isinstance(e, HTTPException):
         return e
 
-    problem = Problem(
-        title="Unexpected Exception",
-        type=str(type(e)),
-        status=HTTPStatus.INTERNAL_SERVER_ERROR,
-        detail="".join(traceback.format_exception(e)),
+    problem = OperationOutcome(
+        issue=[
+            OperationOutcomeIssue(
+                severity="severe", code="unexpected", diagnostics="".join(traceback.format_exception(e))
+            )  # pyright: ignore[reportCallIssue]
+        ]
     )
-    return make_response(problem.model_dump(), HTTPStatus.INTERNAL_SERVER_ERROR)
+    return make_response(problem.model_dump(by_alias=True), HTTPStatus.INTERNAL_SERVER_ERROR)

@@ -3,6 +3,8 @@
 # ==============================================================================
 include scripts/init.mk
 
+MAKE_DIR := $(abspath $(shell pwd))
+
 #Installs dependencies using poetry.
 install-python:
 	poetry install
@@ -39,13 +41,15 @@ publish: clean
 #Files to loop over in release
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests"
 
-
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
 dependencies: # Install dependencies needed to build and test the project @Pipeline
 	scripts/dependencies.sh
 
-build: # Build lambda in dist
+.PHONY: build
+build: dist/lambda.zip # Build lambda.zip in dist/
+
+dist/lambda.zip: $(MAKE_DIR)/pyproject.toml $(MAKE_DIR)/poetry.lock $(shell find src -type f)
 	poetry build-lambda -vv
 
 deploy: # Deploy the project artefact to the target environment @Pipeline
@@ -58,6 +62,16 @@ config:: # Configure development environment (main) @Configuration
 precommit: test-unit build test-integration lint ## Pre-commit tasks
 	python -m this
 
+SPEC_DIR := $(CURDIR)/specification
+POSTMAN_DIR := $(SPEC_DIR)/postman
+
+convert-postman: # Create Postman collection from OAS spec
+	mkdir -p $(POSTMAN_DIR)
+	cp $(SPEC_DIR)/eligibility-signposting-api.yaml $(POSTMAN_DIR)/
+	docker build -t portman-converter -f $(POSTMAN_DIR)/Dockerfile $(SPEC_DIR)
+	docker run --rm -v $(SPEC_DIR):/app portman-converter \
+		portman -l /app/eligibility-signposting-api.yaml -o /app/postman/collection.json
+	rm $(POSTMAN_DIR)/eligibility-signposting-api.yaml
 # ==============================================================================
 
 ${VERBOSE}.SILENT: \
