@@ -11,7 +11,7 @@ resource "aws_network_acl" "private" {
   egress {
     rule_no    = 100
     action     = "allow"
-    cidr_block = "0.0.0.0/0"
+    cidr_block = local.vpc_cidr_block
     protocol   = -1
     from_port  = 0
     to_port    = 0

@@ -42,44 +42,26 @@ resource "aws_route_table_association" "public_3" {
 # Private Route Tables
 resource "aws_route_table" "private_1" {
   vpc_id = aws_vpc.main.id
-  route {
-    cidr_block     = local.any_ip_cidr
-    nat_gateway_id = aws_nat_gateway.public_access_1.id
-  }
   tags = {
     Name = "private-route-1",
     Stack = local.stack_name
   }
-
-  depends_on = [aws_nat_gateway.public_access_1]
 }
 
 resource "aws_route_table" "private_2" {
   vpc_id = aws_vpc.main.id
-  route {
-    cidr_block     = local.any_ip_cidr
-    nat_gateway_id = aws_nat_gateway.public_access_2.id
-  }
   tags = {
     Name = "private-route-2",
     Stack = local.stack_name
   }
-
-  depends_on = [aws_nat_gateway.public_access_2]
 }
 
 resource "aws_route_table" "private_3" {
   vpc_id = aws_vpc.main.id
-  route {
-    cidr_block     = local.any_ip_cidr
-    nat_gateway_id = aws_nat_gateway.public_access_3.id
-  }
   tags = {
     Name = "private-route-3",
     Stack = local.stack_name
   }
-
-  depends_on = [aws_nat_gateway.public_access_3]
 }
 
 # Associate Private Route Tables with Private Subnets
