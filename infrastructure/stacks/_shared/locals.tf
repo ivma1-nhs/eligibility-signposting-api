@@ -15,4 +15,9 @@ locals {
     ServiceCategory = var.environment == "prod" ? "Bronze" : "N/A"
     Tool            = "Terraform"
   }
+
+  sso_role_patterns = {
+    dev  = "AWSReservedSSO_vdselid_dev_*"
+    test = "AWSReservedSSO_vdselid_test_*"
+  }
 }

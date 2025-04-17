@@ -5,15 +5,10 @@ data "aws_iam_policy_document" "terraform_developer_assume_role" {
     actions = ["sts:AssumeRole"]
 
     principals {
-      type        = "AWS"
-      identifiers = [for user in var.developer_users : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${user}"]
-    }
-
-    # Optional: Add MFA condition for additional security
-    condition {
-      test     = "Bool"
-      variable = "aws:MultiFactorAuthPresent"
-      values   = ["true"]
+      type = "AWS"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/${lookup(local.sso_role_patterns, var.environment, "AWSReservedSSO_vdselid_${var.environment}_*")}"
+      ]
     }
   }
 }
@@ -49,7 +44,7 @@ data "aws_iam_policy_document" "terraform_developer_policy" {
     ]
   }
 
-  # Permissions for the specific resources in your stacks
+  # Permissions for the specific resources in our stacks
   statement {
     effect = "Allow"
     actions = [
