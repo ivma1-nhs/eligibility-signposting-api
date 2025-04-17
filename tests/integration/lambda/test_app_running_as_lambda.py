@@ -14,12 +14,16 @@ from hamcrest import assert_that, contains_exactly, contains_string, has_entries
 from yarl import URL
 
 from eligibility_signposting_api.model.eligibility import DateOfBirth, NHSNumber, Postcode
+from eligibility_signposting_api.model.rules import CampaignConfig
 
 logger = logging.getLogger(__name__)
 
 
 def test_install_and_call_lambda_flask(
-    lambda_client: BaseClient, flask_function: str, persisted_person: tuple[NHSNumber, DateOfBirth, Postcode]
+    lambda_client: BaseClient,
+    flask_function: str,
+    persisted_person: tuple[NHSNumber, DateOfBirth, Postcode],
+    campaign_config: CampaignConfig,  # noqa: ARG001
 ):
     """Given lambda installed into localstack, run it via boto3 lambda client"""
     # Given
@@ -53,14 +57,16 @@ def test_install_and_call_lambda_flask(
     logger.info(response_payload)
     assert_that(
         response_payload,
-        has_entries(statusCode=HTTPStatus.OK, body=is_json_that(has_entries(processed_suggestions=[]))),
+        has_entries(statusCode=HTTPStatus.OK, body=is_json_that(has_entries(resourceType="Bundle"))),
     )
 
-    assert_that(log_output, contains_string("got eligibility_data"))
+    assert_that(log_output, contains_string("person_data"))
 
 
 def test_install_and_call_flask_lambda_over_http(
-    flask_function_url: URL, persisted_person: tuple[NHSNumber, DateOfBirth, Postcode]
+    flask_function_url: URL,
+    persisted_person: tuple[NHSNumber, DateOfBirth, Postcode],
+    campaign_config: CampaignConfig,  # noqa: ARG001
 ):
     """Given lambda installed into localstack, run it via http"""
     # Given
@@ -72,12 +78,16 @@ def test_install_and_call_flask_lambda_over_http(
     # Then
     assert_that(
         response,
-        is_response().with_status_code(HTTPStatus.OK).and_body(is_json_that(has_entries(processed_suggestions=[]))),
+        is_response().with_status_code(HTTPStatus.OK).and_body(is_json_that(has_entries(resourceType="Bundle"))),
     )
 
 
 def test_install_and_call_flask_lambda_with_unknown_nhs_number(
-    flask_function_url: URL, flask_function: str, logs_client: BaseClient, faker: Faker
+    flask_function_url: URL,
+    flask_function: str,
+    campaign_config: CampaignConfig,  # noqa: ARG001
+    logs_client: BaseClient,
+    faker: Faker,
 ):
     """Given lambda installed into localstack, run it via http, with a nonexistent NHS number specified"""
     # Given

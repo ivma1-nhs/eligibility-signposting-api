@@ -8,7 +8,7 @@ from flask.testing import FlaskClient
 from hamcrest import assert_that, contains_exactly, has_entries
 from wireup.integration.flask import get_app_container
 
-from eligibility_signposting_api.model.eligibility import Eligibility, NHSNumber
+from eligibility_signposting_api.model.eligibility import EligibilityStatus, NHSNumber
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
 
 logger = logging.getLogger(__name__)
@@ -18,15 +18,15 @@ class FakeEligibilityService(EligibilityService):
     def __init__(self):
         pass
 
-    def get_eligibility(self, _: NHSNumber | None = None) -> Eligibility:
-        return Eligibility(processed_suggestions=[])
+    def get_eligibility_status(self, _: NHSNumber | None = None) -> EligibilityStatus:
+        return EligibilityStatus(eligible=True, reasons=[], actions=[])
 
 
 class FakeUnknownPersonEligibilityService(EligibilityService):
     def __init__(self):
         pass
 
-    def get_eligibility(self, _: NHSNumber | None = None) -> Eligibility:
+    def get_eligibility_status(self, _: NHSNumber | None = None) -> EligibilityStatus:
         raise UnknownPersonError
 
 
@@ -34,7 +34,7 @@ class FakeUnexpectedErrorEligibilityService(EligibilityService):
     def __init__(self):
         pass
 
-    def get_eligibility(self, _: NHSNumber | None = None) -> Eligibility:
+    def get_eligibility_status(self, _: NHSNumber | None = None) -> EligibilityStatus:
         raise ValueError
 
 
@@ -47,7 +47,7 @@ def test_nhs_number_given(app: Flask, client: FlaskClient):
         # Then
     assert_that(
         response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(processed_suggestions=[]))),
+        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_entries(resourceType="Bundle"))),
     )
 
 
