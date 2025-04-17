@@ -5,9 +5,15 @@ data "aws_iam_policy_document" "terraform_developer_assume_role" {
     actions = ["sts:AssumeRole"]
 
     principals {
-      type = "AWS"
-      identifiers = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/${lookup(local.sso_role_patterns, var.environment, "AWSReservedSSO_vdselid_${var.environment}_*")}"
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values   = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_vdselid_${var.environment}_*"
       ]
     }
   }
@@ -48,20 +54,16 @@ data "aws_iam_policy_document" "terraform_developer_policy" {
   statement {
     effect = "Allow"
     actions = [
-      # VPC permissions
-      "ec2:*Vpc*",
-      "ec2:*Subnet*",
-      "ec2:*RouteTable*",
-      "ec2:*InternetGateway*",
-      "ec2:*SecurityGroup*",
-      "ec2:*NetworkAcl*",
-      "ec2:*VpcEndpoint*",
-
       # Lambda permissions
       "lambda:*",
 
+      # DynamoDB permissions
+      "dynamodb:*",
+
       # CloudWatch permissions
       "logs:*",
+      "cloudtrail:*",
+      "cloudwatch:*",
 
       # IAM permissions (restricted)
       "iam:Get*",

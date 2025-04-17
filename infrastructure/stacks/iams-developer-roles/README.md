@@ -31,19 +31,19 @@ This stack creates the following AWS resources:
 2. Initialize the Terraform configuration:
 
     ```bash
-    make terraform env=dev stack=iams-roles tf-command=init workspace=dev
+    make terraform-init env=dev stack=iams-developer-roles
     ```
 
 3. Plan the deployment:
 
     ```bash
-    make terraform env=dev stack=iams-roles tf-command=plan workspace=dev
+    make terraform env=dev stack=iams-developer-roles tf-command=plan workspace=dev
     ```
 
 4. Apply the configuration:
 
     ```bash
-    make terraform env=dev stack=iams-roles tf-command=apply workspace=dev
+    make terraform env=dev stack=iams-developer-roles tf-command=apply workspace=dev
     ```
 
 5. Verify the role was created:
@@ -69,5 +69,5 @@ export AWS_SECRET_ACCESS_KEY=<from-assume-role-response>
 export AWS_SESSION_TOKEN=<from-assume-role-response>
 
 # Run Terraform commands
-make terraform env=dev stack=networking tf-command=plan workspace=dev
+make terraform env=dev stack=<stack of choice> tf-command=plan workspace=dev
 ```
