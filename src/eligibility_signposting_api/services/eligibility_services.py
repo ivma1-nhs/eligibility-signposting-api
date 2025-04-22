@@ -142,12 +142,16 @@ class EligibilityService:
                 return int(attribute_value) < low_comparator or int(attribute_value) > high_comparator
 
             case RuleOperator.is_empty:
-                msg = f"{iteration_rule.operator} not implemented"
-                raise NotImplementedError(msg)
+                return (
+                    attribute_value is None or
+                    all(item.strip() == '' for item in attribute_value.split(','))
+                )
 
             case RuleOperator.is_not_empty:
-                msg = f"{iteration_rule.operator} not implemented"
-                raise NotImplementedError(msg)
+                return (
+                    attribute_value is not None and
+                    any(item.strip() != '' for item in attribute_value.split(','))
+                )
 
             case RuleOperator.is_true:
                 return attribute_value is True
@@ -161,12 +165,67 @@ class EligibilityService:
                 cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
                 return (attribute_date <= cutoff) if attribute_date else False
 
+            case RuleOperator.day_lt:
+                attribute_date = datetime.strptime(str(attribute_value), '%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+
             case RuleOperator.day_gte:
                 attribute_date = datetime.strptime(str(attribute_value),'%Y%m%d') if attribute_value else None  # noqa: DTZ007
                 today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
                 cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
                 return (attribute_date >= cutoff) if attribute_date else False
 
+            case RuleOperator.day_gt:
+                attribute_date = datetime.strptime(str(attribute_value),'%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date > cutoff) if attribute_date else False
+
+
+            case RuleOperator.week_lte:
+                attribute_date = datetime.strptime(str(attribute_value), '%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date <= cutoff) if attribute_date else False
+
+            case RuleOperator.week_lt:
+                attribute_date = datetime.strptime(str(attribute_value), '%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+
+            case RuleOperator.week_gte:
+                attribute_date = datetime.strptime(str(attribute_value),'%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date >= cutoff) if attribute_date else False
+
+            case RuleOperator.week_gt:
+                attribute_date = datetime.strptime(str(attribute_value),'%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date > cutoff) if attribute_date else False
+
+
+            case RuleOperator.year_lte:
+                attribute_date = datetime.strptime(str(attribute_value), '%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date <= cutoff) if attribute_date else False
+
+            case RuleOperator.year_lt:
+                attribute_date = datetime.strptime(str(attribute_value), '%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+
+            case RuleOperator.year_gte:
+                attribute_date = datetime.strptime(str(attribute_value),'%Y%m%d') if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date >= cutoff) if attribute_date else False
 
             case RuleOperator.year_gt:
                 attribute_date = datetime.strptime(str(attribute_value),
@@ -174,6 +233,7 @@ class EligibilityService:
                 today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
                 cutoff = today + relativedelta(years=int(iteration_rule.comparator))
                 return (attribute_date > cutoff) if attribute_date else False
+
 
             case _:
                 msg = f"{iteration_rule.operator} not implemented"

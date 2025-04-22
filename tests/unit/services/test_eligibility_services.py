@@ -378,10 +378,37 @@ def test_not_between_rule():
 
 
 def test_is_empty_rule():
-    pass # clarify definition
+    rule = IterationRuleFactory.build(operator=RuleOperator.is_empty)
+    assert EligibilityService.evaluate_rule(rule, "")
+    assert EligibilityService.evaluate_rule(rule, ",")
+    assert EligibilityService.evaluate_rule(rule, ",,,,")
+    assert EligibilityService.evaluate_rule(rule, ", , , ,")
+    assert EligibilityService.evaluate_rule(rule, "  ,  ,  ,  ,  ")
+    assert EligibilityService.evaluate_rule(rule, None)
+    assert EligibilityService.evaluate_rule(rule, "              ")
+
+    assert not EligibilityService.evaluate_rule(rule, "a")
+    assert not EligibilityService.evaluate_rule(rule, "this is not empty")
+    assert not EligibilityService.evaluate_rule(rule, "a,")
+    assert not EligibilityService.evaluate_rule(rule, ",a")
+    assert not EligibilityService.evaluate_rule(rule, "a,b,c")
+
 
 def test_is_not_empty_rule():
-    pass # clarify definition
+    rule = IterationRuleFactory.build(operator=RuleOperator.is_not_empty)
+    assert EligibilityService.evaluate_rule(rule, "a")
+    assert EligibilityService.evaluate_rule(rule, "this is not empty")
+    assert EligibilityService.evaluate_rule(rule, "a,")
+    assert EligibilityService.evaluate_rule(rule, ",a")
+    assert EligibilityService.evaluate_rule(rule, "a,b,c")
+
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, ",")
+    assert not EligibilityService.evaluate_rule(rule, ",,,,")
+    assert not EligibilityService.evaluate_rule(rule, ", , , ,")
+    assert not EligibilityService.evaluate_rule(rule, "  ,  ,  ,  ,  ")
+    assert not EligibilityService.evaluate_rule(rule, None)
+    assert not EligibilityService.evaluate_rule(rule, "              ")
 
 
 def test_is_true_rule():
@@ -402,34 +429,67 @@ def test_is_false_rule():
     assert not EligibilityService.evaluate_rule(rule, "False")
 
 
-def test_day_lte_rule():
+def test_day_lte_rule_past_date():
     today = datetime.today()  # noqa: DTZ002
     days_offset = 2
-    future_date = today + relativedelta(days=days_offset - 3)
-    attribute_value = future_date.strftime("%Y%m%d")
+    offset_date = today + relativedelta(days=days_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
     rule = IterationRuleFactory.build(operator=RuleOperator.day_lte, comparator=str(days_offset))
     assert EligibilityService.evaluate_rule(rule, attribute_value)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
-
-def test_week_lte_rule():
-    pass
-
-
-def test_year_lte_rule():
-    pass
-
-
-def test_day_gte_rule_future_date():
+def test_day_lte_rule_present_date():
     today = datetime.today()  # noqa: DTZ002
     days_offset = 2
-    future_date = today + relativedelta(days=days_offset + 1)
-    attribute_value = future_date.strftime("%Y%m%d")
-    rule = IterationRuleFactory.build(operator=RuleOperator.day_gte, comparator=str(days_offset))
+    offset_date = today + relativedelta(days=days_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_lte, comparator=str(days_offset))
     assert EligibilityService.evaluate_rule(rule, attribute_value)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_day_lte_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    offset_date = today + relativedelta(days=days_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_lte, comparator=str(days_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+
+def test_day_lt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    offset_date = today + relativedelta(days=days_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_lt, comparator=str(days_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_day_lt_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    offset_date = today + relativedelta(days=days_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_lt, comparator=str(days_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_day_lt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    offset_date = today + relativedelta(days=days_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_lt, comparator=str(days_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
 
 
 def test_day_gte_rule_past_date():
@@ -442,8 +502,7 @@ def test_day_gte_rule_past_date():
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
-
-def test_day_gte_rule_same_date():
+def test_day_gte_rule_present_date():
     today = datetime.today()  # noqa: DTZ002
     days_offset = 2
     past_date = today + relativedelta(days=days_offset)
@@ -453,41 +512,263 @@ def test_day_gte_rule_same_date():
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
-
-def test_week_gte_rule():
-    pass
-
-
-def test_year_gte_rule():
-    pass
-
-
-def test_day_lt_rule():
-    pass
+def test_day_gte_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    future_date = today + relativedelta(days=days_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_gte, comparator=str(days_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
-def test_week_lt_rule():
-    pass
+def test_day_gt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    past_date = today + relativedelta(days=days_offset - 1)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_gt, comparator=str(days_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_day_gt_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    past_date = today + relativedelta(days=days_offset)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_gt, comparator=str(days_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_day_gt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    days_offset = 2
+    future_date = today + relativedelta(days=days_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.day_gt, comparator=str(days_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
-def test_year_lt_rule():
-    pass
+
+def test_week_lte_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lte, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_lte_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lte, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_lte_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lte, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
-def test_day_gt_rule():
-    pass
+def test_week_lt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lt, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_lt_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lt, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_lt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    offset_date = today + relativedelta(weeks=weeks_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_lt, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
-def test_week_gt_rule():
-    pass
+
+def test_week_gte_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    past_date = today + relativedelta(weeks=weeks_offset - 1)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gte, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_gte_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    past_date = today + relativedelta(weeks=weeks_offset)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gte, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_gte_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    future_date = today + relativedelta(weeks=weeks_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gte, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
-def test_year_gt_rule_future_date():
+def test_week_gt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    past_date = today + relativedelta(weeks=weeks_offset - 1)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gt, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_gt_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    past_date = today + relativedelta(weeks=weeks_offset)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gt, comparator=str(weeks_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_week_gt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    weeks_offset = 2
+    future_date = today + relativedelta(weeks=weeks_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.week_gt, comparator=str(weeks_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+
+
+def test_year_lte_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lte, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_lte_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lte, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_lte_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lte, comparator=str(years_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+
+def test_year_lt_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset - 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lt, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_lt_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lt, comparator=str(years_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_lt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    offset_date = today + relativedelta(years=years_offset + 1)
+    attribute_value = offset_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_lt, comparator=str(years_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+
+def test_year_gte_rule_past_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    past_date = today + relativedelta(years=years_offset - 1)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gte, comparator=str(years_offset))
+    assert not EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_gte_rule_present_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    past_date = today + relativedelta(years=years_offset)
+    attribute_value = past_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gte, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_gte_rule_future_date():
     today = datetime.today()  # noqa: DTZ002
     years_offset = 2
     future_date = today + relativedelta(years=years_offset + 1)
     attribute_value = future_date.strftime("%Y%m%d")
-    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gte, comparator=str(years_offset))
     assert EligibilityService.evaluate_rule(rule, attribute_value)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
@@ -503,8 +784,7 @@ def test_year_gt_rule_past_date():
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
-
-def test_year_gt_rule_same_date():
+def test_year_gt_rule_present_date():
     today = datetime.today()  # noqa: DTZ002
     years_offset = 2
     past_date = today + relativedelta(years=years_offset)
@@ -513,6 +793,31 @@ def test_year_gt_rule_same_date():
     assert not EligibilityService.evaluate_rule(rule, attribute_value)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
+
+def test_year_gt_rule_future_date():
+    today = datetime.today()  # noqa: DTZ002
+    years_offset = 2
+    future_date = today + relativedelta(years=years_offset + 1)
+    attribute_value = future_date.strftime("%Y%m%d")
+    rule = IterationRuleFactory.build(operator=RuleOperator.year_gt, comparator=str(years_offset))
+    assert EligibilityService.evaluate_rule(rule, attribute_value)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @pytest.mark.skip(reason="Skipping this test since all the operators are implemented")
