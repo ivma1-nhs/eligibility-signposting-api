@@ -10,8 +10,8 @@ variable "environment" {
   type        = string
 }
 
-variable "terraform_state_bucket_name" {
-  default     = "eligibility-signposting-api-${var.environment}-tfstate"
-  description = "S3 bucket for Terraform state"
+variable "default_aws_region" {
+  default     = "eu-west-2"
+  description = "Default AWS region"
   type        = string
 }

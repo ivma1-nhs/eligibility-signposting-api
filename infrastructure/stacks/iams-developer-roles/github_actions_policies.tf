@@ -78,12 +78,13 @@ resource "aws_iam_policy" "api_infrastructure" {
 # Assume role policy document for GitHub Actions
 data "aws_iam_policy_document" "github_actions_assume_role" {
   statement {
+    sid    = "OidcAssumeRoleWithWebIdentity"
     effect = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
       type        = "Federated"
-      identifiers = ["arn:aws:iam::${local.current_account_id}:oidc-provider/token.actions.githubusercontent.com"]
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
     }
 
     condition {

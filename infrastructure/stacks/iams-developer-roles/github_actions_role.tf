@@ -16,7 +16,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 resource "aws_iam_role" "github_actions" {  # Renamed from github_oidc to github_actions for consistency
   name        = "github-actions-api-deployment-role"
   description = "Role for GitHub Actions to deploy infrastructure via Terraform"
-
+  permissions_boundary = aws_iam_policy.permissions_boundary.arn  # Attach permissions boundary
   # Adds managed path prefix for easier organization
   path = "/service-roles/"
 

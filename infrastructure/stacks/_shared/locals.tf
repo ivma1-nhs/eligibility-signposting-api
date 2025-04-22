@@ -21,7 +21,8 @@ locals {
     test = "AWSReservedSSO_vdselid_test_*"
   }
 
-  terraform_state_bucket_arn = "arn:aws:s3:::${var.terraform_state_bucket_name}"
+  terraform_state_bucket_name = "eligibility-signposting-api-${var.environment}-tfstate"
+  terraform_state_bucket_arn = "arn:aws:s3:::eligibility-signposting-api-${var.environment}-tfstate"
 
   account_ids = {
     dev     = "448049830832"
