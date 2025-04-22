@@ -40,41 +40,31 @@ class RuleOperator(str, Enum):
     ne = "!="
     gte = ">="
     lte = "<="
-
     contains = "contains"
     not_contains = "not_contains"
     starts_with = "starts_with"
     not_starts_with = "not_starts_with"
     ends_with = "ends_with"
-
     is_in = "in"
     not_in = "not_in"
-
     member_of = "MemberOf"
     not_member_of = "NotaMemberOf"
-
     is_null = "is_null"
     is_not_null = "is_not_null"
-
     between = "between"
     not_between = "not_between"
-
     is_empty = "is_empty"
     is_not_empty = "is_not_empty"
-
     is_true = "is_true"
     is_false = "is_false"
-
     day_lte = "D<="
     day_lt = "D<"
     day_gte = "D>="
     day_gt = "D>"
-
     week_lte = "W<="
     week_lt = "W<"
     week_gte = "W>="
     week_gt = "W>"
-
     year_lte = "Y<="
     year_lt = "Y<"
     year_gte = "Y>="
