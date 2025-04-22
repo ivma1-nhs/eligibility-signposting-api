@@ -20,4 +20,16 @@ locals {
     dev  = "AWSReservedSSO_vdselid_dev_*"
     test = "AWSReservedSSO_vdselid_test_*"
   }
+
+  terraform_state_bucket_arn = "arn:aws:s3:::${var.terraform_state_bucket_name}"
+
+  account_ids = {
+    dev     = "448049830832"
+    test    = "050451367081"
+    preprod = "203918864209"
+    # prod    = "476114145616"
+  }
+
+  current_account_id = lookup(local.account_ids, var.environment, data.aws_caller_identity.current.account_id)
+
 }
