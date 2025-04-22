@@ -21,20 +21,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set AWS Account ID
-      run: |
-        if [ "${{ inputs.environment }}" = "dev" ]; then
-          echo "AWS_ACCOUNT_ID=${{ secrets.DEV_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
-        elif [ "${{ inputs.environment }}" = "test" ]; then
-          echo "AWS_ACCOUNT_ID=${{ secrets.TEST_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
-        elif [ "${{ inputs.environment }}" = "preprod" ]; then
-          echo "AWS_ACCOUNT_ID=${{ secrets.PREPROD_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
-        fi
-
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-api-deployment-role
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-api-deployment-role
         aws-region: eu-west-2
 
     - name: List S3 bucket
