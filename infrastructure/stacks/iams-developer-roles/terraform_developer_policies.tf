@@ -20,6 +20,8 @@ data "aws_iam_policy_document" "terraform_developer_assume_role" {
 }
 
 # Policy document for terraform access
+# ARN(s) will need adding once they are in place / additional policies
+# created in the main api stack and this removed
 data "aws_iam_policy_document" "terraform_developer_policy" {
   # S3 bucket for Terraform state
   statement {
@@ -35,43 +37,128 @@ data "aws_iam_policy_document" "terraform_developer_policy" {
     ]
   }
 
-  # Permissions for the specific resources in our stacks
+  # DynamoDB permissions (environment-specific)
+  # Prod - only allow determination of table existence
+  dynamic "statement" {
+    for_each = var.environment == "prod" ? [1] : []
+    content {
+      effect = "Allow"
+      actions = [
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables",
+      ]
+      resources = ["*"]
+    }
+  }
+
+  # Non-prod - allow full access to DynamoDB
+  dynamic "statement" {
+    for_each = var.environment != "prod" ? [1] : []
+    content {
+      effect = "Allow"
+      actions = [
+        "dynamodb:CreateTable",
+        "dynamodb:UpdateTable",
+        "dynamodb:UpdateTableReplicaAutoScaling",
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem"
+      ]
+      resources = ["*"]
+    }
+  }
+
+  # Lambda permissions (environment-specific)
+  # Prod - only allow listing
+  dynamic "statement" {
+    for_each = var.environment == "prod" ? [1] : []
+    content {
+      effect = "Allow"
+      actions = [
+        "lambda:List*",
+        "lambda:Get*",
+      ]
+      resources = ["*"]
+    }
+  }
+
+  # Non-prod - allow full access to Lambda
+  dynamic "statement" {
+    for_each = var.environment != "prod" ? [1] : []
+    content {
+      effect = "Allow"
+      actions = [
+        "lambda:*"
+      ]
+      resources = ["*"]
+    }
+  }
+
+  # CloudWatch and logging permissions
   statement {
     effect = "Allow"
     actions = [
-      # Lambda permissions
-      "lambda:*",
-
-      # DynamoDB permissions
-      "dynamodb:*",
-
-      # CloudWatch permissions
       "logs:*",
       "cloudtrail:*",
-      "cloudwatch:*",
+      "cloudwatch:*"
+    ]
+    resources = ["*"]
+  }
 
-      # IAM permissions (restricted)
+  # IAM permissions (restricted)
+  statement {
+    effect = "Allow"
+    actions = [
       "iam:Get*",
       "iam:List*",
-      "iam:PassRole",
+      "iam:PassRole"
+    ]
+    resources = ["*"]
+  }
 
-      # KMS permissions
+  # KMS permissions
+  statement {
+    effect = "Allow"
+    actions = [
       "kms:Describe*",
       "kms:List*",
-      "kms:Get*",
+      "kms:Get*"
+    ]
+    resources = ["*"]
+  }
 
-      # SSM permissions
+  # SSM permissions
+  statement {
+    effect = "Allow"
+    actions = [
       "ssm:GetParameter*",
-      "ssm:PutParameter",
+      "ssm:PutParameter"
+    ]
+    resources = ["*"]
+  }
 
-      # S3 permissions for application buckets
+  # S3 permissions for application buckets
+  statement {
+    effect = "Allow"
+    actions = [
       "s3:List*",
       "s3:Get*",
       "s3:Put*",
       "s3:CreateBucket",
-      "s3:DeleteObject",
+      "s3:DeleteObject"
+    ]
+    resources = ["*"]
+  }
 
-      # API Gateway permissions
+  # API Gateway permissions
+  statement {
+    effect = "Allow"
+    actions = [
       "apigateway:*"
     ]
     resources = ["*"]
