@@ -33,13 +33,18 @@ def test_install_and_call_lambda_flask(
     request_payload = {
         "version": "2.0",
         "routeKey": "GET /",
-        "rawPath": "/eligibility/",
-        "rawQueryString": f"nhs_number={nhs_number}",
+        "rawPath": "/",
+        "rawQueryString": "",
         "headers": {"accept": "application/json", "content-type": "application/json"},
         "requestContext": {
-            "http": {"sourceIp": "192.0.0.1", "method": "GET", "path": "/eligibility/", "protocol": "HTTP/1.1"}
+            "http": {
+                "sourceIp": "192.0.0.1",
+                "method": "GET",
+                "path": f"/eligibility/{nhs_number}",
+                "protocol": "HTTP/1.1",
+            }
         },
-        "queryStringParameters": {"nhs_number": nhs_number},
+        "queryStringParameters": {},
         "body": None,
         "isBase64Encoded": False,
     }
@@ -73,7 +78,7 @@ def test_install_and_call_flask_lambda_over_http(
     nhs_number, date_of_birth, postcode = persisted_person
 
     # When
-    response = httpx.get(str(flask_function_url / "eligibility" / "" % {"nhs_number": nhs_number}))
+    response = httpx.get(str(flask_function_url / "eligibility" / nhs_number))
 
     # Then
     assert_that(
@@ -94,7 +99,7 @@ def test_install_and_call_flask_lambda_with_unknown_nhs_number(
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 
     # When
-    response = httpx.get(str(flask_function_url / "eligibility" / "" % {"nhs_number": nhs_number}))
+    response = httpx.get(str(flask_function_url / "eligibility" / nhs_number))
 
     # Then
     assert_that(
