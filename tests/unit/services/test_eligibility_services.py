@@ -414,8 +414,8 @@ def test_is_not_empty_rule():
 
 def test_is_true_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.is_true)
-    assert EligibilityService.evaluate_rule(rule, True)
-    assert not EligibilityService.evaluate_rule(rule, False)
+    assert EligibilityService.evaluate_rule(rule, attribute_value=True)
+    assert not EligibilityService.evaluate_rule(rule, attribute_value=False)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
     assert not EligibilityService.evaluate_rule(rule, "True")
@@ -423,8 +423,8 @@ def test_is_true_rule():
 
 def test_is_false_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.is_false)
-    assert EligibilityService.evaluate_rule(rule, False)
-    assert not EligibilityService.evaluate_rule(rule, True)
+    assert EligibilityService.evaluate_rule(rule, attribute_value=False)
+    assert not EligibilityService.evaluate_rule(rule, attribute_value=True)
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
     assert not EligibilityService.evaluate_rule(rule, "False")
