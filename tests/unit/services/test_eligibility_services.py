@@ -165,12 +165,25 @@ def test_equals_rule():
     assert not EligibilityService.evaluate_rule(rule, None)
     assert not EligibilityService.evaluate_rule(rule, "99")
 
+    rule = IterationRuleFactory.build(operator=RuleOperator.equals, comparator="-1")
+    assert EligibilityService.evaluate_rule(rule, "-1")
+    assert not EligibilityService.evaluate_rule(rule, "0")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
 
 def test_greater_than_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.gt, comparator="100")
     assert EligibilityService.evaluate_rule(rule, "101")
     assert not EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "99")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+    rule = IterationRuleFactory.build(operator=RuleOperator.gt, comparator="-1")
+    assert EligibilityService.evaluate_rule(rule, "0")
+    assert not EligibilityService.evaluate_rule(rule, "-1")
+    assert not EligibilityService.evaluate_rule(rule, "-2")
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
@@ -181,16 +194,29 @@ def test_less_than_rule():
     assert EligibilityService.evaluate_rule(rule, "99")
     assert not EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "101")
-    assert EligibilityService.evaluate_rule(rule, "")
-    assert EligibilityService.evaluate_rule(rule, None)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+    rule = IterationRuleFactory.build(operator=RuleOperator.lt, comparator="-1")
+    assert EligibilityService.evaluate_rule(rule, "-2")
+    assert not EligibilityService.evaluate_rule(rule, "-1")
+    assert not EligibilityService.evaluate_rule(rule, "0")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_not_equals_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.ne, comparator="27")
     assert EligibilityService.evaluate_rule(rule, "98")
-    assert EligibilityService.evaluate_rule(rule, "")
-    assert EligibilityService.evaluate_rule(rule, None)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
     assert not EligibilityService.evaluate_rule(rule, "27")
+
+    rule = IterationRuleFactory.build(operator=RuleOperator.ne, comparator="-1")
+    assert not EligibilityService.evaluate_rule(rule, "-1")
+    assert EligibilityService.evaluate_rule(rule, "0")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_greater_than_or_equal_rule():
@@ -201,14 +227,28 @@ def test_greater_than_or_equal_rule():
     assert not EligibilityService.evaluate_rule(rule, "")
     assert not EligibilityService.evaluate_rule(rule, None)
 
+    rule = IterationRuleFactory.build(operator=RuleOperator.gte, comparator="-1")
+    assert EligibilityService.evaluate_rule(rule, "0")
+    assert EligibilityService.evaluate_rule(rule, "-1")
+    assert not EligibilityService.evaluate_rule(rule, "-2")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
 
 def test_less_than_or_equal_rule():
     rule = IterationRuleFactory.build(operator=RuleOperator.lte, comparator="100")
     assert EligibilityService.evaluate_rule(rule, "99")
     assert EligibilityService.evaluate_rule(rule, "100")
     assert not EligibilityService.evaluate_rule(rule, "101")
-    assert EligibilityService.evaluate_rule(rule, "")
-    assert EligibilityService.evaluate_rule(rule, None)
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
+
+    rule = IterationRuleFactory.build(operator=RuleOperator.lte, comparator="-1")
+    assert EligibilityService.evaluate_rule(rule, "-2")
+    assert EligibilityService.evaluate_rule(rule, "-1")
+    assert not EligibilityService.evaluate_rule(rule, "0")
+    assert not EligibilityService.evaluate_rule(rule, "")
+    assert not EligibilityService.evaluate_rule(rule, None)
 
 
 def test_contains_rule():
