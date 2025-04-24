@@ -48,6 +48,7 @@ class EligibilityService:
     def evaluate_eligibility(
         campaign_configs: list[CampaignConfig], person_data: list[dict[str, PersonData]]
     ) -> EligibilityStatus:
+        """Calculate a person's eligibility for vaccination."""
         conditions: dict[ConditionName, Condition] = {}
         for campaign_config in campaign_configs:
             condition_name = ConditionName(campaign_config.target)

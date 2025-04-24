@@ -55,6 +55,8 @@ def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[Eligi
 
 
 def build_eligibility_response(eligibility_status: EligibilityStatus) -> EligibilityResponse:
+    """Return an object representing the API response we are going to send, given an evaluation of the person's
+    eligibility."""
     return EligibilityResponse(  # pyright: ignore[reportCallIssue]
         response_id=uuid.uuid4(),  # pyright: ignore[reportCallIssue]
         meta=Meta(last_updated=LastUpdated(datetime.now(tz=UTC))),  # pyright: ignore[reportCallIssue]

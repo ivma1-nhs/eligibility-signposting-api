@@ -23,4 +23,6 @@ class Condition:
 
 @dataclass
 class EligibilityStatus:
+    """Represents a person's eligibility for vaccination."""
+
     conditions: list[Condition]

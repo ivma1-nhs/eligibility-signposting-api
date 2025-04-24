@@ -75,6 +75,9 @@ class Meta(BaseModel):
 
 
 class EligibilityResponse(BaseModel):
+    """Pydantic model for creating our API response as specified in
+    https://github.com/NHSDigital/eligibility-signposting-api-specification/blob/main/specification/eligibility-signposting-api.yaml"""
+
     response_id: UUID4 = Field(..., alias="responseId")
     meta: Meta
     processed_suggestions: list[ProcessedSuggestion] = Field(..., alias="processedSuggestions")
