@@ -8,6 +8,7 @@ from wireup import service
 from eligibility_signposting_api.model.eligibility import EligibilityStatus, NHSNumber
 from eligibility_signposting_api.model.rules import CampaignConfig, IterationRule, RuleAttributeLevel, RuleOperator
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
+from eligibility_signposting_api.services.rules.operators import OPERATORS
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +82,10 @@ class EligibilityService:
 
     @staticmethod
     def evaluate_rule(iteration_rule: IterationRule, attribute_value: Any) -> bool:  # noqa: PLR0911, ANN401, PLR0912, C901, PLR0915
+        if matcher_class := OPERATORS.get(iteration_rule.operator):
+            return matcher_class(iteration_rule.comparator).matches(attribute_value)
+
         match iteration_rule.operator:
-            case RuleOperator.equals:
-                return attribute_value == iteration_rule.comparator
-            case RuleOperator.gt:
-                return bool(attribute_value) and int(attribute_value) > int(iteration_rule.comparator)
             case RuleOperator.lt:
                 return bool(attribute_value) and int(attribute_value) < int(iteration_rule.comparator)
             case RuleOperator.ne:
