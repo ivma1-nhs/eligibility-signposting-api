@@ -80,7 +80,5 @@ class EligibilityService:
 
     @staticmethod
     def evaluate_rule(iteration_rule: IterationRule, attribute_value: PersonData) -> bool:
-        if matcher_class := OperatorRegistry.registry.get(iteration_rule.operator):
-            return matcher_class(iteration_rule.comparator).matches(attribute_value)
-        msg = f"{iteration_rule.operator} not implemented"
-        raise NotImplementedError(msg)
+        matcher_class = OperatorRegistry.get(iteration_rule.operator)
+        return matcher_class(iteration_rule.comparator).matches(attribute_value)

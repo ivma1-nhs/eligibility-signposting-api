@@ -30,6 +30,13 @@ class OperatorRegistry:
         OperatorRegistry.registry[the_type.rule_operator] = the_type
         return the_type
 
+    @staticmethod
+    def get(rule_operator: RuleOperator) -> type[OperatorRule]:
+        if matcher_class := OperatorRegistry.registry.get(rule_operator):
+            return matcher_class
+        msg = f"{rule_operator} not implemented"
+        raise NotImplementedError(msg)
+
 
 @OperatorRegistry.register
 class Equals(OperatorRule):
