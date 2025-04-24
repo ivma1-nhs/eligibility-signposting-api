@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import ClassVar
@@ -16,7 +17,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class OperatorRule(BaseMatcher[AttributeData], ABC):
     rule_comparator: str
-    rule_operator: ClassVar[RuleOperator]
 
     @abstractmethod
     def _matches(self, item: AttributeData) -> bool: ...
@@ -26,9 +26,12 @@ class OperatorRegistry:
     registry: ClassVar[dict[RuleOperator, type[OperatorRule]]] = {}
 
     @staticmethod
-    def register(the_type: type[OperatorRule]) -> type[OperatorRule]:
-        OperatorRegistry.registry[the_type.rule_operator] = the_type
-        return the_type
+    def register(rule_operator: RuleOperator) -> Callable[[type[OperatorRule]], type[OperatorRule]]:
+        def decorator(the_type: type[OperatorRule]) -> type[OperatorRule]:
+            OperatorRegistry.registry[rule_operator] = the_type
+            return the_type
+
+        return decorator
 
     @staticmethod
     def get(rule_operator: RuleOperator) -> type[OperatorRule]:
@@ -38,142 +41,108 @@ class OperatorRegistry:
         raise NotImplementedError(msg)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.equals)
 class Equals(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.equals
-
     def _matches(self, item: AttributeData) -> bool:
         return item == self.rule_comparator
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.gt)
 class GT(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.gt
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and int(item) > int(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.lt)
 class LT(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.lt
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and int(item) < int(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.ne)
 class NE(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.ne
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and item != self.rule_comparator
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.gte)
 class GTE(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.gte
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and int(item) >= int(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.lte)
 class LTE(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.lte
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and int(item) <= int(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.contains)
 class Contains(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.contains
-
     def _matches(self, item: AttributeData) -> bool:
         return bool(item) and self.rule_comparator in str(item)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.not_contains)
 class NotContains(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.not_contains
-
     def _matches(self, item: AttributeData) -> bool:
         return self.rule_comparator not in str(item)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.starts_with)
 class StartsWith(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.starts_with
-
     def _matches(self, item: AttributeData) -> bool:
         return str(item).startswith(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.not_starts_with)
 class NotStartsWith(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.not_starts_with
-
     def _matches(self, item: AttributeData) -> bool:
         return not str(item).startswith(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.ends_with)
 class EndsWith(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.ends_with
-
     def _matches(self, item: AttributeData) -> bool:
         return str(item).endswith(self.rule_comparator)
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_in)
 class IsIn(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_in
-
     def _matches(self, item: AttributeData) -> bool:
         comparators = str(self.rule_comparator).split(",")
         return str(item) in comparators
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.not_in)
 class NotIn(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.not_in
-
     def _matches(self, item: AttributeData) -> bool:
         comparators = str(self.rule_comparator).split(",")
         return str(item) not in comparators
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.member_of)
 class MemberOf(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.member_of
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_values = str(item).split(",")
         return self.rule_comparator in attribute_values
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.not_member_of)
 class NotMemberOf(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.not_member_of
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_values = str(item).split(",")
         return self.rule_comparator not in attribute_values
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_null)
 class IsNull(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_null
-
     def _matches(self, item: AttributeData) -> bool:
         return item in (None, "")
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_not_null)
 class IsNotNull(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_not_null
-
     def _matches(self, item: AttributeData) -> bool:
         return item not in (None, "")
 
@@ -186,54 +155,42 @@ class RangeOperator(OperatorRule, ABC):
         self.high_comparator = max(int(low_comparator_str), int(high_comparator_str))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.between)
 class Between(RangeOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.between
-
     def _matches(self, item: AttributeData) -> bool:
         if item in (None, ""):
             return False
         return self.low_comparator <= int(item) <= self.high_comparator
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.not_between)
 class NotBetween(RangeOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.not_between
-
     def _matches(self, item: AttributeData) -> bool:
         if item in (None, ""):
             return False
         return not self.low_comparator <= int(item) <= self.high_comparator
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_empty)
 class IsEmpty(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_empty
-
     def _matches(self, item: AttributeData) -> bool:
         return item is None or all(item.strip() == "" for item in str(item).split(","))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_not_empty)
 class IsNotEmpty(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_not_empty
-
     def _matches(self, item: AttributeData) -> bool:
         return item is not None and any(item.strip() != "" for item in str(item).split(","))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_true)
 class IsTrue(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_true
-
     def _matches(self, item: AttributeData) -> bool:
         return item is True
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.is_false)
 class IsFalse(OperatorRule):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.is_false
-
     def _matches(self, item: AttributeData) -> bool:
         return item is False
 
@@ -254,37 +211,29 @@ class DateDayOperator(DateOperator, ABC):
         return self.today + relativedelta(days=int(self.rule_comparator))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.day_lte)
 class DayLTE(DateDayOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.day_lte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date <= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.day_lt)
 class DayLT(DateDayOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.day_lt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date < self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.day_gte)
 class DayGTE(DateDayOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.day_gte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date >= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.day_gt)
 class DayGT(DateDayOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.day_gt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date > self.cutoff) if attribute_date else False
@@ -296,37 +245,29 @@ class DateWeekOperator(DateOperator, ABC):
         return self.today + relativedelta(weeks=int(self.rule_comparator))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.week_lte)
 class WeekLTE(DateWeekOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.week_lte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date <= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.week_lt)
 class WeekLT(DateWeekOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.week_lt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date < self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.week_gte)
 class WeekGTE(DateWeekOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.week_gte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date >= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.week_gt)
 class WeekGT(DateWeekOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.week_gt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date > self.cutoff) if attribute_date else False
@@ -338,37 +279,29 @@ class DateYearOperator(DateOperator, ABC):
         return self.today + relativedelta(years=int(self.rule_comparator))
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.year_lte)
 class YearLTE(DateYearOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.year_lte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date <= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.year_lt)
 class YearLT(DateYearOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.year_lt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date < self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.year_gte)
 class YearGTE(DateYearOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.year_gte
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date >= self.cutoff) if attribute_date else False
 
 
-@OperatorRegistry.register
+@OperatorRegistry.register(RuleOperator.year_gt)
 class YearGT(DateYearOperator):
-    rule_operator: ClassVar[RuleOperator] = RuleOperator.year_gt
-
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
         return (attribute_date > self.cutoff) if attribute_date else False
