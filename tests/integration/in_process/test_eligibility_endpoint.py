@@ -18,7 +18,7 @@ def test_nhs_number_given(
     nhs_number, date_of_birth, postcode = persisted_person
 
     # When
-    response = client.get(f"/eligibility/?nhs_number={nhs_number}")
+    response = client.get(f"/eligibility/{nhs_number}")
 
     # Then
     assert_that(
