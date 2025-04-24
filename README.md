@@ -19,8 +19,7 @@ The software will only be used for signposting an individual to an appropriate s
       - [Environment variables](#environment-variables)
   - [Usage](#usage)
     - [Testing](#testing)
-  - [Sandbox](#sandbox)
-  - [Specification](#specification)
+  - [Sandbox and Specification](#sandbox-and-specification)
   - [Conflict with yanai](#conflict-with-yanai)
   - [Creating a Postman collection](#creating-a-postman-collection)
   - [Design](#design)
@@ -93,14 +92,10 @@ make precommit
 
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
 
-## Sandbox
+## Sandbox and Specification
 
-There is a minimalist sandbox environment in `/sandbox` with an accompanying README with instructions on how to run it locally.
-
-## Specification
-
-The OpenAPI specification is stored in `specification`. In that folder, there is an accompanying README with instructions on how to produce an environment-specification specification and publish
-it using Proxygen CLI.
+See the [specification repository](https://github.com/NHSDigital/eligibility-signposting-api-specification) for details on how to publish both the specification and
+sandbox.
 
 ## Conflict with yanai
 
