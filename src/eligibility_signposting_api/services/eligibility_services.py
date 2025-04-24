@@ -1,15 +1,13 @@
 import logging
-from datetime import datetime
-from typing import Any
 
-from dateutil.relativedelta import relativedelta
 from wireup import service
 
 from eligibility_signposting_api.model.eligibility import EligibilityStatus, NHSNumber
-from eligibility_signposting_api.model.rules import CampaignConfig, IterationRule, RuleAttributeLevel, RuleOperator
+from eligibility_signposting_api.model.rules import CampaignConfig, IterationRule, RuleAttributeLevel
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 from eligibility_signposting_api.services.rules.operators import OperatorRegistry
 
+PersonData = str | int | bool | None
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +46,7 @@ class EligibilityService:
 
     @staticmethod
     def evaluate_eligibility(
-        campaign_configs: list[CampaignConfig], person_data: list[dict[str, Any]]
+        campaign_configs: list[CampaignConfig], person_data: list[dict[str, PersonData]]
     ) -> EligibilityStatus:
         eligible, reasons, actions = True, [], []
         for iteration_rule in [
@@ -63,15 +61,15 @@ class EligibilityService:
         return EligibilityStatus(eligible=eligible, reasons=reasons, actions=actions)
 
     @staticmethod
-    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> bool:
+    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, PersonData]]) -> bool:
         attribute_value = EligibilityService.get_attribute_value(iteration_rule, person_data)
         return EligibilityService.evaluate_rule(iteration_rule, attribute_value)
 
     @staticmethod
-    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, Any]]) -> Any:  # noqa: ANN401
+    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, PersonData]]) -> PersonData:
         match iteration_rule.attribute_level:
             case RuleAttributeLevel.PERSON:
-                person: dict[str, Any] | None = next(
+                person: dict[str, PersonData] | None = next(
                     (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(iteration_rule.attribute_name) if person else None
@@ -81,111 +79,8 @@ class EligibilityService:
         return attribute_value
 
     @staticmethod
-    def evaluate_rule(iteration_rule: IterationRule, attribute_value: Any) -> bool:  # noqa: PLR0911, ANN401, PLR0912, C901, PLR0915
+    def evaluate_rule(iteration_rule: IterationRule, attribute_value: PersonData) -> bool:
         if matcher_class := OperatorRegistry.registry.get(iteration_rule.operator):
             return matcher_class(iteration_rule.comparator).matches(attribute_value)
-
-        match iteration_rule.operator:
-            case RuleOperator.ends_with:
-                return str(attribute_value).endswith(iteration_rule.comparator)
-            case RuleOperator.is_in:
-                comparators = str(iteration_rule.comparator).split(",")
-                return str(attribute_value) in comparators
-            case RuleOperator.not_in:
-                comparators = str(iteration_rule.comparator).split(",")
-                return str(attribute_value) not in comparators
-            case RuleOperator.member_of:
-                attribute_values = str(attribute_value).split(",")
-                return iteration_rule.comparator in attribute_values
-            case RuleOperator.not_member_of:
-                attribute_values = str(attribute_value).split(",")
-                return iteration_rule.comparator not in attribute_values
-            case RuleOperator.is_null:
-                return attribute_value in (None, "")
-            case RuleOperator.is_not_null:
-                return attribute_value not in (None, "")
-            case RuleOperator.between:
-                if attribute_value in (None, ""):
-                    return False
-                low_comparator_str, high_comparator_str = str(iteration_rule.comparator).split(",")
-                low_comparator = min(int(low_comparator_str), int(high_comparator_str))
-                high_comparator = max(int(low_comparator_str), int(high_comparator_str))
-                return low_comparator <= int(attribute_value) <= high_comparator
-            case RuleOperator.not_between:
-                if attribute_value in (None, ""):
-                    return False
-                low_comparator_str, high_comparator_str = str(iteration_rule.comparator).split(",")
-                low_comparator = min(int(low_comparator_str), int(high_comparator_str))
-                high_comparator = max(int(low_comparator_str), int(high_comparator_str))
-                return int(attribute_value) < low_comparator or int(attribute_value) > high_comparator
-            case RuleOperator.is_empty:
-                return attribute_value is None or all(item.strip() == "" for item in attribute_value.split(","))
-            case RuleOperator.is_not_empty:
-                return attribute_value is not None and any(item.strip() != "" for item in attribute_value.split(","))
-            case RuleOperator.is_true:
-                return attribute_value is True
-            case RuleOperator.is_false:
-                return attribute_value is False
-            case RuleOperator.day_lte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
-                return (attribute_date <= cutoff) if attribute_date else False
-            case RuleOperator.day_lt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
-                return (attribute_date < cutoff) if attribute_date else False
-            case RuleOperator.day_gte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
-                return (attribute_date >= cutoff) if attribute_date else False
-            case RuleOperator.day_gt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
-                return (attribute_date > cutoff) if attribute_date else False
-            case RuleOperator.week_lte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
-                return (attribute_date <= cutoff) if attribute_date else False
-            case RuleOperator.week_lt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
-                return (attribute_date < cutoff) if attribute_date else False
-            case RuleOperator.week_gte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
-                return (attribute_date >= cutoff) if attribute_date else False
-            case RuleOperator.week_gt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
-                return (attribute_date > cutoff) if attribute_date else False
-            case RuleOperator.year_lte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
-                return (attribute_date <= cutoff) if attribute_date else False
-            case RuleOperator.year_lt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
-                return (attribute_date < cutoff) if attribute_date else False
-            case RuleOperator.year_gte:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
-                return (attribute_date >= cutoff) if attribute_date else False
-            case RuleOperator.year_gt:
-                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
-                cutoff = today + relativedelta(years=int(iteration_rule.comparator))
-                return (attribute_date > cutoff) if attribute_date else False
-            case _:
-                msg = f"{iteration_rule.operator} not implemented"
-                raise NotImplementedError(msg)
+        msg = f"{iteration_rule.operator} not implemented"
+        raise NotImplementedError(msg)
