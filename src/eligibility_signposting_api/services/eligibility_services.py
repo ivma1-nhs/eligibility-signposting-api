@@ -80,23 +80,126 @@ class EligibilityService:
         return attribute_value
 
     @staticmethod
-    def evaluate_rule(iteration_rule: IterationRule, attribute_value: Any) -> bool:  # noqa: PLR0911, ANN401
+    def evaluate_rule(iteration_rule: IterationRule, attribute_value: Any) -> bool:  # noqa: PLR0911, ANN401, PLR0912, C901, PLR0915
         match iteration_rule.operator:
             case RuleOperator.equals:
                 return attribute_value == iteration_rule.comparator
-            case RuleOperator.ne:
-                return attribute_value != iteration_rule.comparator
-            case RuleOperator.lt:
-                return int(attribute_value or 0) < int(iteration_rule.comparator)
-            case RuleOperator.lte:
-                return int(attribute_value or 0) <= int(iteration_rule.comparator)
             case RuleOperator.gt:
-                return int(attribute_value or 0) > int(iteration_rule.comparator)
+                return bool(attribute_value) and int(attribute_value) > int(iteration_rule.comparator)
+            case RuleOperator.lt:
+                return bool(attribute_value) and int(attribute_value) < int(iteration_rule.comparator)
+            case RuleOperator.ne:
+                return bool(attribute_value) and attribute_value != iteration_rule.comparator
             case RuleOperator.gte:
-                return int(attribute_value or 0) >= int(iteration_rule.comparator)
+                return bool(attribute_value) and int(attribute_value) >= int(iteration_rule.comparator)
+            case RuleOperator.lte:
+                return bool(attribute_value) and int(attribute_value) <= int(iteration_rule.comparator)
+            case RuleOperator.contains:
+                return attribute_value and iteration_rule.comparator in str(attribute_value)
+            case RuleOperator.not_contains:
+                return iteration_rule.comparator not in str(attribute_value)
+            case RuleOperator.starts_with:
+                return str(attribute_value).startswith(iteration_rule.comparator)
+            case RuleOperator.not_starts_with:
+                return not str(attribute_value).startswith(iteration_rule.comparator)
+            case RuleOperator.ends_with:
+                return str(attribute_value).endswith(iteration_rule.comparator)
+            case RuleOperator.is_in:
+                comparators = str(iteration_rule.comparator).split(",")
+                return str(attribute_value) in comparators
+            case RuleOperator.not_in:
+                comparators = str(iteration_rule.comparator).split(",")
+                return str(attribute_value) not in comparators
+            case RuleOperator.member_of:
+                attribute_values = str(attribute_value).split(",")
+                return iteration_rule.comparator in attribute_values
+            case RuleOperator.not_member_of:
+                attribute_values = str(attribute_value).split(",")
+                return iteration_rule.comparator not in attribute_values
+            case RuleOperator.is_null:
+                return attribute_value in (None, "")
+            case RuleOperator.is_not_null:
+                return attribute_value not in (None, "")
+            case RuleOperator.between:
+                if attribute_value in (None, ""):
+                    return False
+                low_comparator_str, high_comparator_str = str(iteration_rule.comparator).split(",")
+                low_comparator = min(int(low_comparator_str), int(high_comparator_str))
+                high_comparator = max(int(low_comparator_str), int(high_comparator_str))
+                return low_comparator <= int(attribute_value) <= high_comparator
+            case RuleOperator.not_between:
+                if attribute_value in (None, ""):
+                    return False
+                low_comparator_str, high_comparator_str = str(iteration_rule.comparator).split(",")
+                low_comparator = min(int(low_comparator_str), int(high_comparator_str))
+                high_comparator = max(int(low_comparator_str), int(high_comparator_str))
+                return int(attribute_value) < low_comparator or int(attribute_value) > high_comparator
+            case RuleOperator.is_empty:
+                return attribute_value is None or all(item.strip() == "" for item in attribute_value.split(","))
+            case RuleOperator.is_not_empty:
+                return attribute_value is not None and any(item.strip() != "" for item in attribute_value.split(","))
+            case RuleOperator.is_true:
+                return attribute_value is True
+            case RuleOperator.is_false:
+                return attribute_value is False
+            case RuleOperator.day_lte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date <= cutoff) if attribute_date else False
+            case RuleOperator.day_lt:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+            case RuleOperator.day_gte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date >= cutoff) if attribute_date else False
+            case RuleOperator.day_gt:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(days=int(iteration_rule.comparator))
+                return (attribute_date > cutoff) if attribute_date else False
+            case RuleOperator.week_lte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date <= cutoff) if attribute_date else False
+            case RuleOperator.week_lt:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+            case RuleOperator.week_gte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date >= cutoff) if attribute_date else False
+            case RuleOperator.week_gt:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(weeks=int(iteration_rule.comparator))
+                return (attribute_date > cutoff) if attribute_date else False
+            case RuleOperator.year_lte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date <= cutoff) if attribute_date else False
+            case RuleOperator.year_lt:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date < cutoff) if attribute_date else False
+            case RuleOperator.year_gte:
+                attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
+                today_date = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
+                cutoff = today_date + relativedelta(years=int(iteration_rule.comparator))
+                return (attribute_date >= cutoff) if attribute_date else False
             case RuleOperator.year_gt:
                 attribute_date = datetime.strptime(str(attribute_value), "%Y%m%d") if attribute_value else None  # noqa: DTZ007
-                today = datetime.today()  # noqa: DTZ002
+                today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ002
                 cutoff = today + relativedelta(years=int(iteration_rule.comparator))
                 return (attribute_date > cutoff) if attribute_date else False
             case _:
