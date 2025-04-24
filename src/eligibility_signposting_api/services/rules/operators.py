@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import ClassVar
 
 from dateutil.relativedelta import relativedelta
@@ -241,11 +241,11 @@ class IsFalse(OperatorRule):
 class DateOperator(OperatorRule, ABC):
     @property
     def today(self) -> date:
-        return date.today()  # noqa: DTZ011
+        return datetime.now(tz=UTC).date()
 
     @staticmethod
     def get_attribute_date(item: AttributeData) -> date | None:
-        return datetime.strptime(str(item), "%Y%m%d").date() if item else None  # noqa: DTZ007
+        return datetime.strptime(str(item), "%Y%m%d").replace(tzinfo=UTC).date() if item else None
 
 
 class DateDayOperator(DateOperator, ABC):
