@@ -178,30 +178,32 @@ class IsNotNull(OperatorRule):
         return item not in (None, "")
 
 
+class RangeOperator(OperatorRule, ABC):
+    def __init__(self, rule_comparator: str) -> None:
+        super().__init__(rule_comparator=rule_comparator)
+        low_comparator_str, high_comparator_str = str(self.rule_comparator).split(",")
+        self.low_comparator = min(int(low_comparator_str), int(high_comparator_str))
+        self.high_comparator = max(int(low_comparator_str), int(high_comparator_str))
+
+
 @OperatorRegistry.register
-class Between(OperatorRule):
+class Between(RangeOperator):
     rule_operator: ClassVar[RuleOperator] = RuleOperator.between
 
     def _matches(self, item: AttributeData) -> bool:
         if item in (None, ""):
             return False
-        low_comparator_str, high_comparator_str = str(self.rule_comparator).split(",")
-        low_comparator = min(int(low_comparator_str), int(high_comparator_str))
-        high_comparator = max(int(low_comparator_str), int(high_comparator_str))
-        return low_comparator <= int(item) <= high_comparator
+        return self.low_comparator <= int(item) <= self.high_comparator
 
 
 @OperatorRegistry.register
-class NotBetween(OperatorRule):
+class NotBetween(RangeOperator):
     rule_operator: ClassVar[RuleOperator] = RuleOperator.not_between
 
     def _matches(self, item: AttributeData) -> bool:
         if item in (None, ""):
             return False
-        low_comparator_str, high_comparator_str = str(self.rule_comparator).split(",")
-        low_comparator = min(int(low_comparator_str), int(high_comparator_str))
-        high_comparator = max(int(low_comparator_str), int(high_comparator_str))
-        return int(item) < low_comparator or int(item) > high_comparator
+        return not self.low_comparator <= int(item) <= self.high_comparator
 
 
 @OperatorRegistry.register
