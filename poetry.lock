@@ -2244,7 +2244,7 @@ version = "2.1.0"
 description = "Hamcrest framework for matcher objects"
 optional = false
 python-versions = ">=3.6"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "pyhamcrest-2.1.0-py3-none-any.whl", hash = "sha256:f6913d2f392e30e0375b3ecbd7aee79e5d1faa25d345c8f4ff597665dcac2587"},
     {file = "pyhamcrest-2.1.0.tar.gz", hash = "sha256:c6acbec0923d0cb7e72c22af1926f3e7c97b8e8d69fc7498eabacaf7c975bd9c"},
@@ -3140,4 +3140,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "18400c6f7da9e0d0cd89b70c09463990e08556f78f4c32057bfb7bb009e132fd"
+content-hash = "998701cc22de7cbc0d8244aacced2888cd143cc2759467c9df4812d3c399c92c"
