@@ -237,6 +237,10 @@ class IsFalse(OperatorRule):
 
 
 class DateOperator(OperatorRule, ABC):
+    @property
+    def today(self) -> date:
+        return date.today()  # noqa: DTZ011
+
     @staticmethod
     def get_attribute_date(item: AttributeData) -> date | None:
         return datetime.strptime(str(item), "%Y%m%d").date() if item else None  # noqa: DTZ007
@@ -244,9 +248,8 @@ class DateOperator(OperatorRule, ABC):
 
 class DateDayOperator(DateOperator, ABC):
     @property
-    def cutoff_date(self) -> date:
-        today_date = date.today()  # noqa: DTZ011
-        return today_date + relativedelta(days=int(self.rule_comparator))
+    def cutoff(self) -> date:
+        return self.today + relativedelta(days=int(self.rule_comparator))
 
 
 @OperatorRegistry.register
@@ -255,7 +258,7 @@ class DayLTE(DateDayOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date <= self.cutoff_date) if attribute_date else False
+        return (attribute_date <= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -264,7 +267,7 @@ class DayLT(DateDayOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date < self.cutoff_date) if attribute_date else False
+        return (attribute_date < self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -273,7 +276,7 @@ class DayGTE(DateDayOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date >= self.cutoff_date) if attribute_date else False
+        return (attribute_date >= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -282,14 +285,13 @@ class DayGT(DateDayOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date > self.cutoff_date) if attribute_date else False
+        return (attribute_date > self.cutoff) if attribute_date else False
 
 
 class DateWeekOperator(DateOperator, ABC):
     @property
-    def cutoff_date(self) -> date:
-        today_date = date.today()  # noqa: DTZ011
-        return today_date + relativedelta(weeks=int(self.rule_comparator))
+    def cutoff(self) -> date:
+        return self.today + relativedelta(weeks=int(self.rule_comparator))
 
 
 @OperatorRegistry.register
@@ -298,7 +300,7 @@ class WeekLTE(DateWeekOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date <= self.cutoff_date) if attribute_date else False
+        return (attribute_date <= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -307,7 +309,7 @@ class WeekLT(DateWeekOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date < self.cutoff_date) if attribute_date else False
+        return (attribute_date < self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -316,7 +318,7 @@ class WeekGTE(DateWeekOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date >= self.cutoff_date) if attribute_date else False
+        return (attribute_date >= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -325,14 +327,13 @@ class WeekGT(DateWeekOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date > self.cutoff_date) if attribute_date else False
+        return (attribute_date > self.cutoff) if attribute_date else False
 
 
 class DateYearOperator(DateOperator, ABC):
     @property
-    def cutoff_date(self) -> date:
-        today_date = date.today()  # noqa: DTZ011
-        return today_date + relativedelta(years=int(self.rule_comparator))
+    def cutoff(self) -> date:
+        return self.today + relativedelta(years=int(self.rule_comparator))
 
 
 @OperatorRegistry.register
@@ -341,7 +342,7 @@ class YearLTE(DateYearOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date <= self.cutoff_date) if attribute_date else False
+        return (attribute_date <= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -350,7 +351,7 @@ class YearLT(DateYearOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date < self.cutoff_date) if attribute_date else False
+        return (attribute_date < self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -359,7 +360,7 @@ class YearGTE(DateYearOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date >= self.cutoff_date) if attribute_date else False
+        return (attribute_date >= self.cutoff) if attribute_date else False
 
 
 @OperatorRegistry.register
@@ -368,4 +369,4 @@ class YearGT(DateYearOperator):
 
     def _matches(self, item: AttributeData) -> bool:
         attribute_date = self.get_attribute_date(item)
-        return (attribute_date > self.cutoff_date) if attribute_date else False
+        return (attribute_date > self.cutoff) if attribute_date else False
