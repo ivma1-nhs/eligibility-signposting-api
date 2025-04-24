@@ -27,4 +27,19 @@ class GT(OperatorRule):
         return bool(item) and int(item) > int(self.rule_comparator)
 
 
-OPERATORS: dict[RuleOperator, type[OperatorRule]] = {RuleOperator.equals: Equals, RuleOperator.gt: GT}
+class LT(OperatorRule):
+    def _matches(self, item: str) -> bool:
+        return bool(item) and int(item) < int(self.rule_comparator)
+
+
+class NE(OperatorRule):
+    def _matches(self, item: str) -> bool:
+        return bool(item) and item != self.rule_comparator
+
+
+OPERATORS: dict[RuleOperator, type[OperatorRule]] = {
+    RuleOperator.equals: Equals,
+    RuleOperator.gt: GT,
+    RuleOperator.lt: LT,
+    RuleOperator.ne: NE,
+}
