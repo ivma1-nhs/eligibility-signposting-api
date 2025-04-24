@@ -86,16 +86,6 @@ class EligibilityService:
             return matcher_class(iteration_rule.comparator).matches(attribute_value)
 
         match iteration_rule.operator:
-            case RuleOperator.gte:
-                return bool(attribute_value) and int(attribute_value) >= int(iteration_rule.comparator)
-            case RuleOperator.lte:
-                return bool(attribute_value) and int(attribute_value) <= int(iteration_rule.comparator)
-            case RuleOperator.contains:
-                return attribute_value and iteration_rule.comparator in str(attribute_value)
-            case RuleOperator.not_contains:
-                return iteration_rule.comparator not in str(attribute_value)
-            case RuleOperator.starts_with:
-                return str(attribute_value).startswith(iteration_rule.comparator)
             case RuleOperator.not_starts_with:
                 return not str(attribute_value).startswith(iteration_rule.comparator)
             case RuleOperator.ends_with:
