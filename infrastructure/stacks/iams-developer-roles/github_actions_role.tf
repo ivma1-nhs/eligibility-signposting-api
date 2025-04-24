@@ -13,11 +13,10 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 # GitHub Actions Role
-resource "aws_iam_role" "github_actions" {  # Renamed from github_oidc to github_actions for consistency
+resource "aws_iam_role" "github_actions" {
   name        = "github-actions-api-deployment-role"
   description = "Role for GitHub Actions to deploy infrastructure via Terraform"
-  permissions_boundary = aws_iam_policy.permissions_boundary.arn  # Attach permissions boundary
-  # Adds managed path prefix for easier organization
+  permissions_boundary = aws_iam_policy.permissions_boundary.arn
   path = "/service-roles/"
 
   # Trust policy allowing GitHub Actions to assume the role

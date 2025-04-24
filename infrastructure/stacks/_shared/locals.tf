@@ -19,6 +19,7 @@ locals {
   sso_role_patterns = {
     dev  = "AWSReservedSSO_vdselid_dev_*"
     test = "AWSReservedSSO_vdselid_test_*"
+    preprod = "AWSReservedSSO_vdselid_preprod_*"
   }
 
   terraform_state_bucket_name = "eligibility-signposting-api-${var.environment}-tfstate"
