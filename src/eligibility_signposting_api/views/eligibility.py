@@ -48,10 +48,10 @@ def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[Eligi
                 )  # pyright: ignore[reportCallIssue]
             ]
         )
-        return make_response(problem.model_dump(by_alias=True), HTTPStatus.NOT_FOUND)
+        return make_response(problem.model_dump(by_alias=True, mode="json"), HTTPStatus.NOT_FOUND)
     else:
         eligibility_response = build_eligibility_response(eligibility_status)
-        return make_response(eligibility_response.model_dump(by_alias=True), HTTPStatus.OK)
+        return make_response(eligibility_response.model_dump(by_alias=True, mode="json"), HTTPStatus.OK)
 
 
 def build_eligibility_response(eligibility_status: EligibilityStatus) -> EligibilityResponse:
