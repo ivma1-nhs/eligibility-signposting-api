@@ -1,14 +1,28 @@
+from dataclasses import dataclass
 from datetime import date
+from enum import Enum, auto
 from typing import NewType
-
-from pydantic import BaseModel
 
 NHSNumber = NewType("NHSNumber", str)
 DateOfBirth = NewType("DateOfBirth", date)
 Postcode = NewType("Postcode", str)
+ConditionName = NewType("ConditionName", str)
 
 
-class EligibilityStatus(BaseModel):
-    eligible: bool
-    reasons: list[dict]
-    actions: list[dict]
+class Status(Enum):
+    not_eligible = auto()
+    not_actionable = auto()
+    actionable = auto()
+
+
+@dataclass
+class Condition:
+    condition_name: ConditionName
+    status: Status
+
+
+@dataclass
+class EligibilityStatus:
+    """Represents a person's eligibility for vaccination."""
+
+    conditions: list[Condition]
