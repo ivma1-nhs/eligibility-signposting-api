@@ -7,7 +7,7 @@ from typing import Literal, NewType
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
 
 BucketName = NewType("BucketName", str)
