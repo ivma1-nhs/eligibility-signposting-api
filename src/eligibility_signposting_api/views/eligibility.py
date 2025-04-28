@@ -10,20 +10,12 @@ from wireup import Injected
 
 from eligibility_signposting_api.model.eligibility import EligibilityStatus, NHSNumber, Status
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
-from eligibility_signposting_api.views.response_models import (
-    ConditionName,
-    EligibilityResponse,
-    LastUpdated,
-    Meta,
-    ProcessedSuggestion,
-    StatusText,
-)
-from eligibility_signposting_api.views.response_models import Status as ResponseStatus
+from eligibility_signposting_api.views import response_models
 
 STATUS_MAPPING = {
-    Status.actionable: ResponseStatus.actionable,
-    Status.not_actionable: ResponseStatus.not_actionable,
-    Status.not_eligible: ResponseStatus.not_eligible,
+    Status.actionable: response_models.Status.actionable,
+    Status.not_actionable: response_models.Status.not_actionable,
+    Status.not_eligible: response_models.Status.not_eligible,
 }
 
 logger = logging.getLogger(__name__)
@@ -54,19 +46,28 @@ def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[Eligi
         return make_response(eligibility_response.model_dump(by_alias=True, mode="json"), HTTPStatus.OK)
 
 
-def build_eligibility_response(eligibility_status: EligibilityStatus) -> EligibilityResponse:
+def build_eligibility_response(
+    eligibility_status: EligibilityStatus,
+) -> response_models.EligibilityResponse:
     """Return an object representing the API response we are going to send, given an evaluation of the person's
     eligibility."""
-    return EligibilityResponse(  # pyright: ignore[reportCallIssue]
+    return response_models.EligibilityResponse(  # pyright: ignore[reportCallIssue]
         response_id=uuid.uuid4(),  # pyright: ignore[reportCallIssue]
-        meta=Meta(last_updated=LastUpdated(datetime.now(tz=UTC))),  # pyright: ignore[reportCallIssue]
+        meta=response_models.Meta(last_updated=response_models.LastUpdated(datetime.now(tz=UTC))),  # pyright: ignore[reportCallIssue]
         processed_suggestions=[  # pyright: ignore[reportCallIssue]
-            ProcessedSuggestion(  # pyright: ignore[reportCallIssue]
-                condition_name=ConditionName(condition.condition_name),  # pyright: ignore[reportCallIssue]
+            response_models.ProcessedSuggestion(  # pyright: ignore[reportCallIssue]
+                condition_name=response_models.ConditionName(condition.condition_name),  # pyright: ignore[reportCallIssue]
                 status=STATUS_MAPPING[condition.status],
-                status_text=StatusText(f"{condition.status}"),  # pyright: ignore[reportCallIssue]
+                status_text=response_models.StatusText(f"{condition.status}"),  # pyright: ignore[reportCallIssue]
                 eligibility_cohorts=[],  # pyright: ignore[reportCallIssue]
-                suitability_rules=[],  # pyright: ignore[reportCallIssue]
+                suitability_rules=[  # pyright: ignore[reportCallIssue]
+                    response_models.SuitabilityRule(  # pyright: ignore[reportCallIssue]
+                        type=response_models.RuleType(reason.rule_type.value),  # pyright: ignore[reportCallIssue]
+                        rule_code=response_models.RuleCode(reason.rule_name),  # pyright: ignore[reportCallIssue]
+                        rule_text=response_models.RuleText(reason.rule_result),  # pyright: ignore[reportCallIssue]
+                    )
+                    for reason in condition.reasons
+                ],  # pyright: ignore[reportCallIssue]
                 actions=[],
             )
             for condition in eligibility_status.conditions

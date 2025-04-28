@@ -253,6 +253,7 @@ def bucket(s3_client: BaseClient) -> Generator[BucketName]:
 @pytest.fixture(scope="session")
 def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[CampaignConfig]:
     campaign: CampaignConfig = CampaignConfigFactory.build(
+        target="RSV",
         iterations=[
             IterationFactory.build(
                 iteration_rules=[
@@ -265,7 +266,7 @@ def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[Camp
                     )
                 ]
             )
-        ]
+        ],
     )
     campaign_data = {"CampaignConfig": campaign.model_dump(by_alias=True)}
     s3_client.put_object(
