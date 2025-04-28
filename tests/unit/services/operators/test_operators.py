@@ -14,6 +14,11 @@ cases: list[tuple[RuleOperator, AttributeData, AttributeData, bool]] = [
     (RuleOperator.equals, "-1", "0", False),
     (RuleOperator.equals, "-1", "", False),
     (RuleOperator.equals, "-1", None, False),
+    (RuleOperator.equals, "", "", False),
+    (RuleOperator.equals, "", None, False),
+    (RuleOperator.equals, None, "", False),
+    (RuleOperator.equals, None, None, False),
+    (RuleOperator.equals, "42", "Fourtytwo", False),
     # Greater Than
     (RuleOperator.gt, "100", "101", True),
     (RuleOperator.gt, "100", "100", False),
@@ -163,10 +168,67 @@ cases: list[tuple[RuleOperator, AttributeData, AttributeData, bool]] = [
     (RuleOperator.is_false, None, "", False),
     (RuleOperator.is_false, None, None, False),
     (RuleOperator.is_false, None, "False", False),
+    # Has it contains
+    (RuleOperator.contains, "A12", "A12 3DC", True),
+    (RuleOperator.contains, "A12", "A12", True),
+    (RuleOperator.contains, "A12", None, False),
+    (RuleOperator.contains, "A12", "", False),
+    (RuleOperator.contains, "A12", "A23", False),
+    (RuleOperator.contains, "A12", 23, False),
+    # Has it not_contains
+    (RuleOperator.not_contains, "A12", "A22", True),
+    (RuleOperator.not_contains, "A12", None, True),
+    (RuleOperator.not_contains, "A12", "", True),
+    (RuleOperator.not_contains, "A12", 23, True),
+    (RuleOperator.not_contains, "A12", "A12", False),
+    # Does it starts_with
+    (RuleOperator.starts_with, "YY66", "YY66", True),
+    (RuleOperator.starts_with, "YY66", "YY66095", True),
+    (RuleOperator.starts_with, "YY66", "BB11", False),
+    (RuleOperator.starts_with, "YY66", "BYY66095", False),
+    (RuleOperator.starts_with, "YY66", "  YY66", False),
+    (RuleOperator.starts_with, "YY66", None, False),
+    (RuleOperator.starts_with, "YY66", "", False),
+    # Does it not_starts_with
+    (RuleOperator.not_starts_with, "YY66", "YY66", False),
+    (RuleOperator.not_starts_with, "YY66", "YY66095", False),
+    (RuleOperator.not_starts_with, "YY66", "BB11", True),
+    (RuleOperator.not_starts_with, "YY66", "BYY66095", True),
+    (RuleOperator.not_starts_with, "YY66", "  YY66", True),
+    (RuleOperator.not_starts_with, "YY66", None, True),
+    (RuleOperator.not_starts_with, "YY66", "", True),
+    # Does it ends_with
+    (RuleOperator.ends_with, "2BA", "2BA", True),
+    (RuleOperator.ends_with, "2BA", "002BA", True),
+    (RuleOperator.ends_with, "2BA", None, False),
+    (RuleOperator.ends_with, "2BA", "", False),
+    (RuleOperator.ends_with, "2BA", "2BA00", False),
+    # is_in
+    (RuleOperator.is_in, "QH8,QJG", "", False),
+    (RuleOperator.is_in, "QH8,QJG", None, False),
+    (RuleOperator.is_in, "QH8,QJG", "AZ1", False),
+    (RuleOperator.is_in, "QH8,QJG", "QH8", True),
+    # is not_in
+    (RuleOperator.not_in, "QH8,QJG", "", True),
+    (RuleOperator.not_in, "QH8,QJG", None, True),
+    (RuleOperator.not_in, "QH8,QJG", "AZ1", True),
+    (RuleOperator.not_in, "QH8,QJG", "QH8", False),
+    # is member_of
+    (RuleOperator.member_of, "cohort1", "cohort1,cohort2", True),
+    (RuleOperator.member_of, "cohort1", None, False),
+    (RuleOperator.member_of, "cohort1", "", False),
+    (RuleOperator.member_of, "cohort1", "cohort3", False),
+    # is not_member_of
+    (RuleOperator.not_member_of, "cohort1", "cohort1,cohort2", False),
+    (RuleOperator.not_member_of, "cohort1", None, True),
+    (RuleOperator.not_member_of, "cohort1", "", True),
+    (RuleOperator.not_member_of, "cohort1", "cohort3", True),
     # Day lesser than or equal to
     (RuleOperator.day_lte, "2", "20250426", True),  # Past date
     (RuleOperator.day_lte, "2", "20250427", True),  # Present date
     (RuleOperator.day_lte, "2", "20250428", False),  # Future date
+    (RuleOperator.day_lte, "2", "", False),  # Case empty string: behaves the same for all the date operators
+    (RuleOperator.day_lte, "2", None, False),  # Case None: behaves the same for all the date operators
     # Day less than
     (RuleOperator.day_lt, "2", "20250426", True),  # Past date
     (RuleOperator.day_lt, "2", "20250427", False),  # Present date
@@ -187,7 +249,7 @@ cases: list[tuple[RuleOperator, AttributeData, AttributeData, bool]] = [
     (RuleOperator.week_lt, 2, "20250502", True),  # Past week
     (RuleOperator.week_lt, 2, "20250509", False),  # Present week
     (RuleOperator.week_lt, 2, "20250516", False),  # Future week
-    # week greater than or equal to
+    # Week greater than or equal to
     (RuleOperator.week_gte, 2, "20250502", False),  # Past week
     (RuleOperator.week_gte, 2, "20250509", True),  # Present week
     (RuleOperator.week_gte, 2, "20250516", True),  # Future week
@@ -215,14 +277,14 @@ cases: list[tuple[RuleOperator, AttributeData, AttributeData, bool]] = [
 
 
 @freeze_time("2025-04-25")
-@pytest.mark.parametrize(("rule_operator", "comparator", "attribute", "expected"), cases)
-def test_operator(rule_operator: RuleOperator, comparator: AttributeData, attribute: AttributeData, expected: bool):  # noqa: FBT001
+@pytest.mark.parametrize(("rule_operator", "rule_value", "person_data", "expected"), cases)
+def test_operator(rule_operator: RuleOperator, rule_value: AttributeData, person_data: AttributeData, expected: bool):  # noqa: FBT001
     # Given
     operator_class: type[Operator] = OperatorRegistry.get(rule_operator)
-    operator: Operator = operator_class(rule_comparator=comparator)
+    operator: Operator = operator_class(rule_value=rule_value)
 
     # When
-    actual = operator.matches(attribute)
+    actual = operator.matches(person_data)
 
     # Then
     assert actual is expected
