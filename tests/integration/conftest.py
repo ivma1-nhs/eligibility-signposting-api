@@ -224,7 +224,28 @@ def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
 @pytest.fixture
 def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NHSNumber, DateOfBirth, Postcode]]:
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
-    date_of_birth = DateOfBirth(faker.date_of_birth())
+    date_of_birth = DateOfBirth(faker.date_of_birth(maximum_age=65))
+    postcode = Postcode(faker.postcode())
+    eligibility_table.put_item(
+        Item={
+            "NHS_NUMBER": f"PERSON#{nhs_number}",
+            "ATTRIBUTE_TYPE": "PERSON",
+            "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
+            "POSTCODE": postcode,
+        }
+    )
+    eligibility_table.put_item(
+        Item={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS", "COHORT_MAP": {}}
+    )
+    yield nhs_number, date_of_birth, postcode
+    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "PERSON"})
+    eligibility_table.delete_item(Key={"NHS_NUMBER": f"PERSON#{nhs_number}", "ATTRIBUTE_TYPE": "COHORTS"})
+
+
+@pytest.fixture
+def persisted_77yo_person(eligibility_table: Any, faker: Faker) -> Generator[tuple[NHSNumber, DateOfBirth, Postcode]]:
+    nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=77, maximum_age=77))
     postcode = Postcode(faker.postcode())
     eligibility_table.put_item(
         Item={
@@ -259,7 +280,9 @@ def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[Camp
                 iteration_rules=[
                     IterationRuleFactory.build(
                         type=RuleType.filter,
-                        operator=RuleOperator.lt,
+                        name="Exclude too young",
+                        description="Exclude too young less than 75",
+                        operator=RuleOperator.year_gt,
                         attribute_level=RuleAttributeLevel.PERSON,
                         attribute_name="DATE_OF_BIRTH",
                         comparator="-75",

@@ -8,7 +8,6 @@ from eligibility_signposting_api.model.rules import CampaignConfig, IterationRul
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 from eligibility_signposting_api.services.rules.operators import OperatorRegistry
 
-PersonData = str | None
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +46,7 @@ class EligibilityService:
 
     @staticmethod
     def evaluate_eligibility(
-        campaign_configs: list[CampaignConfig], person_data: list[dict[str, PersonData]]
+        campaign_configs: list[CampaignConfig], person_data: list[dict[str, str | None]]
     ) -> eligibility.EligibilityStatus:
         """Calculate a person's eligibility for vaccination."""
         conditions: dict[eligibility.ConditionName, eligibility.Condition] = {}
@@ -76,21 +75,23 @@ class EligibilityService:
         return eligibility.EligibilityStatus(conditions=list(conditions.values()))
 
     @staticmethod
-    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, PersonData]]) -> tuple[bool, str]:
+    def evaluate_exclusion(iteration_rule: IterationRule, person_data: list[dict[str, str | None]]) -> tuple[bool, str]:
+        """Evaluate if a particular rule excludes this person. Return the result, and the reason for the result."""
         attribute_value = EligibilityService.get_attribute_value(iteration_rule, person_data)
         exclusion, reason = EligibilityService.evaluate_rule(iteration_rule, attribute_value)
         reason = (
-            f"Rule {iteration_rule.name} ({iteration_rule.description}) "
+            f"Rule {iteration_rule.name!r} ({iteration_rule.description!r}) "
             f"{'' if exclusion else 'not '}excluding - "
-            f"{iteration_rule.attribute_name!r} {attribute_value!r} {reason}"
+            f"{iteration_rule.attribute_name!r} {iteration_rule.comparator!r} {reason}"
         )
         return exclusion, reason
 
     @staticmethod
-    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, PersonData]]) -> PersonData:
+    def get_attribute_value(iteration_rule: IterationRule, person_data: list[dict[str, str | None]]) -> str | None:
+        """Pull out the correct attribute for a rule from the person's data."""
         match iteration_rule.attribute_level:
             case RuleAttributeLevel.PERSON:
-                person: dict[str, PersonData] | None = next(
+                person: dict[str, str | None] | None = next(
                     (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(iteration_rule.attribute_name) if person else None
@@ -100,7 +101,8 @@ class EligibilityService:
         return attribute_value
 
     @staticmethod
-    def evaluate_rule(iteration_rule: IterationRule, attribute_value: PersonData) -> tuple[bool, str]:
+    def evaluate_rule(iteration_rule: IterationRule, attribute_value: str | None) -> tuple[bool, str]:
+        """Evaluate a rule against a person data attribute. Return the result, and the reason for the result."""
         matcher_class = OperatorRegistry.get(iteration_rule.operator)
         matcher = matcher_class(iteration_rule.comparator)
 
