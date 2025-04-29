@@ -80,9 +80,9 @@ class EligibilityService:
         attribute_value = EligibilityService.get_attribute_value(iteration_rule, person_data)
         exclusion, reason = EligibilityService.evaluate_rule(iteration_rule, attribute_value)
         reason = (
-            f"Rule {iteration_rule.name} ({iteration_rule.description}) "
+            f"Rule {iteration_rule.name!r} ({iteration_rule.description!r}) "
             f"{'' if exclusion else 'not '}excluding - "
-            f"{iteration_rule.attribute_name!r} {attribute_value!r} {reason}"
+            f"{iteration_rule.attribute_name!r} {iteration_rule.comparator!r} {reason}"
         )
         return exclusion, reason
 
