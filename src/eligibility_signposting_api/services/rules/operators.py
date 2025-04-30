@@ -54,15 +54,20 @@ class ScalarOperator(Operator, ABC):
         person_data: str | int
         rule_value: str | int
         if item is None or self.rule_value is None:
-            return data_comparator == operator.ne and (bool(item) != bool(self.rule_value))
+            # For anything other than an NE comparison, a None on either side won't match.
+            # For an NE comparison, match if one is truthy and the other falsy.
+            return data_comparator == operator.ne and bool(item) != bool(self.rule_value)
         if (
             isinstance(item, str)
             and re.match(r"-?\d*$", item)
             and isinstance(self.rule_value, str)
             and re.match(r"-?\d*$", self.rule_value)
         ):
+            # If both sides can be treated as numeric, do so.
+            # This includes treating a zero length string as zero.
             person_data, rule_value = int(item or 0), int(self.rule_value or 0)
         else:
+            # Treat both sides as strings.
             person_data, rule_value = str(item), str(self.rule_value)
         return data_comparator(person_data, rule_value)
 
