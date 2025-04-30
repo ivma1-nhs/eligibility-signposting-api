@@ -3,10 +3,10 @@ from freezegun import freeze_time
 from hamcrest import assert_that, equal_to
 
 from eligibility_signposting_api.model.rules import RuleOperator
-from eligibility_signposting_api.services.rules.operators import AttributeData, Operator, OperatorRegistry
+from eligibility_signposting_api.services.rules.operators import Operator, OperatorRegistry
 
 # Test cases: person_data, rule_operator, rule_value, expected, test_comment
-cases: list[tuple[AttributeData, RuleOperator, AttributeData, bool, str]] = []
+cases: list[tuple[str | None, RuleOperator, str | None, bool, str]] = []
 
 # Equals
 cases += [
@@ -386,9 +386,9 @@ cases += [
 @pytest.mark.parametrize(("person_data", "rule_operator", "rule_value", "expected", "test_comment"), cases)
 def test_operator(
     *,
-    person_data: AttributeData,
+    person_data: str | None,
     rule_operator: RuleOperator,
-    rule_value: AttributeData,
+    rule_value: str | None,
     expected: bool,
     test_comment: str,
 ):

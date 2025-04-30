@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field, field_serializer, field_validator
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
 
-BucketName = NewType("BucketName", str)
 CampaignName = NewType("CampaignName", str)
 CampaignVersion = NewType("CampaignVersion", str)
 CampaignID = NewType("CampaignID", str)
