@@ -30,6 +30,7 @@ class EligibilityRepo:
 
     This data is held in a handful of records in a single Dynamodb table.
     """
+
     def __init__(self, table: Annotated[Any, Inject(qualifier="eligibility_table")]) -> None:
         super().__init__()
         self.table = table
