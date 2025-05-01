@@ -18,7 +18,7 @@ cases += [
     ("0", RuleOperator.equals, "-1", False, ""),
     ("", RuleOperator.equals, "-1", False, ""),
     (None, RuleOperator.equals, "-1", False, ""),
-    ("", RuleOperator.equals, "", True, ""),  # ?
+    ("", RuleOperator.equals, "", True, ""),
     (None, RuleOperator.equals, "", False, ""),
     (None, RuleOperator.equals, "None", False, ""),
     ("Fourtytwo", RuleOperator.equals, "42", False, ""),
@@ -30,12 +30,12 @@ cases += [
     ("101", RuleOperator.gt, "100", True, ""),
     ("100", RuleOperator.gt, "100", False, ""),
     ("99", RuleOperator.gt, "100", False, ""),
-    ("", RuleOperator.gt, "100", False, ""),  # ?
+    ("", RuleOperator.gt, "100", False, ""),
     (None, RuleOperator.gt, "100", False, ""),
     ("0", RuleOperator.gt, "-1", True, ""),
     ("-1", RuleOperator.gt, "-1", False, ""),
     ("-2", RuleOperator.gt, "-1", False, ""),
-    ("", RuleOperator.gt, "-1", True, ""),  # ?
+    ("", RuleOperator.gt, "-1", True, ""),
     (None, RuleOperator.gt, "-1", False, ""),
 ]
 
@@ -45,7 +45,7 @@ cases += [
     ("99", RuleOperator.lt, "100", True, ""),
     ("100", RuleOperator.lt, "100", False, ""),
     ("101", RuleOperator.lt, "100", False, ""),
-    ("", RuleOperator.lt, "100", True, ""),  # ?
+    ("", RuleOperator.lt, "100", True, ""),
     (None, RuleOperator.lt, "100", False, ""),
     ("-2", RuleOperator.lt, "-1", True, ""),
     ("-1", RuleOperator.lt, "-1", False, ""),
@@ -81,7 +81,7 @@ cases += [
     ("0", RuleOperator.gte, "-1", True, ""),
     ("-1", RuleOperator.gte, "-1", True, ""),
     ("-2", RuleOperator.gte, "-1", False, ""),
-    ("", RuleOperator.gte, "-1", True, ""),  # ?
+    ("", RuleOperator.gte, "-1", True, ""),
     (None, RuleOperator.gte, "-1", False, ""),
     (
         "20240831",
@@ -111,7 +111,7 @@ cases += [
     ("99", RuleOperator.lte, "100", True, ""),
     ("100", RuleOperator.lte, "100", True, ""),
     ("101", RuleOperator.lte, "100", False, ""),
-    ("", RuleOperator.lte, "100", True, ""),  # ?
+    ("", RuleOperator.lte, "100", True, ""),
     (None, RuleOperator.lte, "100", False, ""),
     ("-2", RuleOperator.lte, "-1", True, ""),
     ("-1", RuleOperator.lte, "-1", True, ""),
