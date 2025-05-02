@@ -21,12 +21,15 @@ class Operator(BaseMatcher[str | None], ABC):
     """An operator compares some person's data attribute - date of birth, postcode, flags or so on - against a value
     specified in a rule."""
 
+    ITEM_DEFAULT_PATTERN: ClassVar[str] = r"(?P<rule_value>[^\[]+)\[\[NVL:(?P<item_default>[^\]]+)\]\]"
+
     rule_value: str
     item_default: str | None = None
 
     def __post_init__(self) -> None:
-        if self.rule_value and (match := re.match(r"(.+)\[\[NVL:(.+)\]\]", self.rule_value)):
-            self.rule_value, self.item_default = match.groups()
+        if self.rule_value and (match := re.match(self.ITEM_DEFAULT_PATTERN, self.rule_value)):
+            self.rule_value = match.group("rule_value")
+            self.item_default = match.group("item_default")
 
     @abstractmethod
     def _matches(self, item: str | None) -> bool: ...
