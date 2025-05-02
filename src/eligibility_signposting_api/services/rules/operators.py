@@ -18,7 +18,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Operator(BaseMatcher[str | None], ABC):
+    """An operator compares some person's data attribute - date of birth, postcode, flags or so on - against a value
+    specified in a rule."""
+
+    ITEM_DEFAULT_PATTERN: ClassVar[str] = r"(?P<rule_value>[^\[]+)\[\[NVL:(?P<item_default>[^\]]+)\]\]"
+
     rule_value: str
+    item_default: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.rule_value and (match := re.match(self.ITEM_DEFAULT_PATTERN, self.rule_value)):
+            self.rule_value = match.group("rule_value")
+            self.item_default = match.group("item_default")
 
     @abstractmethod
     def _matches(self, item: str | None) -> bool: ...
@@ -28,6 +39,8 @@ class Operator(BaseMatcher[str | None], ABC):
 
 
 class OperatorRegistry:
+    """Operators are registered and made available for retrieval here for each RuleOperator."""
+
     registry: ClassVar[dict[RuleOperator, type[Operator]]] = {}
 
     @staticmethod
@@ -50,6 +63,7 @@ class ScalarOperator(Operator, ABC):
     comparator: ClassVar[Callable[[str | None, str | None], bool]]
 
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         data_comparator = cast("Callable[[str|int, str|int], bool]", self.comparator)
         person_data: str | int
         rule_value: str | int
@@ -100,30 +114,35 @@ for rule_operator, comparator in SCALAR_OPERATORS:
 @OperatorRegistry.register(RuleOperator.contains)
 class Contains(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         return bool(item) and self.rule_value in str(item)
 
 
 @OperatorRegistry.register(RuleOperator.not_contains)
 class NotContains(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         return self.rule_value not in str(item)
 
 
 @OperatorRegistry.register(RuleOperator.starts_with)
 class StartsWith(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         return str(item).startswith(self.rule_value)
 
 
 @OperatorRegistry.register(RuleOperator.not_starts_with)
 class NotStartsWith(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         return not str(item).startswith(self.rule_value)
 
 
 @OperatorRegistry.register(RuleOperator.ends_with)
 class EndsWith(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         return str(item).endswith(self.rule_value)
 
 
@@ -131,6 +150,7 @@ class EndsWith(Operator):
 @OperatorRegistry.register(RuleOperator.member_of)
 class IsIn(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         comparators = str(self.rule_value).split(",")
         return str(item) in comparators
 
@@ -139,6 +159,7 @@ class IsIn(Operator):
 @OperatorRegistry.register(RuleOperator.not_member_of)
 class NotIn(Operator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         comparators = str(self.rule_value).split(",")
         return str(item) not in comparators
 
@@ -156,8 +177,12 @@ class IsNotNull(Operator):
 
 
 class RangeOperator(Operator, ABC):
-    def __init__(self, rule_value: str) -> None:
-        super().__init__(rule_value=rule_value)
+    low_comparator: int
+    high_comparator: int
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
         low_comparator_str, high_comparator_str = str(self.rule_value).split(",")
         self.low_comparator = min(int(low_comparator_str), int(high_comparator_str))
         self.high_comparator = max(int(low_comparator_str), int(high_comparator_str))
@@ -166,6 +191,7 @@ class RangeOperator(Operator, ABC):
 @OperatorRegistry.register(RuleOperator.is_between)
 class Between(RangeOperator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         if item in (None, ""):
             return False
         return self.low_comparator <= int(item) <= self.high_comparator
@@ -174,6 +200,7 @@ class Between(RangeOperator):
 @OperatorRegistry.register(RuleOperator.is_not_between)
 class NotBetween(RangeOperator):
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         if item in (None, ""):
             return False
         return not self.low_comparator <= int(item) <= self.high_comparator
@@ -204,8 +231,17 @@ class IsFalse(Operator):
 
 
 class DateOperator(Operator, ABC):
+    OFFSET_PATTERN: ClassVar[str] = r"(?P<rule_value>[^\[]+)\[\[OFFSET:(?P<offset>\d{8})\]\]"
     delta_type: ClassVar[str]
     comparator: ClassVar[Callable[[date, date], bool]]
+    offset: date | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        if self.rule_value and (match := re.match(self.OFFSET_PATTERN, self.rule_value)):
+            self.rule_value = match.group("rule_value")
+            self.offset = datetime.strptime(match.group("offset"), "%Y%m%d").replace(tzinfo=UTC).date()
 
     @property
     def today(self) -> date:
@@ -219,9 +255,10 @@ class DateOperator(Operator, ABC):
     def cutoff(self) -> date:
         delta = relativedelta()
         setattr(delta, self.delta_type, int(self.rule_value))
-        return self.today + delta
+        return (self.offset if self.offset else self.today) + delta
 
     def _matches(self, item: str | None) -> bool:
+        item = item if item is not None else self.item_default
         if attribute_date := self.get_attribute_date(item):
             date_comparator = cast("Callable[[date, date], bool]", self.comparator)
             return date_comparator(attribute_date, self.cutoff)
