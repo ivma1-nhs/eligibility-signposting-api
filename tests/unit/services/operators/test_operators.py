@@ -42,6 +42,10 @@ cases += [
     ("-2", RuleOperator.gt, "-1", False, ""),
     ("", RuleOperator.gt, "-1", False, ""),
     (None, RuleOperator.gt, "-1", False, ""),
+    ("0", RuleOperator.gt, "0[[NVL:0]]", False, "Default value specified, but unused"),
+    ("0", RuleOperator.gt, "-1[[NVL:0]]", True, "Default value specified, but unused"),
+    (None, RuleOperator.gt, "0[[NVL:0]]", False, "Default value used"),
+    (None, RuleOperator.gt, "-1[[NVL:0]]", True, "Default value used"),
 ]
 
 # Less Than
@@ -57,6 +61,10 @@ cases += [
     ("0", RuleOperator.lt, "-1", False, ""),
     ("", RuleOperator.lt, "-1", False, ""),
     (None, RuleOperator.lt, "-1", False, ""),
+    ("0", RuleOperator.lt, "0[[NVL:0]]", False, "Default value specified, but unused"),
+    ("-2", RuleOperator.lt, "-1[[NVL:0]]", True, "Default value specified, but unused"),
+    (None, RuleOperator.lt, "0[[NVL:0]]", False, "Default value used"),
+    (None, RuleOperator.lt, "-1[[NVL:-2]]", True, "Default value used"),
 ]
 
 # Not Equals
@@ -75,6 +83,10 @@ cases += [
     (None, RuleOperator.ne, "q4", True, "Exclude anyone without a BSL preference - No preference = Exclude"),
     ("q5", RuleOperator.ne, "q4", True, "Exclude anyone without a BSL preference - A different preference = Exclude"),
     ("q4", RuleOperator.ne, "q4", False, "Exclude anyone without a BSL preference - BSL preference = Don't Exclude"),
+    ("0", RuleOperator.ne, "0[[NVL:0]]", False, "Default value specified, but unused"),
+    ("-2", RuleOperator.ne, "-1[[NVL:0]]", True, "Default value specified, but unused"),
+    (None, RuleOperator.ne, "0[[NVL:0]]", False, "Default value used"),
+    (None, RuleOperator.ne, "-1[[NVL:-2]]", True, "Default value used"),
 ]
 
 # Greater Than or Equal
@@ -110,6 +122,10 @@ cases += [
         True,
         "# Exclude if has had last invitation on or after 1st September 2024",
     ),
+    ("0", RuleOperator.gte, "0[[NVL:0]]", True, "Default value specified, but unused"),
+    ("0", RuleOperator.gte, "1[[NVL:0]]", False, "Default value specified, but unused"),
+    (None, RuleOperator.gte, "0[[NVL:0]]", True, "Default value used"),
+    (None, RuleOperator.gte, "1[[NVL:0]]", False, "Default value used"),
 ]
 
 # Less Than or Equal
@@ -145,6 +161,10 @@ cases += [
         False,
         "Exclude 75 or older at campaign start date (All born before 17/06/1950)",
     ),
+    ("0", RuleOperator.lte, "0[[NVL:0]]", True, "Default value specified, but unused"),
+    ("0", RuleOperator.lte, "-1[[NVL:0]]", False, "Default value specified, but unused"),
+    (None, RuleOperator.lte, "0[[NVL:0]]", True, "Default value used"),
+    (None, RuleOperator.lte, "-1[[NVL:0]]", False, "Default value used"),
 ]
 
 # Is Null
@@ -514,6 +534,9 @@ cases += [
         False,
         "Exclude anyone over 116 on the day from inclusion - 116 tomorrow",
     ),
+    ("19680720", RuleOperator.year_lt, "-57[[OFFSET:20250721]]", True, "Exclude anyone older than Simon"),
+    ("19680721", RuleOperator.year_lt, "-57[[OFFSET:20250721]]", False, "Include anyone the same age as Simon"),
+    ("19680722", RuleOperator.year_lt, "-57[[OFFSET:20250721]]", False, "Include anyone younger than Simon"),
 ]
 
 # Year greater than or equal to
