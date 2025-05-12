@@ -7,6 +7,7 @@ from freezegun import freeze_time
 from hamcrest import assert_that, empty, has_item
 
 from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Status
+from eligibility_signposting_api.model.rules import IterationDate
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
 from tests.fixtures.builders.model import rule as rule_builder
@@ -263,3 +264,33 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
             has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(Status.not_actionable))
         ),
     )
+
+
+@freeze_time("2025-04-25")
+def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
+    # Given
+    nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
+
+    eligibility_repo = MagicMock(spec=EligibilityRepo)
+    rules_repo = MagicMock(spec=RulesRepo)
+    eligibility_repo.get_eligibility_data = MagicMock(return_value=eligibility_rows_builder(nhs_number))
+    rules_repo.get_campaign_configs = MagicMock(
+        return_value=[
+            rule_builder.CampaignConfigFactory.build(
+                target="RSV",
+                iterations=[
+                    rule_builder.IterationFactory.build(
+                        iteration_date=IterationDate(datetime.date(2025, 4, 26)),
+                    )
+                ],
+            )
+        ]
+    )
+
+    ps = EligibilityService(eligibility_repo, rules_repo)
+
+    # When
+    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+
+    # Then
+    assert_that(actual, is_eligibility_status().with_conditions(empty()))

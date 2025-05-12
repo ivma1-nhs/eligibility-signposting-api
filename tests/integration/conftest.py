@@ -220,7 +220,7 @@ def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
 @pytest.fixture
 def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[eligibility.NHSNumber]:
     nhs_number = eligibility.NHSNumber(f"5{faker.random_int(max=999999999):09d}")
-    date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(maximum_age=65))
+    date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=65))
 
     for row in (rows := eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])):
         eligibility_table.put_item(Item=row)
