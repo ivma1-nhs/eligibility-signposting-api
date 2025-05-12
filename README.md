@@ -24,7 +24,6 @@ The software will only be used for signposting an individual to an appropriate s
   - [Creating a Postman collection](#creating-a-postman-collection)
   - [Design](#design)
     - [Diagrams](#diagrams)
-    - [Modularity](#modularity)
   - [Contributing](#contributing)
   - [Contacts](#contacts)
   - [Licence](#licence)
