@@ -5,6 +5,7 @@ from polyfactory import Use
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from eligibility_signposting_api.model import rules
+from eligibility_signposting_api.model.rules import RulePriority
 
 
 def past_date(days_behind: int = 365) -> date:
@@ -38,6 +39,7 @@ class PersonAgeSuppressionRuleFactory(IterationRuleFactory):
     type = rules.RuleType.suppression
     name = "Exclude too young less than 75"
     description = "Exclude too young less than 75"
+    priority = RulePriority(10)
     operator = rules.RuleOperator.year_gt
     attribute_level = rules.RuleAttributeLevel.PERSON
     attribute_name = "DATE_OF_BIRTH"

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from functools import total_ordering
 from typing import NewType, Self
 
@@ -13,7 +13,7 @@ RuleName = NewType("RuleName", str)
 RuleResult = NewType("RuleResult", str)
 
 
-class RuleType(str, Enum):
+class RuleType(StrEnum):
     filter = "F"
     suppression = "S"
     redirect = "R"

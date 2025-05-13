@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from datetime import UTC, date, datetime
-from enum import Enum
+from enum import StrEnum
 from functools import cached_property
 from operator import attrgetter
 from typing import Literal, NewType
@@ -29,13 +29,13 @@ EndDate = NewType("EndDate", date)
 CohortLabel = NewType("CohortLabel", str)
 
 
-class RuleType(str, Enum):
+class RuleType(StrEnum):
     filter = "F"
     suppression = "S"
     redirect = "R"
 
 
-class RuleOperator(str, Enum):
+class RuleOperator(StrEnum):
     equals = "="
     gt = ">"
     lt = "<"
@@ -73,7 +73,7 @@ class RuleOperator(str, Enum):
     year_gt = "Y>"
 
 
-class RuleAttributeLevel(str, Enum):
+class RuleAttributeLevel(StrEnum):
     PERSON = "PERSON"
     TARGET = "TARGET"
     COHORT = "COHORT"
