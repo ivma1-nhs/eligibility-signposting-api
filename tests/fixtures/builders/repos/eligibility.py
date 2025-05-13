@@ -5,21 +5,21 @@ from typing import Any
 from faker import Faker
 
 from eligibility_signposting_api.model import eligibility
-from eligibility_signposting_api.model.eligibility import DateOfBirth
 
 
 def eligibility_rows_builder(
     nhs_number: eligibility.NHSNumber,
     *,
     date_of_birth: eligibility.DateOfBirth | None = None,
+    postcode: eligibility.Postcode | None = None,
     cohorts: Sequence[str] | None = None,
     vaccines: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
     faker = Faker("en_UK")
 
     key = f"PERSON#{nhs_number}"
-    date_of_birth = date_of_birth or DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=99))
-    postcode = eligibility.Postcode(faker.postcode())
+    date_of_birth = date_of_birth or eligibility.DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=99))
+    postcode = postcode or eligibility.Postcode(faker.postcode())
     cohorts = cohorts if cohorts is not None else ["cohort-a", "cohort-b"]
     vaccines = vaccines if vaccines is not None else ["RSV", "COVID"]
     rows: list[dict[str, Any]] = [
