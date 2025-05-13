@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from hamcrest import assert_that, empty, has_item
 
 from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Status
-from eligibility_signposting_api.model.rules import IterationDate
+from eligibility_signposting_api.model.rules import IterationDate, RuleType
 from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
 from tests.fixtures.builders.model import rule as rule_builder
@@ -25,10 +25,10 @@ def test_eligibility_service_returns_from_repo():
     eligibility_repo = MagicMock(spec=EligibilityRepo)
     rules_repo = MagicMock(spec=RulesRepo)
     eligibility_repo.get_eligibility = MagicMock(return_value=[])
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber("1234567890"))
+    actual = service.get_eligibility_status(NHSNumber("1234567890"))
 
     # Then
     assert_that(actual, is_eligibility_status().with_conditions(empty()))
@@ -39,11 +39,11 @@ def test_eligibility_service_for_nonexistent_nhs_number():
     eligibility_repo = MagicMock(spec=EligibilityRepo)
     rules_repo = MagicMock(spec=RulesRepo)
     eligibility_repo.get_eligibility_data = MagicMock(side_effect=NotFoundError)
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
     with pytest.raises(UnknownPersonError):
-        ps.get_eligibility_status(NHSNumber("1234567890"))
+        service.get_eligibility_status(NHSNumber("1234567890"))
 
 
 def test_not_base_eligible(faker: Faker):
@@ -69,10 +69,10 @@ def test_not_base_eligible(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(
@@ -123,10 +123,10 @@ def test_only_live_campaigns_considered(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(
@@ -161,10 +161,10 @@ def test_base_eligible_and_simple_rule_includes(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(
@@ -178,7 +178,7 @@ def test_base_eligible_and_simple_rule_includes(faker: Faker):
 def test_base_eligible_but_simple_rule_excludes(faker: Faker):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
-    date_of_birth = DateOfBirth(faker.date_of_birth(maximum_age=74))
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
 
     eligibility_repo = MagicMock(spec=EligibilityRepo)
     rules_repo = MagicMock(spec=RulesRepo)
@@ -199,10 +199,10 @@ def test_base_eligible_but_simple_rule_excludes(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(
@@ -252,10 +252,10 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(
@@ -287,10 +287,98 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
         ]
     )
 
-    ps = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(eligibility_repo, rules_repo)
 
     # When
-    actual = ps.get_eligibility_status(NHSNumber(nhs_number))
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
 
     # Then
     assert_that(actual, is_eligibility_status().with_conditions(empty()))
+
+
+@pytest.mark.parametrize(
+    ("rule_type", "expected_status"),
+    [
+        (RuleType.suppression, Status.not_actionable),
+        (RuleType.filter, Status.not_eligible),
+        (RuleType.redirect, Status.actionable),
+    ],
+)
+def test_rule_types_cause_correct_statuses(rule_type: RuleType, expected_status: Status, faker: Faker):
+    # Given
+    nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
+
+    eligibility_repo = MagicMock(spec=EligibilityRepo)
+    rules_repo = MagicMock(spec=RulesRepo)
+    eligibility_repo.get_eligibility_data = MagicMock(
+        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    )
+    rules_repo.get_campaign_configs = MagicMock(
+        return_value=[
+            rule_builder.CampaignConfigFactory.build(
+                target="RSV",
+                iterations=[
+                    rule_builder.IterationFactory.build(
+                        iteration_rules=[rule_builder.PersonAgeSuppressionRuleFactory.build(type=rule_type)],
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                    )
+                ],
+            )
+        ]
+    )
+
+    service = EligibilityService(eligibility_repo, rules_repo)
+
+    # When
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
+        ),
+    )
+
+
+def test_multiple_rule_types_cause_correct_status(faker: Faker):
+    # Given
+    nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
+
+    eligibility_repo = MagicMock(spec=EligibilityRepo)
+    rules_repo = MagicMock(spec=RulesRepo)
+    eligibility_repo.get_eligibility_data = MagicMock(
+        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    )
+    rules_repo.get_campaign_configs = MagicMock(
+        return_value=[
+            rule_builder.CampaignConfigFactory.build(
+                target="RSV",
+                iterations=[
+                    rule_builder.IterationFactory.build(
+                        iteration_rules=[
+                            rule_builder.PersonAgeSuppressionRuleFactory.build(type=RuleType.suppression),
+                            rule_builder.PersonAgeSuppressionRuleFactory.build(type=RuleType.filter),
+                            rule_builder.PersonAgeSuppressionRuleFactory.build(type=RuleType.suppression),
+                        ],
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                    )
+                ],
+            )
+        ]
+    )
+
+    service = EligibilityService(eligibility_repo, rules_repo)
+
+    # When
+    actual = service.get_eligibility_status(NHSNumber(nhs_number))
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(Status.not_eligible))
+        ),
+    )
