@@ -1,6 +1,8 @@
 import logging
 from collections import defaultdict
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterator, Mapping
+from itertools import groupby
+from operator import attrgetter
 from typing import Any
 
 from hamcrest.core.string_description import StringDescription
@@ -136,6 +138,8 @@ class EligibilityService:
         or not eligible (due to "S" rules").
 
         For each condition, evaluate all iterations for inclusion or exclusion."""
+        priority_getter = attrgetter("priority")
+
         base_eligible_evaluations: dict[
             eligibility.ConditionName, dict[eligibility.Status, list[eligibility.Reason]]
         ] = defaultdict(dict)
@@ -144,28 +148,80 @@ class EligibilityService:
             for cc in base_eligible_campaigns
             if cc.current_iteration
         ]:
-            status = eligibility.Status.actionable
+            # Until we see a worse status, we assume someone is actionable for this iteration.
+            worst_status_so_far_for_condition = eligibility.Status.actionable
             exclusion_reasons, actionable_reasons = [], []
-            for iteration_rule in iteration.iteration_rules:
-                if iteration_rule.type not in (rules.RuleType.filter, rules.RuleType.suppression):
-                    continue
-                exclusion, reason = EligibilityService.evaluate_exclusion(iteration_rule, person_data)
-                if exclusion:
-                    status = min(
-                        status,
-                        eligibility.Status.not_eligible
-                        if iteration_rule.type == rules.RuleType.filter
-                        else eligibility.Status.not_actionable,
+            for _priority, iteration_rule_group in groupby(
+                sorted(iteration.iteration_rules, key=priority_getter), key=priority_getter
+            ):
+                worst_status_so_far_for_condition, group_actionable_reasons, group_exclusion_reasons = (
+                    EligibilityService.evaluate_priority_group(
+                        iteration_rule_group, person_data, worst_status_so_far_for_condition
                     )
-                    exclusion_reasons.append(reason)
-                else:
-                    actionable_reasons.append(reason)
+                )
+                actionable_reasons.extend(group_actionable_reasons)
+                exclusion_reasons.extend(group_exclusion_reasons)
             condition_entry = base_eligible_evaluations.setdefault(condition_name, {})
-            condition_status_entry = condition_entry.setdefault(status, [])
+            condition_status_entry = condition_entry.setdefault(worst_status_so_far_for_condition, [])
             condition_status_entry.extend(
-                actionable_reasons if status is eligibility.Status.actionable else exclusion_reasons
+                actionable_reasons
+                if worst_status_so_far_for_condition is eligibility.Status.actionable
+                else exclusion_reasons
             )
         return base_eligible_evaluations
+
+    @staticmethod
+    def evaluate_priority_group(
+        iteration_rule_group: Iterator[rules.IterationRule],
+        person_data: Collection[Mapping[str, Any]],
+        worst_status_so_far_for_condition: eligibility.Status,
+    ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason]]:
+        actionable_reasons, exclusion_reasons = [], []
+        exclude_capable_rules = [
+            ir for ir in iteration_rule_group if ir.type in (rules.RuleType.filter, rules.RuleType.suppression)
+        ]
+        best_status_so_far_for_priority_group = (
+            eligibility.Status.not_eligible if exclude_capable_rules else eligibility.Status.actionable
+        )
+        for iteration_rule in exclude_capable_rules:
+            exclusion, reason = EligibilityService.evaluate_exclusion(iteration_rule, person_data)
+            if exclusion:
+                best_status_so_far_for_priority_group = EligibilityService.best_status(
+                    iteration_rule.type, best_status_so_far_for_priority_group
+                )
+                exclusion_reasons.append(reason)
+            else:
+                best_status_so_far_for_priority_group = eligibility.Status.actionable
+                actionable_reasons.append(reason)
+        return (
+            EligibilityService.worst_status(best_status_so_far_for_priority_group, worst_status_so_far_for_condition),
+            actionable_reasons,
+            exclusion_reasons,
+        )
+
+    @staticmethod
+    def worst_status(*statuses: eligibility.Status) -> eligibility.Status:
+        """Pick the worst status from those given.
+
+        Here "worst" means furthest from being able to access vaccination, so not-eligible is "worse" than
+        not-actionable, and not-actionable is "worse" than actionable.
+        """
+        return min(statuses)
+
+    @staticmethod
+    def best_status(rule_type: rules.RuleType, status: eligibility.Status) -> eligibility.Status:
+        """Pick the best status between the existing status, and the status implied by
+        the rule excluding the person from vaccination.
+
+        Here "best" means closest to being able to access vaccination, so not-actionable is "better" than
+        not-eligible, and actionable is "better" than not-actionable.
+        """
+        return max(
+            status,
+            eligibility.Status.not_eligible
+            if rule_type == rules.RuleType.filter
+            else eligibility.Status.not_actionable,
+        )
 
     @staticmethod
     def get_base_eligible_conditions(
