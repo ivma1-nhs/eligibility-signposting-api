@@ -1,3 +1,3 @@
 locals {
-  stack_name = "ApiLayer"
+  stack_name = "api-layer"
 }
