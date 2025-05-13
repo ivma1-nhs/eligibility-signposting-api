@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterator, Mapping
 from itertools import groupby
 from operator import attrgetter
 from typing import Any
@@ -154,25 +154,13 @@ class EligibilityService:
             for _priority, iteration_rule_group in groupby(
                 sorted(iteration.iteration_rules, key=priority_getter), key=priority_getter
             ):
-                exclude_capable_rules = [
-                    ir for ir in iteration_rule_group if ir.type in (rules.RuleType.filter, rules.RuleType.suppression)
-                ]
-                best_status_so_far_for_priority_group = (
-                    eligibility.Status.not_eligible if exclude_capable_rules else eligibility.Status.actionable
+                worst_status_so_far_for_condition, group_actionable_reasons, group_exclusion_reasons = (
+                    EligibilityService.evaluate_priority_group(
+                        iteration_rule_group, person_data, worst_status_so_far_for_condition
+                    )
                 )
-                for iteration_rule in exclude_capable_rules:
-                    exclusion, reason = EligibilityService.evaluate_exclusion(iteration_rule, person_data)
-                    if exclusion:
-                        best_status_so_far_for_priority_group = EligibilityService.best_status(
-                            iteration_rule.type, best_status_so_far_for_priority_group
-                        )
-                        exclusion_reasons.append(reason)
-                    else:
-                        best_status_so_far_for_priority_group = eligibility.Status.actionable
-                        actionable_reasons.append(reason)
-                worst_status_so_far_for_condition = EligibilityService.worst_status(
-                    best_status_so_far_for_priority_group, worst_status_so_far_for_condition
-                )
+                actionable_reasons.extend(group_actionable_reasons)
+                exclusion_reasons.extend(group_exclusion_reasons)
             condition_entry = base_eligible_evaluations.setdefault(condition_name, {})
             condition_status_entry = condition_entry.setdefault(worst_status_so_far_for_condition, [])
             condition_status_entry.extend(
@@ -181,6 +169,35 @@ class EligibilityService:
                 else exclusion_reasons
             )
         return base_eligible_evaluations
+
+    @staticmethod
+    def evaluate_priority_group(
+        iteration_rule_group: Iterator[rules.IterationRule],
+        person_data: Collection[Mapping[str, Any]],
+        worst_status_so_far_for_condition: eligibility.Status,
+    ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason]]:
+        actionable_reasons, exclusion_reasons = [], []
+        exclude_capable_rules = [
+            ir for ir in iteration_rule_group if ir.type in (rules.RuleType.filter, rules.RuleType.suppression)
+        ]
+        best_status_so_far_for_priority_group = (
+            eligibility.Status.not_eligible if exclude_capable_rules else eligibility.Status.actionable
+        )
+        for iteration_rule in exclude_capable_rules:
+            exclusion, reason = EligibilityService.evaluate_exclusion(iteration_rule, person_data)
+            if exclusion:
+                best_status_so_far_for_priority_group = EligibilityService.best_status(
+                    iteration_rule.type, best_status_so_far_for_priority_group
+                )
+                exclusion_reasons.append(reason)
+            else:
+                best_status_so_far_for_priority_group = eligibility.Status.actionable
+                actionable_reasons.append(reason)
+        return (
+            EligibilityService.worst_status(best_status_so_far_for_priority_group, worst_status_so_far_for_condition),
+            actionable_reasons,
+            exclusion_reasons,
+        )
 
     @staticmethod
     def worst_status(*statuses: eligibility.Status) -> eligibility.Status:
