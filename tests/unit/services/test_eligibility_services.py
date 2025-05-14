@@ -15,10 +15,10 @@ from eligibility_signposting_api.model.rules import (
     RulePriority,
     RuleType,
 )
-from eligibility_signposting_api.repos import EligibilityRepo, NotFoundError, RulesRepo
+from eligibility_signposting_api.repos import CampaignRepo, NotFoundError, PersonRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
 from tests.fixtures.builders.model import rule as rule_builder
-from tests.fixtures.builders.repos.eligibility import eligibility_rows_builder
+from tests.fixtures.builders.repos.person import person_rows_builder
 from tests.fixtures.matchers.eligibility import is_condition, is_eligibility_status
 
 
@@ -29,10 +29,10 @@ def faker() -> Faker:
 
 def test_eligibility_service_returns_from_repo():
     # Given
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility = MagicMock(return_value=[])
-    service = EligibilityService(eligibility_repo, rules_repo)
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility = MagicMock(return_value=[])
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber("1234567890"))
@@ -43,10 +43,10 @@ def test_eligibility_service_returns_from_repo():
 
 def test_eligibility_service_for_nonexistent_nhs_number():
     # Given
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(side_effect=NotFoundError)
-    service = EligibilityService(eligibility_repo, rules_repo)
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(side_effect=NotFoundError)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     with pytest.raises(UnknownPersonError):
@@ -57,13 +57,11 @@ def test_not_base_eligible(faker: Faker):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
 
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, cohorts=["cohort1"])
-    )
-    rules_repo.get_campaign_configs = MagicMock(
+    person_repo.get_eligibility_data = MagicMock(return_value=person_rows_builder(nhs_number, cohorts=["cohort1"]))
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -76,7 +74,7 @@ def test_not_base_eligible(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -95,12 +93,10 @@ def test_only_live_campaigns_considered(faker: Faker):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, cohorts=["cohort1"])
-    )
-    rules_repo.get_campaign_configs = MagicMock(
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(return_value=person_rows_builder(nhs_number, cohorts=["cohort1"]))
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 name="Live",
@@ -130,7 +126,7 @@ def test_only_live_campaigns_considered(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -149,12 +145,12 @@ def test_base_eligible_and_simple_rule_includes(faker: Faker):
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=76, maximum_age=79))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -168,7 +164,7 @@ def test_base_eligible_and_simple_rule_includes(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -187,12 +183,12 @@ def test_base_eligible_but_simple_rule_excludes(faker: Faker):
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -206,7 +202,7 @@ def test_base_eligible_but_simple_rule_excludes(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -226,12 +222,12 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -259,7 +255,7 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -278,10 +274,10 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(return_value=eligibility_rows_builder(nhs_number))
-    rules_repo.get_campaign_configs = MagicMock(
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(return_value=person_rows_builder(nhs_number))
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -294,7 +290,7 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -316,12 +312,12 @@ def test_rule_types_cause_correct_statuses(rule_type: RuleType, expected_status:
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -335,7 +331,7 @@ def test_rule_types_cause_correct_statuses(rule_type: RuleType, expected_status:
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -354,12 +350,12 @@ def test_multiple_rule_types_cause_correct_status(faker: Faker):
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -383,7 +379,7 @@ def test_multiple_rule_types_cause_correct_status(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -453,14 +449,14 @@ def test_rules_with_same_priority_must_all_match_to_exclude(
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(
             nhs_number, date_of_birth=date_of_birth, postcode=Postcode("SW19 2BH"), cohorts=["cohort1"]
         )
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -474,7 +470,7 @@ def test_rules_with_same_priority_must_all_match_to_exclude(
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -494,13 +490,13 @@ def test_multiple_conditions(faker: Faker):
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=76, maximum_age=78))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
 
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(
+    campaign_repo.get_campaign_configs = MagicMock(
         return_value=[
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
@@ -523,7 +519,7 @@ def test_multiple_conditions(faker: Faker):
         ]
     )
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -594,15 +590,15 @@ def test_multiple_campaigns_for_single_condition(
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=76, maximum_age=78))
 
-    eligibility_repo = MagicMock(spec=EligibilityRepo)
-    rules_repo = MagicMock(spec=RulesRepo)
+    person_repo = MagicMock(spec=PersonRepo)
+    campaign_repo = MagicMock(spec=CampaignRepo)
 
-    eligibility_repo.get_eligibility_data = MagicMock(
-        return_value=eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_repo.get_eligibility_data = MagicMock(
+        return_value=person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
     )
-    rules_repo.get_campaign_configs = MagicMock(return_value=[campaign1, campaign2])
+    campaign_repo.get_campaign_configs = MagicMock(return_value=[campaign1, campaign2])
 
-    service = EligibilityService(eligibility_repo, rules_repo)
+    service = EligibilityService(person_repo, campaign_repo)
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))

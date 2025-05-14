@@ -13,25 +13,25 @@ logger = logging.getLogger(__name__)
 TableName = NewType("TableName", str)
 
 
-@service(qualifier="eligibility_table")
-def eligibility_table_factory(
+@service(qualifier="person_table")
+def person_table_factory(
     dynamodb_resource: Annotated[ServiceResource, Inject(qualifier="dynamodb")],
-    eligibility_table_name: Annotated[TableName, Inject(param="eligibility_table_name")],
+    person_table_name: Annotated[TableName, Inject(param="person_table_name")],
 ) -> Any:
-    table = dynamodb_resource.Table(eligibility_table_name)  # type: ignore[reportAttributeAccessIssue]
-    logger.info("eligibility_table %r", table, extra={"table": table})
+    table = dynamodb_resource.Table(person_table_name)  # type: ignore[reportAttributeAccessIssue]
+    logger.info("person_table %r", table, extra={"table": table})
     return table
 
 
 @service
-class EligibilityRepo:
+class PersonRepo:
     """Repository class for the data held about a person which may be relevant to calculating their eligibility for
     vaccination.
 
     This data is held in a handful of records in a single Dynamodb table.
     """
 
-    def __init__(self, table: Annotated[Any, Inject(qualifier="eligibility_table")]) -> None:
+    def __init__(self, table: Annotated[Any, Inject(qualifier="person_table")]) -> None:
         super().__init__()
         self.table = table
 

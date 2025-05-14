@@ -6,7 +6,7 @@ from botocore.client import BaseClient
 from hamcrest import assert_that, has_item
 
 from eligibility_signposting_api.model.rules import CampaignConfig
-from eligibility_signposting_api.repos.rules_repo import BucketName, RulesRepo
+from eligibility_signposting_api.repos.campaign_repo import BucketName, CampaignRepo
 from tests.fixtures.builders.model.rule import CampaignConfigFactory
 from tests.fixtures.matchers.rules import is_campaign_config, is_iteration, is_iteration_rule
 
@@ -24,7 +24,7 @@ def campaign_config(s3_client: BaseClient, bucket: BucketName) -> Generator[Camp
 
 def test_get_campaign_config(s3_client: BaseClient, bucket: BucketName, campaign_config: CampaignConfig):
     # Given
-    repo = RulesRepo(s3_client, bucket)
+    repo = CampaignRepo(s3_client, bucket)
 
     # When
     actual = list(repo.get_campaign_configs())

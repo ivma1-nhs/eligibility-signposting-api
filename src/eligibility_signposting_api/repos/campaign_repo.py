@@ -11,7 +11,7 @@ BucketName = NewType("BucketName", str)
 
 
 @service
-class RulesRepo:
+class CampaignRepo:
     """Repository class for Campaign Rules, which we can use to calculate a person's eligibility for vaccination.
 
     These rules are stored as JSON files in AWS S3."""

@@ -17,10 +17,10 @@ from httpx import RequestError
 from yarl import URL
 
 from eligibility_signposting_api.model import eligibility, rules
-from eligibility_signposting_api.repos.eligibility_repo import TableName
-from eligibility_signposting_api.repos.rules_repo import BucketName
+from eligibility_signposting_api.repos.campaign_repo import BucketName
+from eligibility_signposting_api.repos.person_repo import TableName
 from tests.fixtures.builders.model import rule
-from tests.fixtures.builders.repos.eligibility import eligibility_rows_builder
+from tests.fixtures.builders.repos.person import person_rows_builder
 
 if TYPE_CHECKING:
     from pytest_docker.plugin import Services
@@ -200,9 +200,9 @@ def wait_for_function_active(function_name, lambda_client):
 
 
 @pytest.fixture(scope="session")
-def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
+def person_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
     table = dynamodb_resource.create_table(
-        TableName=TableName(os.getenv("ELIGIBILITY_TABLE_NAME", "test_eligibility_datastore")),
+        TableName=TableName(os.getenv("PERSON_TABLE_NAME", "test_eligibility_datastore")),
         KeySchema=[
             {"AttributeName": "NHS_NUMBER", "KeyType": "HASH"},
             {"AttributeName": "ATTRIBUTE_TYPE", "KeyType": "RANGE"},
@@ -219,33 +219,31 @@ def eligibility_table(dynamodb_resource: ServiceResource) -> Generator[Any]:
 
 
 @pytest.fixture
-def persisted_person(eligibility_table: Any, faker: Faker) -> Generator[eligibility.NHSNumber]:
+def persisted_person(person_table: Any, faker: Faker) -> Generator[eligibility.NHSNumber]:
     nhs_number = eligibility.NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=65))
 
-    for row in (rows := eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])):
-        eligibility_table.put_item(Item=row)
+    for row in (rows := person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])):
+        person_table.put_item(Item=row)
 
     yield nhs_number
 
     for row in rows:
-        eligibility_table.delete_item(Key={"NHS_NUMBER": row["NHS_NUMBER"], "ATTRIBUTE_TYPE": row["ATTRIBUTE_TYPE"]})
+        person_table.delete_item(Key={"NHS_NUMBER": row["NHS_NUMBER"], "ATTRIBUTE_TYPE": row["ATTRIBUTE_TYPE"]})
 
 
 @pytest.fixture
-def persisted_77yo_person(eligibility_table: Any, faker: Faker) -> Generator[eligibility.NHSNumber]:
+def persisted_77yo_person(person_table: Any, faker: Faker) -> Generator[eligibility.NHSNumber]:
     nhs_number = eligibility.NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(minimum_age=77, maximum_age=77))
 
-    for row in (
-        rows := eligibility_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1", "cohort2"])
-    ):
-        eligibility_table.put_item(Item=row)
+    for row in (rows := person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1", "cohort2"])):
+        person_table.put_item(Item=row)
 
     yield nhs_number
 
     for row in rows:
-        eligibility_table.delete_item(Key={"NHS_NUMBER": row["NHS_NUMBER"], "ATTRIBUTE_TYPE": row["ATTRIBUTE_TYPE"]})
+        person_table.delete_item(Key={"NHS_NUMBER": row["NHS_NUMBER"], "ATTRIBUTE_TYPE": row["ATTRIBUTE_TYPE"]})
 
 
 @pytest.fixture(scope="session")
