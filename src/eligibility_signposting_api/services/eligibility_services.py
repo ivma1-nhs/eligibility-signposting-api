@@ -1,7 +1,8 @@
 import logging
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import cached_property
 from itertools import groupby
 from operator import attrgetter
 from typing import Any
@@ -15,29 +16,23 @@ from eligibility_signposting_api.services.rules.operators import OperatorRegistr
 
 logger = logging.getLogger(__name__)
 
+Row = Collection[Mapping[str, Any]]
+
 
 class UnknownPersonError(Exception):
     pass
 
 
-@dataclass
-class EligibilityCalculator:
-    person_data: Collection[Mapping[str, Any]]
-    campaign_configs: Collection[rules.CampaignConfig]
-
-
 @service
 class EligibilityCalculatorFactory:
-    def get(
-        self, person_data: Collection[Mapping[str, Any]], campaign_configs: Collection[rules.CampaignConfig]
-    ) -> EligibilityCalculator:
+    def get(self, person_data: Row, campaign_configs: Collection[rules.CampaignConfig]) -> "EligibilityCalculator":
         return EligibilityCalculator(person_data=person_data, campaign_configs=campaign_configs)
 
 
 @service
 class EligibilityService:
     def __init__(
-        self, person_repo: PersonRepo, campaign_repo: CampaignRepo, calculator_factory: EligibilityCalculatorFactory
+        self, person_repo: PersonRepo, campaign_repo: CampaignRepo, calculator_factory: "EligibilityCalculatorFactory"
     ) -> None:
         super().__init__()
         self.person_repo = person_repo
@@ -62,58 +57,61 @@ class EligibilityService:
             except NotFoundError as e:
                 raise UnknownPersonError from e
             else:
-                return self.evaluate_eligibility(campaign_configs, person_data)
+                calculator = self.calculator_factory.get(person_data, campaign_configs)
+                return calculator.evaluate_eligibility()
 
         raise UnknownPersonError  # pragma: no cover
 
-    @staticmethod
-    def evaluate_eligibility(
-        campaign_configs: Collection[rules.CampaignConfig], person_data: Collection[Mapping[str, Any]]
-    ) -> eligibility.EligibilityStatus:
+
+@dataclass
+class EligibilityCalculator:
+    person_data: Row
+    campaign_configs: Collection[rules.CampaignConfig]
+
+    results: dict[eligibility.ConditionName, eligibility.Condition] = field(default_factory=dict)
+
+    @cached_property
+    def condition_names(self) -> set[eligibility.ConditionName]:
+        return {
+            eligibility.ConditionName(cc.target)
+            for cc in self.campaign_configs
+            if cc.campaign_live and cc.current_iteration
+        }
+
+    def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Calculate a person's eligibility for vaccination."""
 
         # Get all iterations for which the person is base eligible, i.e. those which *might* provide eligibility
         # due to cohort membership.
-        base_eligible_campaigns, condition_names = EligibilityService.get_base_eligible_campaigns(
-            campaign_configs, person_data
-        )
+        base_eligible_campaigns = self.get_base_eligible_campaigns()
+
         # Evaluate iteration rules to see if the person is actionable, not actionable (due to "F" rules),
         # or not eligible (due to "S" rules")
-        evaluations = EligibilityService.evaluate_for_base_eligible_campaigns(base_eligible_campaigns, person_data)
+        evaluations = self.evaluate_for_base_eligible_campaigns(base_eligible_campaigns)
 
-        conditions: dict[eligibility.ConditionName, eligibility.Condition] = {}
         # Add all not base eligible conditions to result set.
-        conditions |= EligibilityService.get_not_base_eligible_conditions(base_eligible_campaigns, condition_names)
+        self.get_not_base_eligible_conditions(base_eligible_campaigns)
         # Add all base eligible conditions to result set.
-        conditions |= EligibilityService.get_base_eligible_conditions(evaluations)
+        self.get_base_eligible_conditions(evaluations)
 
-        return eligibility.EligibilityStatus(conditions=list(conditions.values()))
+        return eligibility.EligibilityStatus(conditions=list(self.results.values()))
 
-    @staticmethod
-    def get_base_eligible_campaigns(
-        campaign_configs: Collection[rules.CampaignConfig], person_data: Collection[Mapping[str, Any]]
-    ) -> tuple[list[rules.CampaignConfig], set[eligibility.ConditionName]]:
+    def get_base_eligible_campaigns(self) -> list[rules.CampaignConfig]:
         """Get all campaigns for which the person is base eligible, i.e. those which *might* provide eligibility.
 
         Build and return a collection of campaigns for which the person is base eligible (using cohorts).
         Also build and return a set of conditions in the campaigns while we are here.
         """
-        condition_names: set[eligibility.ConditionName] = set()
         base_eligible_campaigns: list[rules.CampaignConfig] = []
 
-        for campaign_config in (cc for cc in campaign_configs if cc.campaign_live and cc.current_iteration):
-            condition_name = eligibility.ConditionName(campaign_config.target)
-            condition_names.add(condition_name)
-            base_eligible = EligibilityService.evaluate_base_eligibility(campaign_config.current_iteration, person_data)
+        for campaign_config in (cc for cc in self.campaign_configs if cc.campaign_live and cc.current_iteration):
+            base_eligible = self.evaluate_base_eligibility(campaign_config.current_iteration)
             if base_eligible:
                 base_eligible_campaigns.append(campaign_config)
 
-        return base_eligible_campaigns, condition_names
+        return base_eligible_campaigns
 
-    @staticmethod
-    def evaluate_base_eligibility(
-        iteration: rules.Iteration | None, person_data: Collection[Mapping[str, Any]]
-    ) -> set[str]:
+    def evaluate_base_eligibility(self, iteration: rules.Iteration | None) -> set[str]:
         """Return cohorts for which person is base eligible."""
         if not iteration:
             return set()
@@ -122,35 +120,30 @@ class EligibilityService:
         }
 
         cohorts_row: Mapping[str, dict[str, dict[str, dict[str, Any]]]] = next(
-            (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "COHORTS"), {}
+            (r for r in self.person_data if r.get("ATTRIBUTE_TYPE", "") == "COHORTS"), {}
         )
         person_cohorts = set(cohorts_row.get("COHORT_MAP", {}).get("cohorts", {}).get("M", {}).keys())
 
         return iteration_cohorts.intersection(person_cohorts)
 
-    @staticmethod
     def get_not_base_eligible_conditions(
+        self,
         base_eligible_campaigns: Collection[rules.CampaignConfig],
-        condition_names: Collection[eligibility.ConditionName],
-    ) -> dict[eligibility.ConditionName, eligibility.Condition]:
+    ) -> None:
         """Get conditions where the person is not base eligible,
         i.e. is not is the cohort for any campaign iteration."""
 
         # for each condition:
         # if the person isn't base eligible for any iteration,
         #         the person is not (base) eligible for the condition
-        not_eligible_conditions: dict[eligibility.ConditionName, eligibility.Condition] = {}
-        for condition_name in condition_names:
+        for condition_name in self.condition_names:
             if condition_name not in {eligibility.ConditionName(cc.target) for cc in base_eligible_campaigns}:
-                not_eligible_conditions[condition_name] = eligibility.Condition(
+                self.results[condition_name] = eligibility.Condition(
                     condition_name=condition_name, status=eligibility.Status.not_eligible, reasons=[]
                 )
-        return not_eligible_conditions
 
-    @staticmethod
     def evaluate_for_base_eligible_campaigns(
-        base_eligible_campaigns: Collection[rules.CampaignConfig],
-        person_data: Collection[Mapping[str, Any]],
+        self, base_eligible_campaigns: Collection[rules.CampaignConfig]
     ) -> dict[eligibility.ConditionName, dict[eligibility.Status, list[eligibility.Reason]]]:
         """Evaluate iteration rules to see if the person is actionable, not actionable (due to "F" rules),
         or not eligible (due to "S" rules").
@@ -173,9 +166,7 @@ class EligibilityService:
                 sorted(iteration.iteration_rules, key=priority_getter), key=priority_getter
             ):
                 worst_status_so_far_for_condition, group_actionable_reasons, group_exclusion_reasons = (
-                    EligibilityService.evaluate_priority_group(
-                        iteration_rule_group, person_data, worst_status_so_far_for_condition
-                    )
+                    self.evaluate_priority_group(iteration_rule_group, worst_status_so_far_for_condition)
                 )
                 actionable_reasons.extend(group_actionable_reasons)
                 exclusion_reasons.extend(group_exclusion_reasons)
@@ -188,10 +179,9 @@ class EligibilityService:
             )
         return base_eligible_evaluations
 
-    @staticmethod
     def evaluate_priority_group(
+        self,
         iteration_rule_group: Iterator[rules.IterationRule],
-        person_data: Collection[Mapping[str, Any]],
         worst_status_so_far_for_condition: eligibility.Status,
     ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason]]:
         actionable_reasons, exclusion_reasons = [], []
@@ -202,9 +192,9 @@ class EligibilityService:
             eligibility.Status.not_eligible if exclude_capable_rules else eligibility.Status.actionable
         )
         for iteration_rule in exclude_capable_rules:
-            exclusion, reason = EligibilityService.evaluate_exclusion(iteration_rule, person_data)
+            exclusion, reason = self.evaluate_exclusion(iteration_rule)
             if exclusion:
-                best_status_so_far_for_priority_group = EligibilityService.best_status(
+                best_status_so_far_for_priority_group = self.best_status(
                     iteration_rule.type, best_status_so_far_for_priority_group
                 )
                 exclusion_reasons.append(reason)
@@ -212,7 +202,7 @@ class EligibilityService:
                 best_status_so_far_for_priority_group = eligibility.Status.actionable
                 actionable_reasons.append(reason)
         return (
-            EligibilityService.worst_status(best_status_so_far_for_priority_group, worst_status_so_far_for_condition),
+            self.worst_status(best_status_so_far_for_priority_group, worst_status_so_far_for_condition),
             actionable_reasons,
             exclusion_reasons,
         )
@@ -241,32 +231,27 @@ class EligibilityService:
             else eligibility.Status.not_actionable,
         )
 
-    @staticmethod
     def get_base_eligible_conditions(
+        self,
         base_eligible_evaluations: Mapping[
             eligibility.ConditionName, Mapping[eligibility.Status, list[eligibility.Reason]]
         ],
-    ) -> dict[eligibility.ConditionName, eligibility.Condition]:
+    ) -> None:
         """Get conditions where the person is base eligible, but may be either actionable, not actionable,
         or not eligible."""
 
         # for each condition for which the person is base eligible:
         #   what is the "best" status, i.e. closest to actionable? Add the condition to the result with that status.
-        eligible_conditions: dict[eligibility.ConditionName, eligibility.Condition] = {}
         for condition_name, reasons_by_status in base_eligible_evaluations.items():
             best_status = max(reasons_by_status.keys())
-            eligible_conditions[condition_name] = eligibility.Condition(
+            self.results[condition_name] = eligibility.Condition(
                 condition_name=condition_name, status=best_status, reasons=reasons_by_status[best_status]
             )
-        return eligible_conditions
 
-    @staticmethod
-    def evaluate_exclusion(
-        iteration_rule: rules.IterationRule, person_data: Collection[Mapping[str, str | None]]
-    ) -> tuple[bool, eligibility.Reason]:
+    def evaluate_exclusion(self, iteration_rule: rules.IterationRule) -> tuple[bool, eligibility.Reason]:
         """Evaluate if a particular rule excludes this person. Return the result, and the reason for the result."""
-        attribute_value = EligibilityService.get_attribute_value(iteration_rule, person_data)
-        exclusion, reason = EligibilityService.evaluate_rule(iteration_rule, attribute_value)
+        attribute_value = self.get_attribute_value(iteration_rule)
+        exclusion, reason = self.evaluate_rule(iteration_rule, attribute_value)
         reason = eligibility.Reason(
             rule_name=eligibility.RuleName(iteration_rule.name),
             rule_type=eligibility.RuleType(iteration_rule.type),
@@ -278,15 +263,12 @@ class EligibilityService:
         )
         return exclusion, reason
 
-    @staticmethod
-    def get_attribute_value(
-        iteration_rule: rules.IterationRule, person_data: Collection[Mapping[str, str | None]]
-    ) -> str | None:
+    def get_attribute_value(self, iteration_rule: rules.IterationRule) -> str | None:
         """Pull out the correct attribute for a rule from the person's data."""
         match iteration_rule.attribute_level:
             case rules.RuleAttributeLevel.PERSON:
                 person: Mapping[str, str | None] | None = next(
-                    (r for r in person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
+                    (r for r in self.person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(iteration_rule.attribute_name) if person else None
             case _:  # pragma: no cover
