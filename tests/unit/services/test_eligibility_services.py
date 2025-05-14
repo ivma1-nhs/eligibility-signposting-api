@@ -17,6 +17,7 @@ from eligibility_signposting_api.model.rules import (
 )
 from eligibility_signposting_api.repos import CampaignRepo, NotFoundError, PersonRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
+from eligibility_signposting_api.services.eligibility_services import EligibilityCalculatorFactory
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
 from tests.fixtures.matchers.eligibility import is_condition, is_eligibility_status
@@ -32,7 +33,7 @@ def test_eligibility_service_returns_from_repo():
     person_repo = MagicMock(spec=PersonRepo)
     campaign_repo = MagicMock(spec=CampaignRepo)
     person_repo.get_eligibility = MagicMock(return_value=[])
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber("1234567890"))
@@ -46,7 +47,7 @@ def test_eligibility_service_for_nonexistent_nhs_number():
     person_repo = MagicMock(spec=PersonRepo)
     campaign_repo = MagicMock(spec=CampaignRepo)
     person_repo.get_eligibility_data = MagicMock(side_effect=NotFoundError)
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     with pytest.raises(UnknownPersonError):
@@ -74,7 +75,7 @@ def test_not_base_eligible(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -126,7 +127,7 @@ def test_only_live_campaigns_considered(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -164,7 +165,7 @@ def test_base_eligible_and_simple_rule_includes(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -202,7 +203,7 @@ def test_base_eligible_but_simple_rule_excludes(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -255,7 +256,7 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -290,7 +291,7 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -331,7 +332,7 @@ def test_rule_types_cause_correct_statuses(rule_type: RuleType, expected_status:
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -379,7 +380,7 @@ def test_multiple_rule_types_cause_correct_status(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -470,7 +471,7 @@ def test_rules_with_same_priority_must_all_match_to_exclude(
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -519,7 +520,7 @@ def test_multiple_conditions(faker: Faker):
         ]
     )
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
@@ -598,7 +599,7 @@ def test_multiple_campaigns_for_single_condition(
     )
     campaign_repo.get_campaign_configs = MagicMock(return_value=[campaign1, campaign2])
 
-    service = EligibilityService(person_repo, campaign_repo)
+    service = EligibilityService(person_repo, campaign_repo, MagicMock(spec=EligibilityCalculatorFactory))
 
     # When
     actual = service.get_eligibility_status(NHSNumber(nhs_number))
