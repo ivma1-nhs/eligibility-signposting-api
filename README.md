@@ -70,29 +70,29 @@ The following software packages, or their equivalents, are expected to be instal
 
 #### Environment variables - Local
 
-| Variable                 | Default                      | Description                                                                                                                                                            |
-|--------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AWS_ACCESS_KEY_ID`      | `dummy_key`                  | AWS Access Key                                                                                                                                                         |
-| `AWS_DEFAULT_REGION`     | `eu-west-1`                  | AWS Region                                                                                                                                                             |
-| `AWS_SECRET_ACCESS_KEY`  | `dummy_secret`               | AWS Secret Access Key                                                                                                                                                  |
-| `DYNAMODB_ENDPOINT`      | `http://localhost:4566`      | Endpoint for the app to access DynamoDB                                                                                                                                |
-| `S3_ENDPOINT`            | `http://localhost:4566`      | Endpoint for the app to access S3                                                                                                                                      |
-| `ELIGIBILITY_TABLE_NAME` | `test_eligibility_datastore` | AWS DynamoDB table for person data.                                                                                                                                    |
-| `LOG_LEVEL`              | `WARNING`                    | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels)                                                           |
-| `RULES_BUCKET_NAME`      | `test-rules-bucket`          | AWS S3 bucket from which to read rules.                                                                                                                                |
+| Variable                | Default                      | Description                                                                                                                                                            |
+|-------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AWS_ACCESS_KEY_ID`     | `dummy_key`                  | AWS Access Key                                                                                                                                                         |
+| `AWS_DEFAULT_REGION`    | `eu-west-1`                  | AWS Region                                                                                                                                                             |
+| `AWS_SECRET_ACCESS_KEY` | `dummy_secret`               | AWS Secret Access Key                                                                                                                                                  |
+| `DYNAMODB_ENDPOINT`     | `http://localhost:4566`      | Endpoint for the app to access DynamoDB                                                                                                                                |
+| `S3_ENDPOINT`           | `http://localhost:4566`      | Endpoint for the app to access S3                                                                                                                                      |
+| `PERSON_TABLE_NAME`     | `test_eligibility_datastore` | AWS DynamoDB table for person data.                                                                                                                                    |
+| `LOG_LEVEL`             | `WARNING`                    | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |
+| `RULES_BUCKET_NAME`     | `test-rules-bucket`          | AWS S3 bucket from which to read rules.                                                                                                                                |
 
 #### Environment variables - DEV, PROD or PRE-PROD
 
-| Variable                 | Default                      | Description                                                                                                                                                            | Comments                                                                                                                       |
-|--------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `AWS_DEFAULT_REGION`     | `eu-west-1`                  | AWS Region                                                                                                                                                             |                                                                                                                                |
-| `AWS_ACCESS_KEY_ID`      | None                         | AWS Access Key                                                                                                                                                         | **AWS_ACCESS_KEY_ID** is set to None, <br/>because it is provided by the AWS environment automatically.                        |
-| `AWS_SECRET_ACCESS_KEY`  | None                         | AWS Secret Access Key                                                                                                                                                  | **AWS_SECRET_ACCESS_KEY** is set to None, <br/>because it is provided by the AWS environment automatically.                    |
-| `DYNAMODB_ENDPOINT`      | None                         | Endpoint for the app to access DynamoDB                                                                                                                                | **DYNAMODB_ENDPOINT** are set to None, <br/>since we are using aws service default endpoints which are provided automatically. |
-| `S3_ENDPOINT`            | None                         | Endpoint for the app to access S3                                                                                                                                      | **S3_ENDPOINT** are set to None, <br/>since we are using aws service default endpoints which are provided automatically.       |
-| `ELIGIBILITY_TABLE_NAME` | `test_eligibility_datastore` | AWS DynamoDB table for person data.                                                                                                                                    |                                                                                                                                |
-| `LOG_LEVEL`              | `WARNING`                    | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |                                                                                                                                |
-| `RULES_BUCKET_NAME`      | `test-rules-bucket`          | AWS S3 bucket from which to read rules.                                                                                                                                |                                                                                                                                |
+| Variable                | Default                      | Description                                                                                                                                                            | Comments                                                                                                                       |
+|-------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| `AWS_DEFAULT_REGION`    | `eu-west-1`                  | AWS Region                                                                                                                                                             |                                                                                                                                |
+| `AWS_ACCESS_KEY_ID`     | None                         | AWS Access Key                                                                                                                                                         | **AWS_ACCESS_KEY_ID** is set to None, <br/>because it is provided by the AWS environment automatically.                        |
+| `AWS_SECRET_ACCESS_KEY` | None                         | AWS Secret Access Key                                                                                                                                                  | **AWS_SECRET_ACCESS_KEY** is set to None, <br/>because it is provided by the AWS environment automatically.                    |
+| `DYNAMODB_ENDPOINT`     | None                         | Endpoint for the app to access DynamoDB                                                                                                                                | **DYNAMODB_ENDPOINT** are set to None, <br/>since we are using aws service default endpoints which are provided automatically. |
+| `S3_ENDPOINT`           | None                         | Endpoint for the app to access S3                                                                                                                                      | **S3_ENDPOINT** are set to None, <br/>since we are using aws service default endpoints which are provided automatically.       |
+| `PERSON_TABLE_NAME`     | `test_eligibility_datastore` | AWS DynamoDB table for person data.                                                                                                                                    |                                                                                                                                |
+| `LOG_LEVEL`             | `WARNING`                    | Logging level. Must be one of `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` as per [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) |                                                                                                                                |
+| `RULES_BUCKET_NAME`     | `test-rules-bucket`          | AWS S3 bucket from which to read rules.                                                                                                                                |                                                                                                                                |
 
 ## Usage
 
@@ -201,8 +201,8 @@ graph TB
         end
         subgraph "Data Access Layer"
             direction TB
-            RepoElig["repos/eligibility_repo.py"]
-            RepoRules["repos/rules_repo.py"]
+            PersonRepo["repos/person_repo.py"]
+            CampaignRepo["repos/campaign_repo.py"]
             Factory["repos/factory.py, exceptions.py"]
         end
         subgraph "Models"
@@ -216,10 +216,10 @@ graph TB
     App -->|injects| View
     View -->|calls| Service
     Service -->|calls| Operators
-    Service -->|calls| RepoElig
-    Service -->|calls| RepoRules
-    RepoElig -->|uses| DynamoDB
-    RepoRules -->|uses| S3Bucket
+    Service -->|calls| PersonRepo
+    Service -->|calls| CampaignRepo
+    PersonRepo -->|uses| DynamoDB
+    CampaignRepo -->|uses| S3Bucket
     View -->|uses| ResponseModel
     App -->|reads| Config
     Service -->|uses| ModelElig

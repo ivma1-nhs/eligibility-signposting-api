@@ -7,7 +7,7 @@ from faker import Faker
 from eligibility_signposting_api.model import eligibility
 
 
-def eligibility_rows_builder(
+def person_rows_builder(
     nhs_number: eligibility.NHSNumber,
     *,
     date_of_birth: eligibility.DateOfBirth | None = None,
