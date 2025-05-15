@@ -19,7 +19,8 @@ Row = Collection[Mapping[str, Any]]
 
 @service
 class EligibilityCalculatorFactory:
-    def get(self, person_data: Row, campaign_configs: Collection[rules.CampaignConfig]) -> EligibilityCalculator:
+    @staticmethod
+    def get(person_data: Row, campaign_configs: Collection[rules.CampaignConfig]) -> EligibilityCalculator:
         return EligibilityCalculator(person_data=person_data, campaign_configs=campaign_configs)
 
 
