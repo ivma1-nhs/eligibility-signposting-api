@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from _operator import attrgetter
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping
@@ -17,7 +19,7 @@ Row = Collection[Mapping[str, Any]]
 
 @service
 class EligibilityCalculatorFactory:
-    def get(self, person_data: Row, campaign_configs: Collection[rules.CampaignConfig]) -> "EligibilityCalculator":
+    def get(self, person_data: Row, campaign_configs: Collection[rules.CampaignConfig]) -> EligibilityCalculator:
         return EligibilityCalculator(person_data=person_data, campaign_configs=campaign_configs)
 
 
