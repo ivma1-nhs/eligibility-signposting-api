@@ -16,11 +16,6 @@ from tests.fixtures.builders.repos.person import person_rows_builder
 from tests.fixtures.matchers.eligibility import is_condition, is_eligibility_status
 
 
-@pytest.fixture(scope="session")
-def faker() -> Faker:
-    return Faker("en_UK")
-
-
 def test_eligibility_service_returns_from_repo():
     # Given
     person_repo = MagicMock(spec=PersonRepo)

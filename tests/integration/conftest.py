@@ -31,11 +31,6 @@ AWS_REGION = "eu-west-1"
 
 
 @pytest.fixture(scope="session")
-def faker() -> Faker:
-    return Faker("en_UK")
-
-
-@pytest.fixture(scope="session")
 def localstack(request: pytest.FixtureRequest) -> URL:
     if url := os.getenv("RUNNING_LOCALSTACK_URL", None):
         logger.info("localstack already running on %s", url)

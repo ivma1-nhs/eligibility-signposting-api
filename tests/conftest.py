@@ -1,4 +1,5 @@
 import pytest
+from faker import Faker
 from flask import Flask
 from flask.testing import FlaskClient
 
@@ -13,3 +14,8 @@ def app() -> Flask:
 @pytest.fixture(scope="session")
 def client(app) -> FlaskClient:
     return app.test_client()
+
+
+@pytest.fixture(scope="session")
+def faker() -> Faker:
+    return Faker("en_UK")
