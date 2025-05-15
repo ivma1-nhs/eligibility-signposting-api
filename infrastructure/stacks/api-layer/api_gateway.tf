@@ -60,7 +60,7 @@ resource "aws_api_gateway_stage" "eligibility-signposting-api" {
   ]
 }
 
-resource "aws_api_gateway_method_settings" "example" {
+resource "aws_api_gateway_method_settings" "check_eligibility" {
   rest_api_id = module.eligibility_signposting_api_gateway.rest_api_id
   stage_name  = aws_api_gateway_stage.eligibility-signposting-api.stage_name
   method_path = "*/*"
@@ -74,4 +74,33 @@ resource "aws_api_gateway_method_settings" "example" {
     module.eligibility_signposting_api_gateway.api_gateway_account,
     module.eligibility_signposting_api_gateway.logging_policy_attachment
   ]
+}
+
+resource "aws_api_gateway_domain_name" "check_eligibility" {
+  count                                  = var.environment == "dev" && local.workspace != "dev" ? 0 : 1
+  domain_name                            = "${local.api_subdomain}.${local.api_domain_name}"
+  regional_certificate_arn               = data.aws_acm_certificate.imported_cert.arn
+  ownership_verification_certificate_arn = data.aws_acm_certificate.validation_cert.arn
+
+  mutual_tls_authentication {
+    truststore_uri     = "s3://${module.s3_truststore_bucket.storage_bucket_name}/truststore.pem"
+    truststore_version = aws_s3_object.pem_file.version_id
+  }
+
+  security_policy = "TLS_1_2"
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_base_path_mapping" "eligibility-signposting-api" {
+  count       = var.environment == "dev" && local.workspace != "dev" ? 0 : 1
+  api_id      = module.eligibility_signposting_api_gateway.rest_api_id
+  stage_name  = aws_api_gateway_stage.eligibility-signposting-api.stage_name
+  domain_name = "${local.api_subdomain}.${local.api_domain_name}"
 }
