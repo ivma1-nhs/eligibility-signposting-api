@@ -6,18 +6,11 @@ from faker import Faker
 from freezegun import freeze_time
 from hamcrest import assert_that, contains_exactly, empty, has_item, has_items
 
+from eligibility_signposting_api.model import rules as rules_model
 from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Postcode, Status
-from eligibility_signposting_api.model.rules import (
-    CampaignConfig,
-    IterationDate,
-    IterationRule,
-    RuleComparator,
-    RulePriority,
-    RuleType,
-)
 from eligibility_signposting_api.repos import CampaignRepo, NotFoundError, PersonRepo
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
-from eligibility_signposting_api.services.eligibility_services import EligibilityCalculatorFactory
+from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculatorFactory
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
 from tests.fixtures.matchers.eligibility import is_condition, is_eligibility_status
@@ -284,7 +277,7 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
                 target="RSV",
                 iterations=[
                     rule_builder.IterationFactory.build(
-                        iteration_date=IterationDate(datetime.date(2025, 4, 26)),
+                        iteration_date=rules_model.IterationDate(datetime.date(2025, 4, 26)),
                     )
                 ],
             )
@@ -303,12 +296,12 @@ def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
 @pytest.mark.parametrize(
     ("rule_type", "expected_status"),
     [
-        (RuleType.suppression, Status.not_actionable),
-        (RuleType.filter, Status.not_eligible),
-        (RuleType.redirect, Status.actionable),
+        (rules_model.RuleType.suppression, Status.not_actionable),
+        (rules_model.RuleType.filter, Status.not_eligible),
+        (rules_model.RuleType.redirect, Status.actionable),
     ],
 )
-def test_rule_types_cause_correct_statuses(rule_type: RuleType, expected_status: Status, faker: Faker):
+def test_rule_types_cause_correct_statuses(rule_type: rules_model.RuleType, expected_status: Status, faker: Faker):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
@@ -364,13 +357,13 @@ def test_multiple_rule_types_cause_correct_status(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_rules=[
                             rule_builder.PersonAgeSuppressionRuleFactory.build(
-                                priority=RulePriority(5), type=RuleType.suppression
+                                priority=rules_model.RulePriority(5), type=rules_model.RuleType.suppression
                             ),
                             rule_builder.PersonAgeSuppressionRuleFactory.build(
-                                priority=RulePriority(10), type=RuleType.filter
+                                priority=rules_model.RulePriority(10), type=rules_model.RuleType.filter
                             ),
                             rule_builder.PersonAgeSuppressionRuleFactory.build(
-                                priority=RulePriority(15), type=RuleType.suppression
+                                priority=rules_model.RulePriority(15), type=rules_model.RuleType.suppression
                             ),
                         ],
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
@@ -399,52 +392,56 @@ def test_multiple_rule_types_cause_correct_status(faker: Faker):
     [
         (
             "two rules, both exclude, same priority, should exclude",
-            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=RulePriority(5)),
-            rule_builder.PostcodeSuppressionRuleFactory.build(priority=RulePriority(5)),
+            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
+            rule_builder.PostcodeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
             Status.not_actionable,
         ),
         (
             "two rules, rule 1 excludes, same priority, should allow",
-            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=RulePriority(5)),
+            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
             rule_builder.PostcodeSuppressionRuleFactory.build(
-                priority=RulePriority(5), comparator=RuleComparator("NW1")
+                priority=rules_model.RulePriority(5), comparator=rules_model.RuleComparator("NW1")
             ),
             Status.actionable,
         ),
         (
             "two rules, rule 2 excludes, same priority, should allow",
             rule_builder.PersonAgeSuppressionRuleFactory.build(
-                priority=RulePriority(5), comparator=RuleComparator("-65")
+                priority=rules_model.RulePriority(5), comparator=rules_model.RuleComparator("-65")
             ),
-            rule_builder.PostcodeSuppressionRuleFactory.build(priority=RulePriority(5)),
+            rule_builder.PostcodeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
             Status.actionable,
         ),
         (
             "two rules, rule 1 excludes, different priority, should exclude",
-            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=RulePriority(5)),
+            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
             rule_builder.PostcodeSuppressionRuleFactory.build(
-                priority=RulePriority(10), comparator=RuleComparator("NW1")
+                priority=rules_model.RulePriority(10), comparator=rules_model.RuleComparator("NW1")
             ),
             Status.not_actionable,
         ),
         (
             "two rules, rule 2 excludes, different priority, should exclude",
             rule_builder.PersonAgeSuppressionRuleFactory.build(
-                priority=RulePriority(5), comparator=RuleComparator("-65")
+                priority=rules_model.RulePriority(5), comparator=rules_model.RuleComparator("-65")
             ),
-            rule_builder.PostcodeSuppressionRuleFactory.build(priority=RulePriority(10)),
+            rule_builder.PostcodeSuppressionRuleFactory.build(priority=rules_model.RulePriority(10)),
             Status.not_actionable,
         ),
         (
             "two rules, both excludes, different priority, should exclude",
-            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=RulePriority(5)),
-            rule_builder.PostcodeSuppressionRuleFactory.build(priority=RulePriority(10)),
+            rule_builder.PersonAgeSuppressionRuleFactory.build(priority=rules_model.RulePriority(5)),
+            rule_builder.PostcodeSuppressionRuleFactory.build(priority=rules_model.RulePriority(10)),
             Status.not_actionable,
         ),
     ],
 )
 def test_rules_with_same_priority_must_all_match_to_exclude(
-    test_comment: str, rule1: IterationRule, rule2: IterationRule, expected_status: Status, faker: Faker
+    test_comment: str,
+    rule1: rules_model.IterationRule,
+    rule2: rules_model.IterationRule,
+    expected_status: Status,
+    faker: Faker,
 ):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
@@ -585,7 +582,7 @@ def test_multiple_conditions(faker: Faker):
     ],
 )
 def test_multiple_campaigns_for_single_condition(
-    test_comment: str, campaign1: CampaignConfig, campaign2: CampaignConfig, faker: Faker
+    test_comment: str, campaign1: rules_model.CampaignConfig, campaign2: rules_model.CampaignConfig, faker: Faker
 ):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
