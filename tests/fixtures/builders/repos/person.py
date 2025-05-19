@@ -47,7 +47,7 @@ def person_rows_builder(  # noqa:PLR0913
     gender: Literal["0", "1"] | None = ...,
     postcode: str | None = ...,
     cohorts: Sequence[str] | None = ...,
-    vaccines: Sequence[str] | None = ...,
+    vaccines: Sequence[tuple[str, date]] | None = ...,
     icb: str | None = ...,
     gp_practice: str | None = ...,
     pcn: str | None = ...,
@@ -66,7 +66,7 @@ def person_rows_builder(  # noqa:PLR0913
     gender = gender if gender is not ... else choice(("0", "1"))
     postcode = postcode if postcode is not ... else faker.postcode()
     cohorts = cohorts if cohorts is not ... else ["cohort-a", "cohort-b"]
-    vaccines = vaccines if vaccines is not ... else ["RSV", "COVID"]
+    vaccines = vaccines if vaccines is not ... else [("RSV", faker.past_date("-5y")), ("COVID", faker.past_date("-5y"))]
     icb = icb if icb is not ... else faker.icb()
     gp_practice = gp_practice if gp_practice is not ... else faker.gp_practice()
     pcn = pcn if pcn is not ... else faker.pcn()
@@ -109,11 +109,11 @@ def person_rows_builder(  # noqa:PLR0913
         {
             "NHS_NUMBER": key,
             "ATTRIBUTE_TYPE": vaccine,
-            "LAST_SUCCESSFUL_DATE": faker.past_date().strftime("%Y%m%d"),
+            "LAST_SUCCESSFUL_DATE": last_successful_date.strftime("%Y%m%d"),
             "OPTOUT": choice(["Y", "N"]),
-            "LAST_INVITE_DATE": faker.past_date().strftime("%Y%m%d"),
+            "LAST_INVITE_DATE": faker.past_date("-5y").strftime("%Y%m%d"),
         }
-        for vaccine in vaccines
+        for vaccine, last_successful_date in vaccines
     )
 
     shuffle(rows)
