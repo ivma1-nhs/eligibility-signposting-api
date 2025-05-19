@@ -4,6 +4,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from eligibility_signposting_api.app import create_app
+from tests.fixtures.builders.providers import PersonDetailProvider
 
 
 @pytest.fixture(scope="session")
@@ -18,4 +19,6 @@ def client(app) -> FlaskClient:
 
 @pytest.fixture(scope="session")
 def faker() -> Faker:
-    return Faker("en_UK")
+    faker = Faker("en_UK")
+    faker.add_provider(PersonDetailProvider)
+    return faker
