@@ -7,7 +7,7 @@ from faker import Faker
 
 from tests.conftest import PersonDetailProvider
 
-Gender = Literal["0", "1"]
+Gender = Literal["0", "1", "2", "9"]  # 0 - Not known, 1- Male, 2 - Female, 9 - Not specified. I know, right?
 
 
 def person_rows_builder(  # noqa:PLR0913
