@@ -2,10 +2,12 @@ import string
 from collections.abc import Sequence
 from datetime import date
 from random import choice, randint, shuffle
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 from faker import Faker
 from faker.providers import BaseProvider
+
+Gender = Literal["0", "1"]
 
 
 class PersonDetailProvider(BaseProvider):
@@ -44,7 +46,7 @@ def person_rows_builder(  # noqa:PLR0913
     nhs_number: str,
     *,
     date_of_birth: date | None = ...,
-    gender: Literal["0", "1"] | None = ...,
+    gender: Gender | None = ...,
     postcode: str | None = ...,
     cohorts: Sequence[str] | None = ...,
     vaccines: Sequence[tuple[str, date]] | None = ...,
@@ -63,7 +65,7 @@ def person_rows_builder(  # noqa:PLR0913
 
     key = f"PERSON#{nhs_number}"
     date_of_birth = date_of_birth if date_of_birth is not ... else faker.date_of_birth(minimum_age=18, maximum_age=99)
-    gender = gender if gender is not ... else choice(("0", "1"))
+    gender = gender if gender is not ... else choice(get_args(Gender))
     postcode = postcode if postcode is not ... else faker.postcode()
     cohorts = cohorts if cohorts is not ... else ["cohort-a", "cohort-b"]
     vaccines = vaccines if vaccines is not ... else [("RSV", faker.past_date("-5y")), ("COVID", faker.past_date("-5y"))]
