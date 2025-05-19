@@ -1,35 +1,46 @@
-import random
+import string
 from collections.abc import Sequence
+from datetime import date
+from random import choice, randint
 from typing import Any
 
 from faker import Faker
+from faker.providers import BaseProvider
 
-from eligibility_signposting_api.model import eligibility
+
+class IcbProvider(BaseProvider):
+    def icb(self) -> str | None:
+        if randint(0, 3):
+            return f"{choice(string.ascii_uppercase)}{choice(string.ascii_uppercase)}{choice(string.digits)}"
+
+        return None
 
 
-def person_rows_builder(
-    nhs_number: eligibility.NHSNumber,
+def person_rows_builder(  # noqa:PLR0913
+    nhs_number: str,
     *,
-    date_of_birth: eligibility.DateOfBirth | None = None,
-    postcode: eligibility.Postcode | None = None,
+    date_of_birth: date | None = None,
+    postcode: str | None = None,
     cohorts: Sequence[str] | None = None,
     vaccines: Sequence[str] | None = None,
-    icb: eligibility.ICB |None = None,
+    icb: str | None = None,
 ) -> list[dict[str, Any]]:
     faker = Faker("en_UK")
+    faker.add_provider(IcbProvider)
 
     key = f"PERSON#{nhs_number}"
-    date_of_birth = date_of_birth or eligibility.DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=99))
-    postcode = postcode or eligibility.Postcode(faker.postcode())
+    date_of_birth = date_of_birth or faker.date_of_birth(minimum_age=18, maximum_age=99)
+    postcode = postcode or faker.postcode()
     cohorts = cohorts if cohorts is not None else ["cohort-a", "cohort-b"]
     vaccines = vaccines if vaccines is not None else ["RSV", "COVID"]
+    icb = icb or faker.icb()
     rows: list[dict[str, Any]] = [
         {
             "NHS_NUMBER": key,
             "ATTRIBUTE_TYPE": "PERSON",
             "DATE_OF_BIRTH": date_of_birth.strftime("%Y%m%d"),
             "POSTCODE": postcode,
-            "ICB": icb
+            "ICB": icb,
         },
         {
             "NHS_NUMBER": key,
@@ -48,7 +59,7 @@ def person_rows_builder(
             "NHS_NUMBER": key,
             "ATTRIBUTE_TYPE": vaccine,
             "LAST_SUCCESSFUL_DATE": faker.past_date().strftime("%Y%m%d"),
-            "OPTOUT": random.choice(["Y", "N"]),
+            "OPTOUT": choice(["Y", "N"]),
             "LAST_INVITE_DATE": faker.past_date().strftime("%Y%m%d"),
         }
         for vaccine in vaccines

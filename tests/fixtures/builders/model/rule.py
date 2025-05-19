@@ -55,6 +55,7 @@ class PostcodeSuppressionRuleFactory(IterationRuleFactory):
     attribute_name = rules.RuleAttributeName("POSTCODE")
     comparator = rules.RuleComparator("SW19")
 
+
 class ICBSuppressionRuleFactory(IterationRuleFactory):
     type = rules.RuleType.filter
     name = rules.RuleName("Not in QE1")

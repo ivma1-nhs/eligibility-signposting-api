@@ -6,7 +6,7 @@ from freezegun import freeze_time
 from hamcrest import assert_that, contains_exactly, empty, has_item, has_items
 
 from eligibility_signposting_api.model import rules as rules_model
-from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Postcode, Status, ICB
+from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Postcode, Status
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
@@ -582,11 +582,12 @@ def test_multiple_campaigns_for_single_condition(
         ("QE1", rules_model.RuleType.filter, Status.actionable),
         ("QWU", rules_model.RuleType.filter, Status.not_eligible),
         ("", rules_model.RuleType.filter, Status.not_eligible),
-        (None, rules_model.RuleType.filter, Status.not_eligible)
+        (None, rules_model.RuleType.filter, Status.not_eligible),
     ],
 )
-def test_base_eligible_and_icb_example(icb: ICB, rule_type: rules_model.RuleType, expected_status: Status, faker: Faker):
-
+def test_base_eligible_and_icb_example(
+    icb: str | None, rule_type: rules_model.RuleType, expected_status: Status, faker: Faker
+):
     # Given
     nhs_number = NHSNumber(f"5{faker.random_int(max=999999999):09d}")
 
