@@ -5,7 +5,7 @@ from typing import Any, Literal, get_args
 
 from faker import Faker
 
-from tests.fixtures.builders.providers import PersonDetailProvider
+from tests.conftest import PersonDetailProvider
 
 Gender = Literal["0", "1"]
 
