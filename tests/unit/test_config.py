@@ -4,8 +4,8 @@ import pytest
 from yarl import URL
 
 from eligibility_signposting_api.config import LOG_LEVEL, AwsAccessKey, AwsRegion, AwsSecretAccessKey, config
-from eligibility_signposting_api.repos.eligibility_repo import TableName
-from eligibility_signposting_api.repos.rules_repo import BucketName
+from eligibility_signposting_api.repos.campaign_repo import BucketName
+from eligibility_signposting_api.repos.person_repo import TableName
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +27,7 @@ def test_config_with_env_variable(monkeypatch):
     assert config_data_with_env["aws_secret_access_key"] is None
     assert config_data_with_env["aws_default_region"] == AwsRegion("eu-west-1")
     assert config_data_with_env["dynamodb_endpoint"] is None
-    assert config_data_with_env["eligibility_table_name"] == TableName("test_eligibility_datastore")
+    assert config_data_with_env["person_table_name"] == TableName("test_eligibility_datastore")
     assert config_data_with_env["s3_endpoint"] is None
     assert config_data_with_env["rules_bucket_name"] == BucketName("test-rules-bucket")
     assert config_data_with_env["log_level"] == LOG_LEVEL
@@ -44,7 +44,7 @@ def test_config_without_env_variable():
     assert config_data_without_env["aws_secret_access_key"] == AwsSecretAccessKey("dummy_secret")
     assert config_data_without_env["aws_default_region"] == AwsRegion("eu-west-1")
     assert config_data_without_env["dynamodb_endpoint"] == URL("http://localhost:4566")
-    assert config_data_without_env["eligibility_table_name"] == TableName("test_eligibility_datastore")
+    assert config_data_without_env["person_table_name"] == TableName("test_eligibility_datastore")
     assert config_data_without_env["s3_endpoint"] == URL("http://localhost:4566")
     assert config_data_without_env["rules_bucket_name"] == BucketName("test-rules-bucket")
     assert config_data_without_env["log_level"] == LOG_LEVEL

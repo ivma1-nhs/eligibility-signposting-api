@@ -7,8 +7,8 @@ from typing import Any, NewType
 from pythonjsonlogger.json import JsonFormatter
 from yarl import URL
 
-from eligibility_signposting_api.repos.eligibility_repo import TableName
-from eligibility_signposting_api.repos.rules_repo import BucketName
+from eligibility_signposting_api.repos.campaign_repo import BucketName
+from eligibility_signposting_api.repos.person_repo import TableName
 
 LOG_LEVEL = logging.getLevelNamesMapping().get(os.getenv("LOG_LEVEL", ""), logging.WARNING)
 
@@ -19,7 +19,7 @@ AwsSecretAccessKey = NewType("AwsSecretAccessKey", str)
 
 @cache
 def config() -> dict[str, Any]:
-    eligibility_table_name = TableName(os.getenv("ELIGIBILITY_TABLE_NAME", "test_eligibility_datastore"))
+    person_table_name = TableName(os.getenv("PERSON_TABLE_NAME", "test_eligibility_datastore"))
     rules_bucket_name = BucketName(os.getenv("RULES_BUCKET_NAME", "test-rules-bucket"))
     aws_default_region = AwsRegion(os.getenv("AWS_DEFAULT_REGION", "eu-west-1"))
     log_level = LOG_LEVEL
@@ -30,7 +30,7 @@ def config() -> dict[str, Any]:
             "aws_default_region": aws_default_region,
             "aws_secret_access_key": None,
             "dynamodb_endpoint": None,
-            "eligibility_table_name": eligibility_table_name,
+            "person_table_name": person_table_name,
             "s3_endpoint": None,
             "rules_bucket_name": rules_bucket_name,
             "log_level": log_level,
@@ -41,7 +41,7 @@ def config() -> dict[str, Any]:
         "aws_default_region": aws_default_region,
         "aws_secret_access_key": AwsSecretAccessKey(os.getenv("AWS_SECRET_ACCESS_KEY", "dummy_secret")),
         "dynamodb_endpoint": URL(os.getenv("DYNAMODB_ENDPOINT", "http://localhost:4566")),
-        "eligibility_table_name": eligibility_table_name,
+        "person_table_name": person_table_name,
         "s3_endpoint": URL(os.getenv("S3_ENDPOINT", "http://localhost:4566")),
         "rules_bucket_name": rules_bucket_name,
         "log_level": log_level,

@@ -1,5 +1,5 @@
-from .eligibility_repo import EligibilityRepo
+from .campaign_repo import CampaignRepo
 from .exceptions import NotFoundError
-from .rules_repo import RulesRepo
+from .person_repo import PersonRepo
 
-__all__ = ["EligibilityRepo", "NotFoundError", "RulesRepo"]
+__all__ = ["CampaignRepo", "NotFoundError", "PersonRepo"]
