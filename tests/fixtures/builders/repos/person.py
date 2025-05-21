@@ -79,7 +79,9 @@ def person_rows_builder(  # noqa:PLR0913
         {
             "NHS_NUMBER": key,
             "ATTRIBUTE_TYPE": vaccine,
-            "LAST_SUCCESSFUL_DATE": last_successful_date.strftime("%Y%m%d"),
+            "LAST_SUCCESSFUL_DATE": (
+                last_successful_date.strftime("%Y%m%d") if last_successful_date else last_successful_date
+            ),
             "OPTOUT": choice(["Y", "N"]),
             "LAST_INVITE_DATE": faker.past_date("-5y").strftime("%Y%m%d"),
         }

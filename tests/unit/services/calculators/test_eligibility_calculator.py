@@ -5,6 +5,7 @@ from faker import Faker
 from freezegun import freeze_time
 from hamcrest import assert_that, contains_exactly, empty, has_item, has_items
 
+from eligibility_signposting_api.model import rules
 from eligibility_signposting_api.model import rules as rules_model
 from eligibility_signposting_api.model.eligibility import ConditionName, DateOfBirth, NHSNumber, Postcode, Status
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
@@ -615,4 +616,73 @@ def test_base_eligible_and_icb_example(
         is_eligibility_status().with_conditions(
             has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("last_successful_date", "expected_status", "test_comment"),
+    [
+        ("20240101", Status.not_actionable, "last_successful_date is a past date"),
+        ("20250101", Status.not_actionable, "last_successful_date is today"),
+        # Below is a non-ideal situation (might be due to a data entry error), so considered as actionable.
+        ("20260101", Status.actionable, "last_successful_date is a future date"),
+        ("", Status.actionable, "last_successful_date is empty"),
+        (None, Status.actionable, "last_successful_date is none"),
+    ],
+)
+@freeze_time("2025-01-01")
+def test_not_actionable_status_on_target_when_last_successful_date_lte_today(
+    last_successful_date, expected_status, test_comment, faker: Faker
+):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+
+    target_rows = person_rows_builder(
+        nhs_number,
+        cohorts=["cohort1"],
+        vaccines=[
+            (
+                "RSV",
+                datetime.datetime.strptime(last_successful_date, "%Y%m%d").replace(tzinfo=datetime.UTC)
+                if last_successful_date
+                else None,
+            )
+        ],
+    )
+
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_rules=[
+                        rule_builder.IterationRuleFactory.build(
+                            type=rules.RuleType.suppression,
+                            name=rules.RuleName("You have already been vaccinated against RSV"),
+                            description=rules.RuleDescription("Exclude anyone Completed RSV Vaccination"),
+                            operator=rules.RuleOperator.day_lte,
+                            attribute_level=rules.RuleAttributeLevel.TARGET,
+                            attribute_name=rules.RuleAttributeName("LAST_SUCCESSFUL_DATE"),
+                            comparator=rules.RuleComparator("0"),
+                            attribute_target=rules.RuleAttributeTarget("RSV"),
+                        )
+                    ],
+                    iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(target_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
+        ),
+        test_comment,
     )
