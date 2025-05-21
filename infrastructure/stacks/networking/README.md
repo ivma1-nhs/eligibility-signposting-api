@@ -96,7 +96,7 @@ CNAME record for the subdomain in question.
 
 1. In AWS Console, for the environment account, navigate to Certificate Manager --> List certificates.
 2. In `Domains` download the CSV of the CNAME details.
-3. Email `england.dnsteam@nhs.net` with subject `eligibility-signposting-api.nhs.uk - Requesting a sub domain - <env>` where 'env' is the
+3. Email `england.dnsteam@nhs.net` with subject `eligibility-signposting-api.nhs.uk - Requesting a sub domain - <env>` where `env` is the
    environment to be provisioned (e.g. `dev` would be our development environment), attaching the exported csv and with the message:
 
    ```text
@@ -180,12 +180,8 @@ Edd
 
 #### Add root and intermediary CAs to our truststore
 
-1. Download the INT CA certificates from [here](https://digital.nhs.uk/services/spine/updating-nhs-public-key-infrastructure-certificates/g2-certificate-technical-implementation#certificate-downloads)
-
-  * NHS INT Root Authority G2 (Trusted Root)
-  * NHS Authentication G2 (Intermediate/Subordinate)
-
-2. `cat intermediate-cert.pem root-cert.pem > truststore.pem` **in this order** to create a truststore.pem. This is used in `infrastructure/stacks/api-layer/truststore_s3_bucket.tf`
+1. Download the INT CA certificates from [here](https://digital.nhs.uk/services/spine/updating-nhs-public-key-infrastructure-certificates/g2-certificate-technical-implementation#certificate-downloads), specifically the NHS INT Root Authority G2 (Trusted Root) and NHS Authentication G2 (Intermediate/Subordinate)
+2.  `cat intermediate-cert.pem root-cert.pem > truststore.pem` **in this order** to create a truststore.pem. This is used in `infrastructure/stacks/api-layer/truststore_s3_bucket.tf`
 3. Upload the truststore.pem to the s3 location and bucket in point 2.
 
 #### Validate CSR
@@ -200,4 +196,22 @@ It should return an 'OK' response.
 
 #### Upload the CSR to SSM (both certificate and private key)
 
-`infrastructure/stacks/networking/ssm.tf` contains the Terraform definition for the SSM parameters into which the CA Certificate, CSR and private key should be stored for the given environment.
+`infrastructure/stacks/networking/ssm.tf` contains the Terraform definition for the SSM parameters into which the CA Certificate, CSR and private key should be stored for the given environment:
+
+* `/${var.environment}/mtls/api_ca_cert` - store the combined / chain CA cert created in `truststore.pem` above.
+* `/${var.environment}/mtls/api_client_cert` - store the signed CSR cert provided in the above process.
+* `/${var.environment}/mtls/api_private_key_cert` - store the private key generated when creating the CSR above.
+
+#### Upload the mTLS secrets to Proxygen
+
+This needs the Proxygen CLI. From the specification repository, after logging into AWS for the appropriate environment, run:
+
+```bash
+    mkdir -p ~/.proxygen && \
+    aws ssm get-parameter --name /$$AWS_ENV/mtls/api_client_cert --with-decryption | jq ".Parameter.Value" --raw-output \
+    > ~/.proxygen/client_cert.pem && \
+    aws ssm get-parameter --name /$$AWS_ENV/mtls/api_private_key_cert --with-decryption | jq ".Parameter.Value" --raw-output \
+    > ~/.proxygen/private_key.pem && \
+    proxygen secret put --mtls-cert ~/.proxygen/client_cert.pem --mtls-key ~/.proxygen/private_key.pem $$APIM_ENV $$secret_name && \
+    rm ~/.proxygen/client_cert.pem ~/.proxygen/private_key.pem
+```
