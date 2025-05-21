@@ -199,3 +199,5 @@ openssl verify -CAfile truststore.crt new-cert.crt
 It should return an 'OK' response.
 
 #### Upload the CSR to SSM (both certificate and private key)
+
+`infrastructure/stacks/networking/ssm.tf` contains the Terraform definition for the SSM parameters into which the CA Certificate, CSR and private key should be stored for the given environment.
