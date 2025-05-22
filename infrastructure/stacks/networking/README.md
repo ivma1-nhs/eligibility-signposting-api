@@ -255,7 +255,10 @@ Store the following in AWS SSM Parameter Store (see `infrastructure/stacks/netwo
 
 #### 6. Upload the mTLS Secrets to Proxygen
 
-Requires the [Proxygen CLI](https://github.com/NHSDigital/proxygen-cli). After logging into AWS for the appropriate environment, run:
+Requires the [Proxygen CLI](https://github.com/NHSDigital/proxygen-cli). The [specification repository](https://github.com/NHSDigital/eligibility-signposting-api-specification)
+includes the CLI, and includes details of how to set up authentication with Proxygen.
+
+After logging into AWS for the appropriate environment, run:
 
 ```bash
 mkdir -p ~/.proxygen
