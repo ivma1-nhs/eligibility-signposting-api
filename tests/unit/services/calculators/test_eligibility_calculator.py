@@ -620,20 +620,21 @@ def test_base_eligible_and_icb_example(
 
 
 @pytest.mark.parametrize(
-    ("last_successful_date", "expected_status", "test_comment"),
+    ("vaccine", "last_successful_date", "expected_status", "test_comment"),
     [
-        ("20240601", Status.not_actionable, "last_successful_date is a past date"),
-        ("20250101", Status.not_actionable, "last_successful_date is today"),
+        ("RSV", "20240601", Status.not_actionable, "last_successful_date is a past date"),
+        ("RSV", "20250101", Status.not_actionable, "last_successful_date is today"),
         # Below is a non-ideal situation (might be due to a data entry error), so considered as actionable.
-        ("20260101", Status.actionable, "last_successful_date is a future date"),
-        ("20230601", Status.actionable, "last_successful_date is a long past"),
-        ("", Status.actionable, "last_successful_date is empty"),
-        (None, Status.actionable, "last_successful_date is none"),
+        ("RSV", "20260101", Status.actionable, "last_successful_date is a future date"),
+        ("RSV", "20230601", Status.actionable, "last_successful_date is a long past"),
+        ("RSV", "", Status.actionable, "last_successful_date is empty"),
+        ("RSV", None, Status.actionable, "last_successful_date is none"),
+        ("COVID", "20240601", Status.actionable, "No RSV row"),
     ],
 )
 @freeze_time("2025-01-01")
 def test_not_actionable_status_on_target_when_last_successful_date_lte_today(
-    last_successful_date, expected_status, test_comment, faker: Faker
+    vaccine: str, last_successful_date: str, expected_status: Status, test_comment: str, faker: Faker
 ):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
@@ -643,7 +644,7 @@ def test_not_actionable_status_on_target_when_last_successful_date_lte_today(
         cohorts=["cohort1"],
         vaccines=[
             (
-                "RSV",
+                vaccine,
                 datetime.datetime.strptime(last_successful_date, "%Y%m%d").replace(tzinfo=datetime.UTC)
                 if last_successful_date
                 else None,
