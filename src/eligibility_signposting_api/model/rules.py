@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import typing
+from collections import Counter
 from datetime import UTC, date, datetime
 from enum import StrEnum
 from functools import cached_property
 from operator import attrgetter
 from typing import Literal, NewType
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
@@ -161,6 +162,15 @@ class CampaignConfig(BaseModel):
     @staticmethod
     def serialize_dates(v: date, _info: SerializationInfo) -> str:
         return v.strftime("%Y%m%d")
+
+    @model_validator(mode="after")
+    def check_no_overlapping_iterations(self) -> typing.Self:
+        iterations_by_date = Counter([i.iteration_date for i in self.iterations])
+        if multiple_found := next(((d, c) for d, c in iterations_by_date.most_common() if c > 1), None):
+            iteration_date, count = multiple_found
+            message = f"{count} iterations with iteration date {iteration_date} in campaign {self.id}"
+            raise ValueError(message)
+        return self
 
     @cached_property
     def campaign_live(self) -> bool:
