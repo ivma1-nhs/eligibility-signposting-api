@@ -5,6 +5,20 @@ from faker import Faker
 from tests.fixtures.builders.model.rule import IterationFactory, RawCampaignConfigFactory
 
 
+def test_start_date_must_be_before_end_date(faker: Faker):
+    # Given
+    start_date = faker.date_object()
+    end_date = start_date - relativedelta(days=1)
+
+    # When, Then
+    with pytest.raises(
+        ValueError,
+        match=r"1 validation error for CampaignConfig\n"
+        r".*start date .* after end date",
+    ):
+        RawCampaignConfigFactory.build(start_date=start_date, end_date=end_date)
+
+
 def test_iteration_with_overlapping_start_dates_not_allowed(faker: Faker):
     # Given
     start_date = faker.date_object()

@@ -164,6 +164,13 @@ class CampaignConfig(BaseModel):
         return v.strftime("%Y%m%d")
 
     @model_validator(mode="after")
+    def check_start_and_end_dates_sensible(self) -> typing.Self:
+        if self.start_date > self.end_date:
+            message = f"start date {self.start_date} after end date {self.end_date}"
+            raise ValueError(message)
+        return self
+
+    @model_validator(mode="after")
     def check_no_overlapping_iterations(self) -> typing.Self:
         iterations_by_date = Counter([i.iteration_date for i in self.iterations])
         if multiple_found := next(((d, c) for d, c in iterations_by_date.most_common() if c > 1), None):
