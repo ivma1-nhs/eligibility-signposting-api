@@ -5,7 +5,20 @@ from faker import Faker
 from tests.fixtures.builders.model.rule import IterationFactory, RawCampaignConfigFactory
 
 
-def test_start_date_must_be_before_end_date(faker: Faker):
+def test_campaign_must_have_at_least_one_iteration():
+    # Given
+
+    # When, Then
+    with pytest.raises(
+        ValueError,
+        match=r"1 validation error for CampaignConfig\n"
+        r"iterations\n"
+        r".*List should have at least 1 item",
+    ):
+        RawCampaignConfigFactory.build(iterations=[])
+
+
+def test_campaign_start_date_must_be_before_end_date(faker: Faker):
     # Given
     start_date = faker.date_object()
     end_date = start_date - relativedelta(days=1)
