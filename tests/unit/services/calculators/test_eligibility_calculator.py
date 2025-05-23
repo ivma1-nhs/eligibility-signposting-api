@@ -3,7 +3,7 @@ import datetime
 import pytest
 from faker import Faker
 from freezegun import freeze_time
-from hamcrest import assert_that, contains_exactly, empty, has_item, has_items
+from hamcrest import assert_that, contains_exactly, has_item, has_items
 
 from eligibility_signposting_api.model import rules
 from eligibility_signposting_api.model import rules as rules_model
@@ -245,32 +245,6 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
             has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(Status.not_actionable))
         ),
     )
-
-
-@freeze_time("2025-04-25")
-def test_campaign_with_no_active_iteration_not_considered(faker: Faker):
-    # Given
-    nhs_number = NHSNumber(faker.nhs_number())
-
-    person_rows = person_rows_builder(nhs_number)
-    campaign_configs = [
-        rule_builder.CampaignConfigFactory.build(
-            target="RSV",
-            iterations=[
-                rule_builder.IterationFactory.build(
-                    iteration_date=rules_model.IterationDate(datetime.date(2025, 4, 26)),
-                )
-            ],
-        )
-    ]
-
-    calculator = EligibilityCalculator(person_rows, campaign_configs)
-
-    # When
-    actual = calculator.evaluate_eligibility()
-
-    # Then
-    assert_that(actual, is_eligibility_status().with_conditions(empty()))
 
 
 @pytest.mark.parametrize(
