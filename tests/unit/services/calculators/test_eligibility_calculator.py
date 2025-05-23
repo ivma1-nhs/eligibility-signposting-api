@@ -649,7 +649,7 @@ def test_base_eligible_and_icb_example(
     ],
 )
 @freeze_time("2025-01-01")
-def test_not_actionable_status_on_target_when_last_successful_date_lte_today(
+def test_status_on_target_based_on_last_successful_date(
     vaccine: str, last_successful_date: str, expected_status: Status, test_comment: str, faker: Faker
 ):
     # Given
@@ -717,4 +717,49 @@ def test_not_actionable_status_on_target_when_last_successful_date_lte_today(
             has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
         ),
         test_comment,
+    )
+
+
+def test_status_on_cohort_attribute_level(faker: Faker):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+
+    person_row = person_rows_builder(nhs_number, cohorts=["cohort1", "covid_eligibility_complaint_list"])
+
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                    iteration_rules=[
+                        rule_builder.IterationRuleFactory.build(
+                            type=rules.RuleType.filter,
+                            name=rules.RuleName("Exclude those in a complaint cohort"),
+                            description=rules.RuleDescription(
+                                "Ensure anyone who has registered a complaint is not shown as eligible"
+                            ),
+                            priority=15,
+                            operator=rules.RuleOperator.member_of,
+                            attribute_level=rules.RuleAttributeLevel.COHORT,
+                            attribute_name=rules.RuleAttributeName("COHORT_LABEL"),
+                            comparator=rules.RuleComparator("covid_eligibility_complaint_list"),
+                        )
+                    ],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_row, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(Status.not_eligible))
+        ),
     )

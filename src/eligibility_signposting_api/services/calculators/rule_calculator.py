@@ -40,6 +40,18 @@ class RuleCalculator:
                     (r for r in self.person_data if r.get("ATTRIBUTE_TYPE", "") == "PERSON"), None
                 )
                 attribute_value = person.get(self.rule.attribute_name) if person else None
+            case rules.RuleAttributeLevel.COHORT:
+                cohorts: Mapping[str, str | None] | None = next(
+                    (r for r in self.person_data if r.get("ATTRIBUTE_TYPE", "") == "COHORTS"), None
+                )
+                if self.rule.attribute_name == "COHORT_LABEL":
+                    cohort_map = self.get_value(cohorts, "COHORT_MAP")
+                    cohorts_dict = self.get_value(cohort_map, "cohorts")
+                    m_dict = self.get_value(cohorts_dict, "M")
+                    person_cohorts: set[str] = set(m_dict.keys())
+                    attribute_value = ",".join(person_cohorts)
+                else:
+                    attribute_value = cohorts.get(self.rule.attribute_name) if cohorts else None
             case rules.RuleAttributeLevel.TARGET:
                 target: Mapping[str, str | None] | None = next(
                     (r for r in self.person_data if r.get("ATTRIBUTE_TYPE", "") == self.rule.attribute_target), None
@@ -49,6 +61,11 @@ class RuleCalculator:
                 msg = f"{self.rule.attribute_level} not implemented"
                 raise NotImplementedError(msg)
         return attribute_value
+
+    @staticmethod
+    def get_value(dictionary: Mapping[str, Any] | None, key: str) -> dict:
+        v = dictionary.get(key, {}) if isinstance(dictionary, dict) else {}
+        return v if isinstance(v, dict) else {}
 
     def evaluate_rule(self, attribute_value: str | None) -> tuple[eligibility.Status, str]:
         """Evaluate a rule against a person data attribute. Return the result, and the reason for the result."""
