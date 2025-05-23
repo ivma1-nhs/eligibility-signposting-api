@@ -32,7 +32,7 @@ class EligibilityCalculator:
 
     @property
     def active_campaigns(self) -> list[rules.CampaignConfig]:
-        return [cc for cc in self.campaign_configs if cc.campaign_live and cc.current_iteration]
+        return [cc for cc in self.campaign_configs if cc.campaign_live]
 
     @property
     def campaigns_grouped_by_condition_name(
@@ -71,11 +71,8 @@ class EligibilityCalculator:
             return base_eligible_campaigns
         return []
 
-    def check_base_eligibility(self, iteration: rules.Iteration | None) -> bool:
+    def check_base_eligibility(self, iteration: rules.Iteration) -> bool:
         """Return cohorts for which person is base eligible."""
-
-        if not iteration:
-            return False  # pragma: no cover
         iteration_cohorts: set[str] = {
             cohort.cohort_label for cohort in iteration.iteration_cohorts if cohort.cohort_label
         }
@@ -100,7 +97,7 @@ class EligibilityCalculator:
 
         status_with_reasons: dict[eligibility.Status, list[eligibility.Reason]] = defaultdict()
 
-        for iteration in [cc.current_iteration for cc in campaign_group if cc.current_iteration]:
+        for iteration in [cc.current_iteration for cc in campaign_group]:
             # Until we see a worse status, we assume someone is actionable for this iteration.
             worst_status = eligibility.Status.actionable
             exclusion_reasons, actionable_reasons = [], []
