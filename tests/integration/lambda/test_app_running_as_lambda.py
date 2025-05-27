@@ -39,7 +39,7 @@ def test_install_and_call_lambda_flask(
             "http": {
                 "sourceIp": "192.0.0.1",
                 "method": "GET",
-                "path": f"/eligibility/{persisted_person}",
+                "path": f"/patient-check/{persisted_person}",
                 "protocol": "HTTP/1.1",
             }
         },
@@ -76,7 +76,7 @@ def test_install_and_call_flask_lambda_over_http(
     # Given
 
     # When
-    response = httpx.get(str(flask_function_url / "eligibility" / persisted_person))
+    response = httpx.get(str(flask_function_url / "patient-check" / persisted_person))
 
     # Then
     assert_that(
@@ -97,7 +97,7 @@ def test_install_and_call_flask_lambda_with_unknown_nhs_number(
     nhs_number = NHSNumber(faker.nhs_number())
 
     # When
-    response = httpx.get(str(flask_function_url / "eligibility" / nhs_number))
+    response = httpx.get(str(flask_function_url / "patient-check" / nhs_number))
 
     # Then
     assert_that(

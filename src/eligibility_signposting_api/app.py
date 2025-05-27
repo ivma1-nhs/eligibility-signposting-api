@@ -35,7 +35,7 @@ def create_app() -> Flask:
     logger.info("app created")
 
     # Register views & error handler
-    app.register_blueprint(eligibility_blueprint, url_prefix="/eligibility")
+    app.register_blueprint(eligibility_blueprint, url_prefix="/patient-check")
     app.register_error_handler(Exception, handle_exception)
 
     # Set up dependency injection using wireup
