@@ -689,7 +689,7 @@ def test_status_on_target_based_on_last_successful_date(
                         ),
                         rule_builder.IterationRuleFactory.build(
                             type=rules.RuleType.suppression,
-                            name=rules.RuleName("You have a future booking to be vaccinated against RSV"),
+                            name=rules.RuleName("You have a vaccination date in the future for RSV"),
                             description=rules.RuleDescription("Exclude anyone with future Completed RSV Vaccination"),
                             priority=10,
                             operator=rules.RuleOperator.day_lte,
@@ -762,4 +762,49 @@ def test_status_on_cohort_attribute_level(faker: Faker):
         is_eligibility_status().with_conditions(
             has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(Status.not_eligible))
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_cohorts", "cohort_label", "expected_status", "test_comment"),
+    [
+        (["cohort1", "cohort2"], "cohort1", Status.not_actionable, "matches the cohort label"),
+        (["cohort2", "cohort3"], "cohort1", Status.actionable, "doesn't match the cohort label"),
+    ],
+)
+def test_status_if_iteration_rules_contains_cohort_label_field(
+    person_cohorts, cohort_label: str, expected_status: Status, test_comment: str, faker: Faker
+):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=person_cohorts)
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.IterationCohortFactory.build(cohort_label="cohort1"),
+                        rule_builder.IterationCohortFactory.build(cohort_label="cohort2"),
+                    ],
+                    iteration_rules=[rule_builder.PersonAgeSuppressionRuleFactory.build(cohort_label=cohort_label)],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
+        ),
+        test_comment,
     )
