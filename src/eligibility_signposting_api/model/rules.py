@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import typing
+from collections import Counter
 from datetime import UTC, date, datetime
 from enum import StrEnum
 from functools import cached_property
 from operator import attrgetter
 from typing import Literal, NewType
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
@@ -146,7 +147,7 @@ class CampaignConfig(BaseModel):
     end_date: EndDate = Field(..., alias="EndDate")
     approval_minimum: int | None = Field(None, alias="ApprovalMinimum")
     approval_maximum: int | None = Field(None, alias="ApprovalMaximum")
-    iterations: list[Iteration] = Field(..., alias="Iterations")
+    iterations: list[Iteration] = Field(..., min_length=1, alias="Iterations")
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True, "extra": "ignore"}
 
@@ -162,16 +163,47 @@ class CampaignConfig(BaseModel):
     def serialize_dates(v: date, _info: SerializationInfo) -> str:
         return v.strftime("%Y%m%d")
 
+    @model_validator(mode="after")
+    def check_start_and_end_dates_sensible(self) -> typing.Self:
+        if self.start_date > self.end_date:
+            message = f"start date {self.start_date} after end date {self.end_date}"
+            raise ValueError(message)
+        return self
+
+    @model_validator(mode="after")
+    def check_no_overlapping_iterations(self) -> typing.Self:
+        iterations_by_date = Counter([i.iteration_date for i in self.iterations])
+        if multiple_found := next(((d, c) for d, c in iterations_by_date.most_common() if c > 1), None):
+            iteration_date, count = multiple_found
+            message = f"{count} iterations with iteration date {iteration_date} in campaign {self.id}"
+            raise ValueError(message)
+        return self
+
+    @model_validator(mode="after")
+    def check_has_iteration_from_start(self) -> typing.Self:
+        iterations_by_date = sorted(self.iterations, key=attrgetter("iteration_date"))
+        if first_iteration := next(iter(iterations_by_date), None):
+            if first_iteration.iteration_date > self.start_date:
+                message = (
+                    f"campaign {self.id} starts on {self.start_date}, "
+                    f"1st iteration starts later - {first_iteration.iteration_date}"
+                )
+                raise ValueError(message)
+            return self
+        # Should never happen, since we are constraining self.iterations with a min_length of 1
+        message = f"campaign {self.id} has no iterations."
+        raise ValueError(message)
+
     @cached_property
     def campaign_live(self) -> bool:
         today = datetime.now(tz=UTC).date()
         return self.start_date <= today <= self.end_date
 
     @cached_property
-    def current_iteration(self) -> Iteration | None:
+    def current_iteration(self) -> Iteration:
         today = datetime.now(tz=UTC).date()
         iterations_by_date_descending = sorted(self.iterations, key=attrgetter("iteration_date"), reverse=True)
-        return next((i for i in iterations_by_date_descending if i.iteration_date <= today), None)
+        return next(i for i in iterations_by_date_descending if i.iteration_date <= today)
 
 
 class Rules(BaseModel):

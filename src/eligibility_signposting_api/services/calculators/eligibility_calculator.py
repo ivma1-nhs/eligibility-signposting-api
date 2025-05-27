@@ -4,6 +4,7 @@ from _operator import attrgetter
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field
+from functools import cached_property
 from itertools import groupby
 from typing import Any
 
@@ -13,6 +14,7 @@ from eligibility_signposting_api.model import eligibility, rules
 from eligibility_signposting_api.services.calculators.rule_calculator import RuleCalculator
 
 Row = Collection[Mapping[str, Any]]
+magic_cohort = "elid_all_people"
 
 
 @service
@@ -31,7 +33,7 @@ class EligibilityCalculator:
 
     @property
     def active_campaigns(self) -> list[rules.CampaignConfig]:
-        return [cc for cc in self.campaign_configs if cc.campaign_live and cc.current_iteration]
+        return [cc for cc in self.campaign_configs if cc.campaign_live]
 
     @property
     def campaigns_grouped_by_condition_name(
@@ -43,6 +45,13 @@ class EligibilityCalculator:
             sorted(self.active_campaigns, key=attrgetter("target")), key=attrgetter("target")
         ):
             yield condition_name, list(campaign_group)
+
+    @cached_property
+    def person_cohorts(self) -> set[str]:
+        cohorts_row: Mapping[str, dict[str, dict[str, dict[str, Any]]]] = next(
+            (row for row in self.person_data if row.get("ATTRIBUTE_TYPE") == "COHORTS"), {}
+        )
+        return set(cohorts_row.get("COHORT_MAP", {}).get("cohorts", {}).get("M", {}).keys())
 
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Iterates over campaign groups, evaluates eligibility, and returns a consolidated status."""
@@ -70,19 +79,14 @@ class EligibilityCalculator:
             return base_eligible_campaigns
         return []
 
-    def check_base_eligibility(self, iteration: rules.Iteration | None) -> set[str]:
+    def check_base_eligibility(self, iteration: rules.Iteration) -> bool:
         """Return cohorts for which person is base eligible."""
-
-        if not iteration:
-            return set()
         iteration_cohorts: set[str] = {
             cohort.cohort_label for cohort in iteration.iteration_cohorts if cohort.cohort_label
         }
-        cohorts_row: Mapping[str, dict[str, dict[str, dict[str, Any]]]] = next(
-            (row for row in self.person_data if row.get("ATTRIBUTE_TYPE") == "COHORTS"), {}
-        )
-        person_cohorts: set[str] = set(cohorts_row.get("COHORT_MAP", {}).get("cohorts", {}).get("M", {}).keys())
-        return iteration_cohorts & person_cohorts
+        if magic_cohort in iteration_cohorts:
+            return True
+        return bool(iteration_cohorts & self.person_cohorts)
 
     def evaluate_eligibility_by_iteration_rules(
         self, campaign_group: list[rules.CampaignConfig]
@@ -96,7 +100,7 @@ class EligibilityCalculator:
 
         status_with_reasons: dict[eligibility.Status, list[eligibility.Reason]] = defaultdict()
 
-        for iteration in [cc.current_iteration for cc in campaign_group if cc.current_iteration]:
+        for iteration in [cc.current_iteration for cc in campaign_group]:
             # Until we see a worse status, we assume someone is actionable for this iteration.
             worst_status = eligibility.Status.actionable
             exclusion_reasons, actionable_reasons = [], []
@@ -122,8 +126,12 @@ class EligibilityCalculator:
         worst_status_so_far_for_condition: eligibility.Status,
     ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason]]:
         exclusion_reasons, actionable_reasons = [], []
+
         exclude_capable_rules = [
-            ir for ir in iteration_rule_group if ir.type in (rules.RuleType.filter, rules.RuleType.suppression)
+            ir
+            for ir in iteration_rule_group
+            if ir.type in (rules.RuleType.filter, rules.RuleType.suppression)
+            and (ir.cohort_label is None or (ir.cohort_label in self.person_cohorts))
         ]
 
         best_status = eligibility.Status.not_eligible if exclude_capable_rules else eligibility.Status.actionable

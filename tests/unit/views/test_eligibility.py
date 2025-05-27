@@ -43,7 +43,7 @@ def test_nhs_number_given(app: Flask, client: FlaskClient):
     # Given
     with get_app_container(app).override.service(EligibilityService, new=FakeEligibilityService()):
         # When
-        response = client.get("/eligibility/12345")
+        response = client.get("/patient-check/12345")
 
         # Then
     assert_that(
@@ -56,7 +56,7 @@ def test_no_nhs_number_given(app: Flask, client: FlaskClient):
     # Given
     with get_app_container(app).override.service(EligibilityService, new=FakeUnknownPersonEligibilityService()):
         # When
-        response = client.get("/eligibility/")
+        response = client.get("/patient-check/")
 
     # Then
     assert_that(
@@ -81,7 +81,7 @@ def test_no_nhs_number_given(app: Flask, client: FlaskClient):
 def test_unexpected_error(app: Flask, client: FlaskClient):
     # Given
     with get_app_container(app).override.service(EligibilityService, new=FakeUnexpectedErrorEligibilityService()):
-        response = client.get("/eligibility/12345")
+        response = client.get("/patient-check/12345")
         assert_that(
             response,
             is_response()

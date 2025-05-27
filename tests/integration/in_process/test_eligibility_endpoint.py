@@ -13,7 +13,7 @@ def test_nhs_number_given(client: FlaskClient, persisted_person: NHSNumber, camp
     # Given
 
     # When
-    response = client.get(f"/eligibility/{persisted_person}")
+    response = client.get(f"/patient-check/{persisted_person}")
 
     # Then
     assert_that(
@@ -26,7 +26,7 @@ def test_no_nhs_number_given(client: FlaskClient):
     # Given
 
     # When
-    response = client.get("/eligibility/")
+    response = client.get("/patient-check/")
 
     # Then
     assert_that(
@@ -41,7 +41,7 @@ def test_actionable_by_rule(client: FlaskClient, persisted_77yo_person: NHSNumbe
     # Given
 
     # When
-    response = client.get(f"/eligibility/{persisted_77yo_person}")
+    response = client.get(f"/patient-check/{persisted_77yo_person}")
 
     # Then
     assert_that(
@@ -58,7 +58,7 @@ def test_not_actionable_by_rule(client: FlaskClient, persisted_person: NHSNumber
     # Given
 
     # When
-    response = client.get(f"/eligibility/{persisted_person}")
+    response = client.get(f"/patient-check/{persisted_person}")
 
     # Then
     assert_that(

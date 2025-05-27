@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime, timedelta
+from operator import attrgetter
 from random import randint
 
 from polyfactory import Use
@@ -18,7 +19,9 @@ def future_date(days_ahead: int = 365) -> date:
 class IterationCohortFactory(ModelFactory[rules.IterationCohort]): ...
 
 
-class IterationRuleFactory(ModelFactory[rules.IterationRule]): ...
+class IterationRuleFactory(ModelFactory[rules.IterationRule]):
+    attribute_target = None
+    cohort_label = None
 
 
 class IterationFactory(ModelFactory[rules.Iteration]):
@@ -27,11 +30,42 @@ class IterationFactory(ModelFactory[rules.Iteration]):
     iteration_date = Use(past_date)
 
 
-class CampaignConfigFactory(ModelFactory[rules.CampaignConfig]):
+class RawCampaignConfigFactory(ModelFactory[rules.CampaignConfig]):
     iterations = Use(IterationFactory.batch, size=2)
 
     start_date = Use(past_date)
     end_date = Use(future_date)
+
+
+class CampaignConfigFactory(RawCampaignConfigFactory):
+    @classmethod
+    def build(cls, **kwargs) -> rules.CampaignConfig:
+        """Ensure invariants are met:
+        * no iterations with duplicate iteration dates
+        * must have iteration active from campaign start date"""
+        processed_kwargs = cls.process_kwargs(**kwargs)
+        start_date: date = processed_kwargs["start_date"]
+        iterations: list[rules.Iteration] = processed_kwargs["iterations"]
+
+        CampaignConfigFactory.fix_iteration_date_invariants(iterations, start_date)
+
+        data = super().build(**processed_kwargs).dict()
+        return cls.__model__(**data)
+
+    @staticmethod
+    def fix_iteration_date_invariants(iterations: list[rules.Iteration], start_date: date) -> None:
+        iterations.sort(key=attrgetter("iteration_date"))
+        iterations[0].iteration_date = start_date
+
+        seen: set[date] = set()
+        previous: date = iterations[0].iteration_date
+        for iteration in iterations:
+            current = iteration.iteration_date if iteration.iteration_date >= previous else previous + timedelta(days=1)
+            while current in seen:
+                current += timedelta(days=1)
+            seen.add(current)
+            iteration.iteration_date = current
+            previous = current
 
 
 class PersonAgeSuppressionRuleFactory(IterationRuleFactory):
