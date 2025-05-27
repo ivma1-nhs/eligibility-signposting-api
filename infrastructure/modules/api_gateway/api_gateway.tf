@@ -1,5 +1,5 @@
 resource "aws_api_gateway_rest_api" "api_gateway" {
-  name        = "${var.workspace}-${var.api_gateway_name}-rest-api"
+  name        = var.workspace == "default" ? "${var.api_gateway_name}-rest-api" : "${var.workspace}-${var.api_gateway_name}-rest-api"
   description = "The API Gateway for ${var.project_name} ${var.environment} environment"
 
   disable_execute_api_endpoint = var.disable_default_endpoint # We would want to disable this if we are using a custom domain name

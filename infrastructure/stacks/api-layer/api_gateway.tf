@@ -1,7 +1,7 @@
 module "eligibility_signposting_api_gateway" {
   source                   = "../../modules/api_gateway"
   api_gateway_name         = "eligibility-signposting-api"
-  disable_default_endpoint = var.environment == "dev" && local.workspace != "dev" ? false : true
+  disable_default_endpoint = var.environment == "dev" && local.workspace != "default" ? false : true
   workspace                = local.workspace
   stack_name               = local.stack_name
   environment              = var.environment
@@ -77,7 +77,7 @@ resource "aws_api_gateway_method_settings" "check_eligibility" {
 }
 
 resource "aws_api_gateway_domain_name" "check_eligibility" {
-  count                                  = var.environment == "dev" && local.workspace != "dev" ? 0 : 1
+  count                                  = var.environment == "dev" && local.workspace != "default" ? 0 : 1
   domain_name                            = "${local.api_subdomain}.${local.api_domain_name}"
   regional_certificate_arn               = data.aws_acm_certificate.imported_cert.arn
   ownership_verification_certificate_arn = data.aws_acm_certificate.validation_cert.arn
@@ -99,7 +99,7 @@ resource "aws_api_gateway_domain_name" "check_eligibility" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "eligibility-signposting-api" {
-  count       = var.environment == "dev" && local.workspace != "dev" ? 0 : 1
+  count       = var.environment == "dev" && local.workspace != "default" ? 0 : 1
   api_id      = module.eligibility_signposting_api_gateway.rest_api_id
   stage_name  = aws_api_gateway_stage.eligibility-signposting-api.stage_name
   domain_name = "${local.api_subdomain}.${local.api_domain_name}"

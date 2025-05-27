@@ -1,7 +1,7 @@
 locals {
   stack_name = "api-layer"
 
-  api_subdomain   = var.environment == local.workspace ? local.workspace : "${local.workspace}.${var.environment}"
+  api_subdomain   = var.environment
   api_domain_name = "eligibility-signposting-api.nhs.uk"
 
   # PEM file for certificate

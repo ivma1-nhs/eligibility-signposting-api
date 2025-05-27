@@ -19,6 +19,10 @@ resource "aws_ssm_parameter" "mtls_api_ca_cert" {
   tags = {
   Stack = local.stack_name
   }
+
+  lifecycle {
+    ignore_changes = [value]
+  }
 }
 
 resource "aws_ssm_parameter" "mtls_api_client_cert" {
@@ -30,6 +34,10 @@ resource "aws_ssm_parameter" "mtls_api_client_cert" {
   tags = {
     Stack = local.stack_name
   }
+
+  lifecycle {
+    ignore_changes = [value]
+  }
 }
 
 resource "aws_ssm_parameter" "mtls_api_private_key_cert" {
@@ -40,5 +48,9 @@ resource "aws_ssm_parameter" "mtls_api_private_key_cert" {
   tier   = "Advanced"
   tags = {
     Stack = local.stack_name
+  }
+
+  lifecycle {
+    ignore_changes = [value]
   }
 }

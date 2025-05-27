@@ -10,7 +10,7 @@ resource "aws_acm_certificate" "imported_cert" {
   tags = {
     Region        = local.region
     Stack         = local.stack_name
-    CerticateType = "Imported"
+    CertificateType = "Imported"
   }
 }
 

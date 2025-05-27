@@ -1,9 +1,10 @@
 data "aws_caller_identity" "current" {}
 
 data "aws_acm_certificate" "imported_cert" {
-  domain      = "${var.environment}.${local.api_domain_name}"
-  types       = ["IMPORTED"]
-  provider    = aws.eu-west-2
+  domain   = "${var.environment}.${local.api_domain_name}"
+  types    = ["IMPORTED"]
+  provider = aws.eu-west-2
+  key_types   = ["RSA_4096"]
 }
 
 data "aws_acm_certificate" "validation_cert" {

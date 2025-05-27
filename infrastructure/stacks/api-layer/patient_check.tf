@@ -17,7 +17,7 @@ resource "aws_api_gateway_integration" "get_patient_check" {
   http_method             = aws_api_gateway_method.get_patient_check.http_method
   integration_http_method = "POST" # Needed for lambda proxy integration
   type                    = "AWS_PROXY"
-  uri                     = module.eligibility_signposting_lambda_function.aws_lambda_function_arn
+  uri                     = module.eligibility_signposting_lambda_function.aws_lambda_invoke_arn
 
   depends_on = [
     aws_api_gateway_method.get_patient_check

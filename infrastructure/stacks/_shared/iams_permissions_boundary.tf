@@ -67,14 +67,14 @@ data "aws_iam_policy_document" "permissions_boundary" {
 
 # Permissions Boundary policy
 resource "aws_iam_policy" "permissions_boundary" {
-  name        = "${upper(var.project_name)}-PermissionsBoundary"
+  name        = "${local.stack_name}-${upper(var.project_name)}-PermissionsBoundary"
   description = "Allows access to AWS services in the regions the client uses only"
   policy      = data.aws_iam_policy_document.permissions_boundary.json
 
   tags = merge(
     local.tags,
     {
-      Stack = "iams-developer-roles"
+      Stack = "api-layer"
     }
   )
 }
