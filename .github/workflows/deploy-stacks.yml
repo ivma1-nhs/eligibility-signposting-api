@@ -1,0 +1,16 @@
+name: Deployment testing
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-stacks:
+    runs-on: ubuntu-latest
+    environment: "dev"
+    steps:
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TF_VERSION }}
