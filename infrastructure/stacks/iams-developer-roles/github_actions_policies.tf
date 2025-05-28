@@ -55,6 +55,10 @@ resource "aws_iam_policy" "api_infrastructure" {
           # S3 permissions
           "s3:*",
 
+          # KMS permissions
+          "kms:ListAliases",
+          "kms:DescribeKey",
+
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
           "iam:List*",
