@@ -62,11 +62,10 @@ jobs:
           TF_VAR_API_PRIVATE_KEY_CERT: ${{ secrets.API_PRIVATE_KEY_CERT }}
 
         run: |
-          echo "Running: make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=networking tf-command=plan args=\"-auto-approve\""
+          mkdir -p ./build
+          echo "Running: make terraform env=$ENVIRONMENT workspace=$ENVIRONMENT stack=networking tf-command=plan args=\"-auto-approve\""
           make terraform env=$ENVIRONMENT stack=networking tf-command=plan workspace=$WORKSPACE
           echo "Running: make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=api-layer tf-command=plan args=\"-auto-approve\""
           make terraform env=$ENVIRONMENT stack=api-layer tf-command=plan workspace=$WORKSPACE
-          echo "Running: make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=iams-developer-roles tf-command=plan args=\"-auto-approve\""
-          make terraform env=$ENVIRONMENT stack=iams-developer-roles tf-command=plan workspace=$WORKSPACE
 
         working-directory: ./infrastructure
