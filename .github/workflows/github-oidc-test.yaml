@@ -18,3 +18,12 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ vars.TF_VERSION }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Built Lambdas
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-artefact
+          path: ./build
