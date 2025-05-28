@@ -14,15 +14,25 @@ jobs:
     runs-on: ubuntu-latest
     environment: "dev"
     steps:
-      - name: Setup Terraform
+      - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ vars.TF_VERSION }}
 
-      - name: Checkout Repository
+      - name: "Checkout Repository"
         uses: actions/checkout@v4
 
-      - name: Download Built Lambdas
+      - name: "Build lambda artefact"
+        run: |
+          make dependencies install-python
+          make build
+      - name: "Upload lambda artefact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda
+          path: dist/lambda.zip
+
+      - name: "Download Built Lambdas"
         uses: actions/download-artifact@v4
         with:
           name: lambda
