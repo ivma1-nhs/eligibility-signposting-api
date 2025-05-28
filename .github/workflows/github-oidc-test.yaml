@@ -12,7 +12,6 @@ on:
 jobs:
   deploy-stacks:
     runs-on: ubuntu-latest
-    environment: "dev"
     steps:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
@@ -42,3 +41,23 @@ jobs:
         with:
           name: lambda
           path: ./build
+
+      - name: "Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/service-roles/github-actions-api-deployment-role
+          aws-region: eu-west-2
+
+      - name: "Deploy Stacks"
+        env:
+          ENVIRONMENT: "dev"
+          WORKSPACE: "default"
+          TF_VAR_API_CA_CERT: ${{ secrets.API_CA_CERT }}
+          TF_VAR_API_CLIENT_CERT: ${{ secrets.API_CLIENT_CERT }}
+          TF_VAR_API_PRIVATE_KEY_CERT: ${{ secrets.API_PRIVATE_KEY_CERT }}
+
+        run: |
+          echo "Running: make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=networking tf-command=plan args=\"-auto-approve\""
+          make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=networking tf-command=plan args="-auto-approve"
+          echo "Running: make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=api-layer tf-command=plan args=\"-auto-approve\""
+          make terraform env=$ENVIRONMENT workspace=$WORKSPACE stack=api-layer tf-command=plan args="-auto-approve"
