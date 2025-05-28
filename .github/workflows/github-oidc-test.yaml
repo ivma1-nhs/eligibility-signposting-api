@@ -12,6 +12,9 @@ on:
 jobs:
   deploy-stacks:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
