@@ -25,5 +25,5 @@ jobs:
       - name: Download Built Lambdas
         uses: actions/download-artifact@v4
         with:
-          name: lambda-artefact
+          name: lambda
           path: ./build
