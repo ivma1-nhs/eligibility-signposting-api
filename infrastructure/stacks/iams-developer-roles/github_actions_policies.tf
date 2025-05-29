@@ -55,13 +55,35 @@ resource "aws_iam_policy" "api_infrastructure" {
           # S3 permissions
           "s3:*",
 
+          # KMS permissions
+          "kms:List*",
+          "kms:Describe*",
+          "kms:GetKeyPolicy*",
+
+          # Cloudwatch permissions
+          "logs:Describe*",
+
+          #EC2 permissions
+          "ec2:Describe*",
+
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
+          "iam:GetPolicy*",
+          "iam:GetRole*",
           "iam:List*",
           "iam:Create*",
           "iam:Update*",
           "iam:Delete*",
+
+          # ssm
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+
+          # acm
+          "acm:ListCertificates",
         ],
+
+
         Resource = "*"
       }
     ]

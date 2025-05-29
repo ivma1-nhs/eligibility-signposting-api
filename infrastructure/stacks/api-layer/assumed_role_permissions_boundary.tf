@@ -1,5 +1,5 @@
 # Policy document for Permissions boundary
-data "aws_iam_policy_document" "permissions_boundary" {
+data "aws_iam_policy_document" "assumed_role_permissions_boundary" {
   #checkov:skip=CKV2_AWS_40: Ensure AWS IAM policy does not allow full IAM privileges
   statement {
     sid    = "RestrictRegion"
@@ -66,10 +66,10 @@ data "aws_iam_policy_document" "permissions_boundary" {
 }
 
 # Permissions Boundary policy
-resource "aws_iam_policy" "permissions_boundary" {
+resource "aws_iam_policy" "assumed_role_permissions_boundary" {
   name        = "${local.stack_name}-${upper(var.project_name)}-PermissionsBoundary"
   description = "Allows access to AWS services in the regions the client uses only"
-  policy      = data.aws_iam_policy_document.permissions_boundary.json
+  policy      = data.aws_iam_policy_document.assumed_role_permissions_boundary.json
 
   tags = merge(
     local.tags,
