@@ -74,7 +74,7 @@ resource "aws_iam_policy" "permissions_boundary" {
   tags = merge(
     local.tags,
     {
-      Stack = "api-layer"
+      Stack = "iams-developer-roles"
     }
   )
 }
