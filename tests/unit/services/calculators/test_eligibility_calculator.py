@@ -47,25 +47,28 @@ def test_not_base_eligible(faker: Faker):
 
 
 @pytest.mark.parametrize(
-    ("cohorts", "test_comment"),
+    ("person_cohorts", "iteration_cohorts", "test_comment"),
     [
-        (["elid_all_people"], "Only magic cohort present"),
-        (["elid_all_people", "cohort1"], "Magic cohort with other cohorts"),
+        (["cohort1"], ["elid_all_people"], "Only magic cohort present"),
+        (["cohort1"], ["elid_all_people", "cohort1"], "Magic cohort with other cohorts"),
+        ([], ["elid_all_people"], "Only magic cohort present without "),
     ],
 )
-def test_base_eligible_with_when_magic_cohort_is_present(faker: Faker, cohorts, test_comment):
+def test_base_eligible_with_when_magic_cohort_is_present(
+    faker: Faker, person_cohorts: list[str], iteration_cohorts: list[str], test_comment: str
+):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=76, maximum_age=79))
 
-    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=person_cohorts)
     campaign_configs = [
         rule_builder.CampaignConfigFactory.build(
             target="RSV",
             iterations=[
                 rule_builder.IterationFactory.build(
                     iteration_cohorts=[
-                        rule_builder.IterationCohortFactory.build(cohort_label=label) for label in cohorts
+                        rule_builder.IterationCohortFactory.build(cohort_label=label) for label in iteration_cohorts
                     ],
                     iteration_rules=[rule_builder.PersonAgeSuppressionRuleFactory.build()],
                 )
