@@ -81,6 +81,8 @@ resource "aws_iam_policy" "api_infrastructure" {
 
           # acm
           "acm:ListCertificates",
+          "acm:DescribeCertificate",
+          "acm:GetCertificate",
         ],
 
 

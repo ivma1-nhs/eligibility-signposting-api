@@ -45,6 +45,20 @@ data "aws_iam_policy_document" "permissions_boundary" {
     }
   }
 
+  # Allow access to IAM actions for us-east-1 region only
+  statement {
+    sid       = "AllowIamActionsInUsEast1"
+    effect    = "Allow"
+    actions   = ["iam:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = ["us-east-1"]
+    }
+  }
+
   statement {
     sid       = "DenyPrivEsculationViaIamRoles"
     effect    = "Deny"
