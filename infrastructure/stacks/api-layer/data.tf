@@ -15,6 +15,10 @@ data "aws_acm_certificate" "validation_cert" {
   most_recent = true
 }
 
+data "aws_kms_alias" "networking_ssm_key" {
+  name = "alias/${var.environment}-networking-ssm-parameters"
+}
+
 data "aws_ssm_parameter" "mtls_api_client_cert" {
   name = "/${var.environment}/mtls/api_client_cert"
 }

@@ -59,9 +59,11 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:List*",
           "kms:Describe*",
           "kms:GetKeyPolicy*",
+          "kms:GetKeyRotationStatus",
 
           # Cloudwatch permissions
           "logs:Describe*",
+          "logs:ListTagsForResource",
 
           #EC2 permissions
           "ec2:Describe*",
@@ -83,6 +85,7 @@ resource "aws_iam_policy" "api_infrastructure" {
           "acm:ListCertificates",
           "acm:DescribeCertificate",
           "acm:GetCertificate",
+          "acm:ListTagsForCertificate",
         ],
 
 
