@@ -10,7 +10,7 @@ on:
         options: [dev, test, preprod]
 
 jobs:
-  deploy-stacks:
+  plan-stacks:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
@@ -53,7 +53,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/service-roles/github-actions-api-deployment-role
           aws-region: eu-west-2
 
-      - name: "Deploy Stacks"
+      - name: "Terraform Plan Stacks"
         env:
           ENVIRONMENT: "dev"
           WORKSPACE: "default"
