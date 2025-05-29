@@ -60,6 +60,7 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:Describe*",
           "kms:GetKeyPolicy*",
           "kms:GetKeyRotationStatus",
+          "kms:Decrypt*",
 
           # Cloudwatch permissions
           "logs:Describe*",
