@@ -81,6 +81,8 @@ resource "aws_iam_policy" "api_infrastructure" {
           # ssm
           "ssm:GetParameter",
           "ssm:GetParameters",
+          "ssm:DescribeParameters",
+          "ssm:ListTagsForResource",
 
           # acm
           "acm:ListCertificates",
