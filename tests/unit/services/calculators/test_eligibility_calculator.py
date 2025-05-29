@@ -54,7 +54,7 @@ def test_not_base_eligible(faker: Faker):
         ([], ["elid_all_people"], "Only magic cohort present without "),
     ],
 )
-def test_base_eligible_with_when_magic_cohort_is_present(faker: Faker, person_cohorts, iteration_cohorts, test_comment):
+def test_base_eligible_with_when_magic_cohort_is_present(faker: Faker, person_cohorts: list[str], iteration_cohorts: list[str], test_comment: str):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
     date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=76, maximum_age=79))
