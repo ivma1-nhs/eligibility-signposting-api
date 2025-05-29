@@ -21,8 +21,10 @@ data "aws_kms_alias" "networking_ssm_key" {
 
 data "aws_ssm_parameter" "mtls_api_client_cert" {
   name = "/${var.environment}/mtls/api_client_cert"
+  with_decryption = true
 }
 
 data "aws_ssm_parameter" "mtls_api_ca_cert" {
   name = "/${var.environment}/mtls/api_ca_cert"
+  with_decryption = true
 }
