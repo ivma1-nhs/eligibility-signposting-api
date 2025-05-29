@@ -26,12 +26,12 @@ data "aws_iam_policy_document" "dps_assume_role" {
 resource "aws_iam_role" "eligibility_lambda_role" {
   name                 = "eligibility_lambda-role${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
   assume_role_policy   = data.aws_iam_policy_document.lambda_assume_role.json
-  permissions_boundary = data.aws_iam_policy.assumed_role_permissions_boundary.arn
+  permissions_boundary = aws_iam_policy.assumed_role_permissions_boundary.arn
 }
 
 
 resource "aws_iam_role" "write_access_role" {
   name                 = "external-write-role-${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
   assume_role_policy   = data.aws_iam_policy_document.dps_assume_role.json
-  permissions_boundary = data.aws_iam_policy.assumed_role_permissions_boundary.arn
+  permissions_boundary = aws_iam_policy.assumed_role_permissions_boundary.arn
 }
