@@ -17,7 +17,6 @@ on:
         options:
           - ref
           - prod
-          - dev
 
 jobs:
   metadata:
