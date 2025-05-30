@@ -1,8 +1,13 @@
+import json
+
 import pytest
 from dateutil.relativedelta import relativedelta
 from faker import Faker
+from hamcrest import assert_that
 
+from eligibility_signposting_api.model.rules import IterationRule
 from tests.fixtures.builders.model.rule import IterationFactory, RawCampaignConfigFactory
+from tests.fixtures.matchers.rules import is_iteration_rule
 
 
 def test_campaign_must_have_at_least_one_iteration():
@@ -59,3 +64,31 @@ def test_iteration_must_have_active_iteration_from_its_start(faker: Faker):
         r".*1st iteration starts later",
     ):
         RawCampaignConfigFactory.build(start_date=start_date, iterations=[iteration])
+
+
+@pytest.mark.parametrize(
+    ("rule_stop", "expected"),
+    [
+        ("Y", True),
+        ("N", False),
+        ("", False),
+        (None, False),
+    ],
+)
+def test_iteration_rule_deserialisation(rule_stop: str, expected):
+    # Given
+    rule_json = f"""{{"Type": "F",
+                "Name": "Exclude TOO YOUNG",
+                "Description": "Exclude too Young less than 75 on the day of run",
+                "Priority": 110,
+                "AttributeLevel": "PERSON",
+                "AttributeName": "DATE_OF_BIRTH",
+                "Operator": "Y>",
+                "Comparator": "-75",
+                "RuleStop": "{rule_stop if rule_stop is not None else "null"}"}}"""
+
+    # When
+    actual = IterationRule.model_validate(json.loads(rule_json))
+
+    # Then
+    assert_that(actual, is_iteration_rule().with_rule_stop(expected))

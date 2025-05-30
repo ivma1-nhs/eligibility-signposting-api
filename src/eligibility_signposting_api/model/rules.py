@@ -100,13 +100,13 @@ class IterationRule(BaseModel):
     operator: RuleOperator = Field(..., alias="Operator")
     comparator: RuleComparator = Field(..., alias="Comparator")
     attribute_target: RuleAttributeTarget | None = Field(None, alias="AttributeTarget")
-    rule_stop: RuleStop | None = Field(None, alias="RuleStop")
+    rule_stop: RuleStop = Field(RuleStop(False), alias="RuleStop")  # noqa: FBT003
 
     @field_validator("rule_stop", mode="before")
-    def parse_yn_to_bool(cls, v: str) -> bool:  # noqa: N805
+    def parse_yn_to_bool(cls, v: str | bool) -> bool:  # noqa: N805
         if isinstance(v, str):
             return v.upper() == "Y"
-        return False
+        return v
 
     model_config = {"populate_by_name": True, "extra": "ignore"}
 
