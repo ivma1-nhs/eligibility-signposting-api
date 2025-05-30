@@ -1,3 +1,4 @@
+# checkov:skip=CKV2_AWS_53: No request parameters to validate for static healthcheck endpoint
 resource "aws_api_gateway_method" "_status" {
   rest_api_id   = module.eligibility_signposting_api_gateway.rest_api_id
   resource_id   = aws_api_gateway_resource._status.id

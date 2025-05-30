@@ -1,9 +1,23 @@
+
+resource "aws_api_gateway_request_validator" "patient_check_validator" {
+  rest_api_id = module.eligibility_signposting_api_gateway.rest_api_id
+  name        = "validate-path-params"
+  validate_request_body = false
+  validate_request_parameters = true
+}
+
 resource "aws_api_gateway_method" "get_patient_check" {
   rest_api_id      = module.eligibility_signposting_api_gateway.rest_api_id
   resource_id      = aws_api_gateway_resource.patient.id
   http_method      = "GET"
   authorization    = "NONE"
   api_key_required = false
+
+  request_validator_id = aws_api_gateway_request_validator.patient_check_validator.id
+
+  request_parameters = {
+    "method.request.path.id" = true  # Require the 'id' path parameter
+  }
 
   depends_on = [
     aws_api_gateway_resource.patient,
