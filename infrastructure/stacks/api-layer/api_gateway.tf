@@ -62,8 +62,8 @@ resource "aws_api_gateway_stage" "eligibility-signposting-api" {
   ]
 }
 
-#checkov:skip=CKV2_AWS_225: We're not enabling caching for this API Gateway, yet
 resource "aws_api_gateway_method_settings" "check_eligibility" {
+  #checkov:skip=CKV2_AWS_225: We're not enabling caching for this API Gateway, yet
   rest_api_id = module.eligibility_signposting_api_gateway.rest_api_id
   stage_name  = aws_api_gateway_stage.eligibility-signposting-api.stage_name
   method_path = "*/*"
