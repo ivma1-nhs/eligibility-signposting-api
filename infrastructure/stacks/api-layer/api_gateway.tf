@@ -43,6 +43,7 @@ resource "aws_api_gateway_deployment" "eligibility_signposting_api" {
   }
 }
 
+# checkov:skip=CKV2_AWS_51: mTLS is enforced at the custom domain, not at the stage level
 resource "aws_api_gateway_stage" "eligibility-signposting-api" {
   deployment_id = aws_api_gateway_deployment.eligibility_signposting_api.id
   rest_api_id   = module.eligibility_signposting_api_gateway.rest_api_id
