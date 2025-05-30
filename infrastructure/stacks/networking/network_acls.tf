@@ -35,7 +35,7 @@ resource "aws_network_acl" "private" {
   protocol   = "tcp"
   from_port  = 3389
   to_port    = 3389
- }
+  }
 
   # Allow responses to outbound requests (ephemeral ports)
   ingress {
