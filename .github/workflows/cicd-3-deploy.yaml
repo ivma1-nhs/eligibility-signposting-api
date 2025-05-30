@@ -1,3 +1,6 @@
+# Deploys a given tag to a given environment and tags for semantic versioning
+# creates semantic release
+
 name: "CI/CD deploy"
 
 on:
