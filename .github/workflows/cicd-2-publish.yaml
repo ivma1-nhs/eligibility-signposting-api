@@ -48,6 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [metadata]
     timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
