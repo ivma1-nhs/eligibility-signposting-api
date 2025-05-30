@@ -3,6 +3,6 @@ module "tfstate" {
 
   project_name = var.project_name
   environment  = var.environment
-  workspace    = var.workspace
+  workspace    = terraform.workspace
   stack_name   = local.stack_name
 }
