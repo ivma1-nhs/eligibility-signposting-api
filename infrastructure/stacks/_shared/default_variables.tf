@@ -15,3 +15,8 @@ variable "default_aws_region" {
   description = "Default AWS region"
   type        = string
 }
+
+variable "workspace" {
+  description = "Usually the developer short code or the name of the environment."
+  type        = string
+}
