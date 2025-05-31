@@ -1,7 +1,7 @@
 # CloudWatch Log Group for VPC Flow Logs
 resource "aws_cloudwatch_log_group" "flow_logs" {
   name              = "/aws/vpc/${aws_vpc.main.id}/flow-logs"
-  retention_in_days = 14
+  retention_in_days = 365
 
   tags = {
     Name  = "vpc-flow-logs"
