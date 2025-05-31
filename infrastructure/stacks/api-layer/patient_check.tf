@@ -6,8 +6,8 @@ resource "aws_api_gateway_request_validator" "patient_check_validator" {
   validate_request_parameters = true
 }
 
-#checkov:skip=CKV_AWS_59: API is secured via Apigee proxy with mTLS, API keys are not used
 resource "aws_api_gateway_method" "get_patient_check" {
+  #checkov:skip=CKV_AWS_59: API is secured via Apigee proxy with mTLS, API keys are not used
   rest_api_id      = module.eligibility_signposting_api_gateway.rest_api_id
   resource_id      = aws_api_gateway_resource.patient.id
   http_method      = "GET"
