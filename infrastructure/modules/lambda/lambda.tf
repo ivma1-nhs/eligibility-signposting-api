@@ -21,6 +21,9 @@ resource "aws_lambda_function" "eligibility_signposting_lambda" {
       ENV               = var.environment
     }
   }
+
+  kms_key_arn = aws_kms_key.lambda_cmk.arn
+
   vpc_config {
     subnet_ids         = var.vpc_intra_subnets
     security_group_ids = var.security_group_ids
