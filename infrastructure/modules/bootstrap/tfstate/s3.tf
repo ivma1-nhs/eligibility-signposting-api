@@ -1,6 +1,7 @@
 # Main state bucket
 resource "aws_s3_bucket" "tfstate_bucket" {
   #checkov:skip=CKV_AWS_144: We don't want to replicate outside our region
+  #checkov:skip=CKV2_AWS_62: We won't enable event notifications for this bucket, yet
   bucket = "${var.project_name}-${var.environment}-tfstate"
   tags = {
     Stack = "Bootstrap"
@@ -97,6 +98,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate_bucket" {
 
 resource "aws_s3_bucket" "tfstate_s3_access_logs" {
   #checkov:skip=CKV_AWS_144: We don't want to replicate outside our region
+  #checkov:skip=CKV2_AWS_62: We won't enable event notifications for this bucket, yet
+
   bucket = "${var.project_name}-${var.environment}-tfstate-access-logs"
 }
 
