@@ -23,4 +23,8 @@ resource "aws_lambda_function" "eligibility_signposting_lambda" {
     subnet_ids         = var.vpc_intra_subnets
     security_group_ids = var.security_group_ids
   }
+
+  tracing_config {
+    mode = "Active"
+  }
 }
