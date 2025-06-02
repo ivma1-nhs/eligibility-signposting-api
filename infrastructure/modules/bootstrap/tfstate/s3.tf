@@ -1,5 +1,6 @@
 # Main state bucket
 resource "aws_s3_bucket" "tfstate_bucket" {
+  #checkov:skip=CKV_AWS_144: We don't want to replicate outside our region
   bucket = "${var.project_name}-${var.environment}-tfstate"
   tags = {
     Stack = "Bootstrap"
@@ -95,6 +96,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate_bucket" {
 # Logging
 
 resource "aws_s3_bucket" "tfstate_s3_access_logs" {
+  #checkov:skip=CKV_AWS_144: We don't want to replicate outside our region
   bucket = "${var.project_name}-${var.environment}-tfstate-access-logs"
 }
 
