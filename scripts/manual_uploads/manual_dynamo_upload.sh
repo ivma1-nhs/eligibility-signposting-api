@@ -3,6 +3,7 @@
 # === Config ===
 DEFAULT_TABLE="eligibility_data_store"
 REGION="eu-west-2"
+AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-https://dynamodb.${REGION}.amazonaws.com}"
 
 # === Usage Check ===
 
@@ -57,7 +58,8 @@ echo "Uploading item from $FILE to table $TABLE ..."
 aws dynamodb put-item \
   --table-name "$TABLE" \
   --item "file://$FILE" \
-  --region "$REGION"
+  --region "$REGION" \
+  --endpoint-url "$AWS_ENDPOINT_URL"
 
 if [ $? -eq 0 ]; then
   echo "Upload complete."
