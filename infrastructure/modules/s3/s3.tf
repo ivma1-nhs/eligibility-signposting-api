@@ -99,6 +99,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage_bucket_access_logs_obj
       noncurrent_days = var.log_retention_in_days
     }
   }
+  rule {
+    id     = "StorageBucketLogsMultipartUploadExpiration"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "storage_bucket_access_logs_public_access_block" {
@@ -109,5 +117,3 @@ resource "aws_s3_bucket_public_access_block" "storage_bucket_access_logs_public_
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-

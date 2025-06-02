@@ -131,6 +131,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate_s3_access_logs_object_
       noncurrent_days = var.log_retention_in_days
     }
   }
+  rule {
+    id     = "StateBucketLogsMultipartUploadExpiration"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "s3logs" {
