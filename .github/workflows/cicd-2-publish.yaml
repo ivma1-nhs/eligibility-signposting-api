@@ -51,7 +51,7 @@ jobs:
     environment: "dev"
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
