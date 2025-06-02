@@ -106,11 +106,15 @@ class EligibilityCalculator:
             exclusion_reasons, actionable_reasons = [], []
             by_priority = sorted(iteration.iteration_rules, key=priority_getter)
             for _, rule_group in groupby(by_priority, key=priority_getter):
-                status, group_actionable, group_exclusions = self.evaluate_priority_group(rule_group, worst_status)
+                status, group_actionable, group_exclusions, is_rule_stop = self.evaluate_priority_group(
+                    rule_group, worst_status
+                )
                 # Merge results
                 worst_status = status
                 actionable_reasons.extend(group_actionable)
                 exclusion_reasons.extend(group_exclusions)
+                if is_rule_stop:
+                    break
             condition_status_entry = status_with_reasons.setdefault(worst_status, [])
             condition_status_entry.extend(
                 actionable_reasons if worst_status is eligibility.Status.actionable else exclusion_reasons
@@ -124,9 +128,9 @@ class EligibilityCalculator:
         self,
         iteration_rule_group: Iterator[rules.IterationRule],
         worst_status_so_far_for_condition: eligibility.Status,
-    ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason]]:
+    ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason], bool]:
+        is_rule_stop = False
         exclusion_reasons, actionable_reasons = [], []
-
         exclude_capable_rules = [
             ir
             for ir in iteration_rule_group
@@ -147,4 +151,6 @@ class EligibilityCalculator:
                 actionable_reasons.append(reason)
 
         worst_group_status = eligibility.Status.worst(best_status, worst_status_so_far_for_condition)
-        return worst_group_status, actionable_reasons, exclusion_reasons
+        if worst_group_status.is_exclusion:
+            is_rule_stop = any(rule.rule_stop for rule in exclude_capable_rules)
+        return worst_group_status, actionable_reasons, exclusion_reasons, is_rule_stop

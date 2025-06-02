@@ -811,3 +811,46 @@ def test_status_if_iteration_rules_contains_cohort_label_field(
         ),
         test_comment,
     )
+
+
+@pytest.mark.parametrize(
+    ("rule_stop", "expected_status", "test_comment"),
+    [
+        (True, Status.not_actionable, "Stops at the first rule"),
+        (False, Status.not_eligible, "Both the rules are executed"),
+    ],
+)
+def test_rules_stop_behavior(rule_stop: bool, expected_status: Status, test_comment: str, faker: Faker) -> None:  # noqa: FBT001
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=74))
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
+
+    # Build campaign configuration
+    campaign_config = rule_builder.CampaignConfigFactory.build(
+        target="RSV",
+        iterations=[
+            rule_builder.IterationFactory.build(
+                iteration_rules=[
+                    rule_builder.PersonAgeSuppressionRuleFactory.build(priority=10, rule_stop=rule_stop),
+                    rule_builder.PersonAgeSuppressionRuleFactory.build(priority=10),
+                    rule_builder.PersonAgeSuppressionRuleFactory.build(type=rules.RuleType.filter, priority=15),
+                ],
+                iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+            )
+        ],
+    )
+
+    calculator = EligibilityCalculator(person_rows, [campaign_config])
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_item(is_condition().with_condition_name(ConditionName("RSV")).and_status(expected_status))
+        ),
+        test_comment,
+    )
