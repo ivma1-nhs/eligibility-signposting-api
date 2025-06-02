@@ -7,4 +7,5 @@ module "eligibility_status_table" {
   sort_key           = "ATTRIBUTE_TYPE"
   sort_key_type      = "S"
   tags               = local.tags
+  environment        = var.environment
 }

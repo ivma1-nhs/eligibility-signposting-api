@@ -23,5 +23,9 @@ resource "aws_dynamodb_table" "dynamodb_table" {
     kms_key_arn = aws_kms_key.dynamodb_cmk.arn
   }
 
+  point_in_time_recovery {
+    enabled = var.environment == "prod"
+  }
+
   tags = var.tags
 }

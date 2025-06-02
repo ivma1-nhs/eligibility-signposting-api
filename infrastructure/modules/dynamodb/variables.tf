@@ -40,3 +40,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "environment" {
+  description = "The purpose of the account dev/test/ref/prod or the workspace"
+  type        = string
+}
