@@ -11,11 +11,12 @@ on:
         required: true
         default: "latest"
       environment:
-        description: "Target environment (e.g., ref or prod)"
+        description: "Target environment (e.g., test, preprod or prod)"
         required: true
         type: choice
         options:
-          - ref
+          - test
+          - preprod
           - prod
 
 jobs:
