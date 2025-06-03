@@ -3,14 +3,12 @@ name: "CI/CD pull request"
 # The total recommended execution time for the "CI/CD Pull Request" workflow is around 20 minutes.
 
 on:
-  push:
-    branches:
-      - "**"
   pull_request:
-    types: [opened, reopened]
+    types: [opened, synchronize, reopened]
 
 jobs:
   metadata:
+    if: github.event.pull_request.draft == false
     name: "Set CI/CD metadata"
     runs-on: ubuntu-latest
     timeout-minutes: 1
@@ -39,7 +37,8 @@ jobs:
           echo "nodejs_version=$(grep "^nodejs" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
           echo "python_version=$(grep "^nodejs" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
           echo "terraform_version=$(grep "^terraform" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
-          echo "version=$(head -n 1 .version 2> /dev/null || echo unknown)" >> $GITHUB_OUTPUT
+          echo "version=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+#          echo "version=$(head -n 1 .version 2> /dev/null || echo unknown)" >> $GITHUB_OUTPUT
       - name: "Check if pull request exists for this branch"
         id: pr_exists
         env:
@@ -68,6 +67,7 @@ jobs:
           make list-variables
   commit-stage: # Recommended maximum execution time is 2 minutes
     name: "Commit stage"
+    if: github.event.pull_request.draft == false
     needs: [metadata]
     uses: ./.github/workflows/stage-1-commit.yaml
     with:
@@ -81,6 +81,7 @@ jobs:
     secrets: inherit
   test-stage: # Recommended maximum execution time is 5 minutes
     name: "Test stage"
+    if: github.event.pull_request.draft == false
     needs: [metadata, commit-stage]
     uses: ./.github/workflows/stage-2-test.yaml
     with:
