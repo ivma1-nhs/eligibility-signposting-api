@@ -62,8 +62,7 @@ fi
 # === Create unique key ===
 
 BASENAME=$(basename "$FILE" .json)
-TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
-S3_KEY="${S3_PREFIX}/${BASENAME}_${TIMESTAMP}.json"
+S3_KEY="${S3_PREFIX}/${BASENAME}.json"
 
 # === Upload ===
 
