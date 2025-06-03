@@ -135,7 +135,11 @@ data "aws_iam_policy_document" "kms_key_policy" {
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
     }
     actions   = ["kms:*"]
-    resources = ["*"]
+    resources = [
+      module.eligibility_status_table.dynamodb_kms_key_arn,
+      module.s3_rules_bucket.storage_bucket_kms_key_arn,
+      module.s3_audit_bucket.storage_bucket_kms_key_arn,
+    ]
   }
   statement {
     sid    = "Allow lambda decrypt role"
