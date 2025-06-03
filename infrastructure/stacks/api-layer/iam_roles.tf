@@ -31,7 +31,8 @@ resource "aws_iam_role" "eligibility_lambda_role" {
 
 
 resource "aws_iam_role" "write_access_role" {
-  name                 = "external-write-role-${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
+  count                = terraform.workspace == "default" ? 1 : 0
+  name                 = "eligibility-signposting-api-${local.environment}-external-write-role"
   assume_role_policy   = data.aws_iam_policy_document.dps_assume_role.json
   permissions_boundary = aws_iam_policy.assumed_role_permissions_boundary.arn
 }
