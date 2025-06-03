@@ -139,6 +139,8 @@ data "aws_iam_policy_document" "kms_key_policy" {
       module.eligibility_status_table.dynamodb_kms_key_arn,
       module.s3_rules_bucket.storage_bucket_kms_key_arn,
       module.s3_audit_bucket.storage_bucket_kms_key_arn,
+      module.eligibility_signposting_api_gateway.kms_key_arn,
+
     ]
   }
   statement {
@@ -155,7 +157,7 @@ data "aws_iam_policy_document" "kms_key_policy" {
     ]
     resources = [
       module.eligibility_status_table.dynamodb_kms_key_arn,
-      module.s3_rules_bucket.storage_bucket_kms_key_arn
+      module.s3_rules_bucket.storage_bucket_kms_key_arn,
     ]
   }
 
