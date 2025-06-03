@@ -18,6 +18,15 @@ on:
           - test
           - preprod
           - prod
+      release_type:
+        description: "Version bump type (patch, minor, major)"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   metadata:
@@ -124,7 +133,21 @@ jobs:
           else
             # Extract the version numbers
             IFS='.' read -r major minor patch <<< "${latest_tag#v}"
-            patch=$((patch + 1))
+            case "${{ github.event.inputs.release_type }}" in
+              major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+              minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch|*)
+              patch=$((patch + 1))
+              ;;
+            esac
+
             next_tag="v${major}.${minor}.${patch}"
           fi
 
@@ -136,8 +159,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.next_tag.outputs.next_tag }}
-          release_name: Release ${{ steps.next_tag.outputs.next_tag }}
+          tag_name: ${{ steps.next_tag.outputs.tag }}
+          release_name: Release ${{ steps.next_tag.outputs.tag }}
           body: |
             Auto-release created during deployment.
           draft: false
