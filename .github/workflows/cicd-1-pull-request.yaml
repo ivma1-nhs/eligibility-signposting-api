@@ -3,14 +3,12 @@ name: "CI/CD pull request"
 # The total recommended execution time for the "CI/CD Pull Request" workflow is around 20 minutes.
 
 on:
-  push:
-    branches:
-      - "**"
   pull_request:
-    types: [opened, reopened]
+    types: [opened, synchronize, reopened]
 
 jobs:
   metadata:
+    if: github.event.pull_request.draft == false
     name: "Set CI/CD metadata"
     runs-on: ubuntu-latest
     timeout-minutes: 1
@@ -69,6 +67,7 @@ jobs:
           make list-variables
   commit-stage: # Recommended maximum execution time is 2 minutes
     name: "Commit stage"
+    if: github.event.pull_request.draft == false
     needs: [metadata]
     uses: ./.github/workflows/stage-1-commit.yaml
     with:
@@ -82,6 +81,7 @@ jobs:
     secrets: inherit
   test-stage: # Recommended maximum execution time is 5 minutes
     name: "Test stage"
+    if: github.event.pull_request.draft == false
     needs: [metadata, commit-stage]
     uses: ./.github/workflows/stage-2-test.yaml
     with:
