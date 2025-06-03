@@ -97,7 +97,7 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: infrastructure/
-          soft_fail: true
+          soft_fail: false
           output_format: sarif
           output_file_path: checkov-report.sarif
   count-lines-of-code:
