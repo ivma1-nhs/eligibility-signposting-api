@@ -99,7 +99,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate_bucket" {
 resource "aws_s3_bucket" "tfstate_s3_access_logs" {
   #checkov:skip=CKV_AWS_144: We don't want to replicate outside our region
   #checkov:skip=CKV2_AWS_62: We won't enable event notifications for this bucket, yet
-
+  #checkov:skip=CKV_AWS_21: Versioning not needed given short lifecycle of logs
   bucket = "${var.project_name}-${var.environment}-tfstate-access-logs"
 }
 
