@@ -23,8 +23,9 @@ data "aws_iam_policy_document" "dynamodb_write_policy_doc" {
 
 # Attach dynamoDB write policy to external write role
 resource "aws_iam_role_policy" "external_dynamodb_write_policy" {
+  count  = length(aws_iam_role.write_access_role)
   name   = "DynamoDBWriteAccess"
-  role   = aws_iam_role.write_access_role.id
+  role   = aws_iam_role.write_access_role[count.index].id
   policy = data.aws_iam_policy_document.dynamodb_write_policy_doc.json
 }
 

@@ -35,7 +35,9 @@ terraform-workspace-delete: guard-env guard-stack
 
 # Runs a specified Terraform command (e.g., plan, apply) for the stack and environment.
 terraform: guard-env guard-stack guard-tf-command terraform-init terraform-workspace
-	terraform -chdir=./stacks/$(stack) $(tf-command) $(args) $(if $(filter $(tf-command),init),,--parallelism=30)
+	terraform -chdir=./stacks/$(stack) $(tf-command) $(args) \
+		$(if $(filter init,$(tf-command)),,--parallelism=30) \
+		$(if $(filter apply,$(tf-command)),-auto-approve)
 	rm -f ./terraform_outputs_$(stack).json || true
 	mkdir -p ./build
 	terraform -chdir=./stacks/$(stack) output -json > ./build/terraform_outputs_$(stack).json

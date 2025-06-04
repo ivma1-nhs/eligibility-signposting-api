@@ -3,6 +3,10 @@
 
 name: "CI/CD deploy"
 
+concurrency:
+  group: terraform-deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
