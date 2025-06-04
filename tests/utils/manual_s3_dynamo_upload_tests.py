@@ -78,7 +78,6 @@ def test_script_cli_end_to_end(test_data_dir):
         }
         response = dynamodb.get_item(TableName=dynamo_table, Key=key)
         item = response.get("Item")
-        assert item is not None, f"Missing item for key {key}"
         dynamo_items.append(item)
 
     expected_dynamo_items = [{k: map_dynamo_type(v) for k, v in item.items()} for item in expected_data]

@@ -43,7 +43,6 @@ def upload_to_s3(
 ) -> None:
 
     filename = os.path.basename(filepath)
-    print(f"Filepath: {filepath}")
     s3_key = f"manual-uploads/{filename}"
 
     if dry_run:
@@ -98,11 +97,23 @@ def run_upload(args: Optional[List[str]] = None) -> None:
     dynamo = session.client("dynamodb", region_name=parsed_args.region)
 
     if parsed_args.upload_s3:
-        for filepath in parsed_args.upload_s3.glob("*.json"):
+        if parsed_args.upload_s3.is_dir():
+            files = parsed_args.upload_s3.glob("*.json")
+        else:
+            files = [parsed_args.upload_s3]
+
+        for filepath in files:
+            print(f"Uploading to S3 from {filepath}")
             upload_to_s3(s3, parsed_args.s3_bucket, str(filepath), parsed_args.dry_run)
 
     if parsed_args.upload_dynamo:
-        for filepath in parsed_args.upload_dynamo.glob("*.json"):
+        if parsed_args.upload_dynamo.is_dir():
+            paths = parsed_args.upload_dynamo.glob("*.json")
+        else:
+            paths = [parsed_args.upload_dynamo]
+
+        for filepath in paths:
+            print(f"Uploading to DynamoDB from {filepath}")
             upload_to_dynamo(dynamo, parsed_args.dynamo_table, str(filepath))
 
 
