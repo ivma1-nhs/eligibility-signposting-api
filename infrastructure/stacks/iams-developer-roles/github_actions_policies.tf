@@ -68,6 +68,7 @@ resource "aws_iam_policy" "api_infrastructure" {
 
           #EC2 permissions
           "ec2:Describe*",
+          "ec2:CreateTags",
 
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
