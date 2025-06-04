@@ -4,12 +4,11 @@ import json
 import os
 import argparse
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Generator
 from decimal import Decimal
 
 
-
-def map_dynamo_type(value: Any):
+def map_dynamo_type(value: Any) -> Dict[str, Any]:
     if isinstance(value, str):
         return {"S": value}
     elif isinstance(value, bool):
@@ -29,7 +28,20 @@ def map_dynamo_type(value: Any):
         return {"S": value}
 
 
-def upload_to_s3(s3_client, bucket, filepath, dry_run=False):
+def load_json_lines(filepath: Union[str, Path]) -> Generator[Dict[str, Any], None, None]:
+    with open(filepath) as f:
+        for line in f:
+            if line.strip():
+                yield json.loads(line)
+
+
+def upload_to_s3(
+    s3_client: Any,
+    bucket: str,
+    filepath: Union[str, Path],
+    dry_run: bool = False
+) -> None:
+
     filename = os.path.basename(filepath)
     print(f"Filepath: {filepath}")
     s3_key = f"manual-uploads/{filename}"
@@ -45,21 +57,23 @@ def upload_to_s3(s3_client, bucket, filepath, dry_run=False):
         print(f"Failed to upload {filepath}: {e}")
 
 
-def upload_to_dynamo(dynamo_client, table_name, filepath):
-    with open(filepath) as f:
-        item = json.load(f)
+def upload_to_dynamo(
+    dynamo_client: Any,
+    table_name: str,
+    filepath: Union[str, Path],
+) -> None:
 
-    try:
-        dynamo_client.put_item(
-            TableName=table_name, Item={key: map_dynamo_type(value) for key, value in item.items()}
-        )
-        print(f"Uploaded {filepath} to DynamoDB table {table_name}")
-    except Exception as e:
-        print(f"Failed to upload {filepath}: {e}")
+    for item in load_json_lines(filepath):
+        try:
+            dynamo_client.put_item(
+                TableName=table_name, Item={key: map_dynamo_type(value) for key, value in item.items()}
+            )
+            print(f"Uploaded {filepath} to DynamoDB table {table_name}")
+        except Exception as e:
+            print(f"Failed to upload {filepath}: {e}")
 
 
-def run_upload(args=None):
-    print("\n\n\n***** We are in main *****\n\n\n")
+def run_upload(args: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env")
     parser.add_argument("--upload-s3", type=Path)
