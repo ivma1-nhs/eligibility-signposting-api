@@ -1,11 +1,14 @@
+import os
 import json
 import tempfile
 import subprocess
-import os
 from pathlib import Path
 import pytest
-from moto import mock_s3, mock_dynamodb
+
 import boto3
+from moto import mock_aws
+
+from scripts.manual_uploads.manual_s3_dynamo_upload import run_upload
 
 
 @pytest.fixture
@@ -17,9 +20,8 @@ def test_data_dir(tmp_path):
     return tmp_path, data
 
 
-@mock_s3
-@mock_dynamodb
-def test_script_cli_end_to_end(test_data_dir):
+@mock_aws
+def test_script_cli_end_to_end(test_data_dir, capsys):
     # Arrange
     data_dir, expected_data = test_data_dir
     env = "test"
@@ -28,7 +30,10 @@ def test_script_cli_end_to_end(test_data_dir):
     dynamo_table = f"api-{env}-datastore"
 
     s3 = boto3.client("s3", region_name=region)
-    s3.create_bucket(Bucket=s3_bucket)
+    s3.create_bucket(
+        Bucket=s3_bucket,
+        CreateBucketConfiguration={"LocationConstraint": region}
+    )
 
     dynamodb = boto3.client("dynamodb", region_name=region)
     dynamodb.create_table(
@@ -45,20 +50,18 @@ def test_script_cli_end_to_end(test_data_dir):
     )
 
     # Act
-    result = subprocess.run(
-        [
-            "python", "your_script.py",
-            "--env", env,
-            "--upload-s3", str(data_dir),
-            "--upload-dynamo", str(data_dir),
-            "--region", region
-        ],
-        capture_output=True,
-        text=True
-    )
+    return_code = run_upload([
+        "--env", env,
+        "--upload-s3", str(data_dir),
+        "--upload-dynamo", str(data_dir),
+        "--region", region,
+        "--s3-bucket", s3_bucket,
+        "--dynamo-table", dynamo_table
+    ])
+    captured = capsys.readouterr()
 
     # Assert
-    key = f"manual-uploads/test.json.json"
+    key = f"manual-uploads/test.json"
     obj = s3.get_object(Bucket=s3_bucket, Key=key)
     uploaded_s3_data = json.load(obj["Body"])
     assert uploaded_s3_data == expected_data
@@ -72,5 +75,5 @@ def test_script_cli_end_to_end(test_data_dir):
     )["Item"]
     assert item["value"]["N"] == "99"
 
-    assert result.returncode == 0
-    assert "Uploaded" in result.stdout
+    assert "Uploaded" in captured.out
+    assert "Error" not in captured.err

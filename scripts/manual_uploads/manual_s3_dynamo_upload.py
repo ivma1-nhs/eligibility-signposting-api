@@ -4,6 +4,9 @@ import json
 import os
 import argparse
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+from decimal import Decimal
+
 
 
 def map_dynamo_type(value: Any):
@@ -28,7 +31,8 @@ def map_dynamo_type(value: Any):
 
 def upload_to_s3(s3_client, bucket, filepath, dry_run=False):
     filename = os.path.basename(filepath)
-    s3_key = f"manual-uploads/{filename}.json"
+    print(f"Filepath: {filepath}")
+    s3_key = f"manual-uploads/{filename}"
 
     if dry_run:
         print(f"[DRY RUN] Would upload {filepath} to s3://{bucket}/{s3_key}")
@@ -54,7 +58,8 @@ def upload_to_dynamo(dynamo_client, table_name, filepath):
         print(f"Failed to upload {filepath}: {e}")
 
 
-def main():
+def run_upload(args=None):
+    print("\n\n\n***** We are in main *****\n\n\n")
     parser = argparse.ArgumentParser()
     parser.add_argument("--env")
     parser.add_argument("--upload-s3", type=Path)
@@ -63,25 +68,29 @@ def main():
     parser.add_argument("--s3-bucket")
     parser.add_argument("--dynamo-table")
     parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
 
-    if not args.s3_bucket:
-        args.s3_bucket = f"eligibility-signposting-api-{args.env}-eli-rules"
-    if not args.dynamo_table:
-        args.dynamo_table = f"eligibility-signposting-api-{args.env}-eligibility_datastore"
+    if args is None:
+        parsed_args = parser.parse_args()
+    else:
+        parsed_args = parser.parse_args(args)
+
+    if not parsed_args.s3_bucket:
+        parsed_args.s3_bucket = f"eligibility-signposting-api-{parsed_args.env}-eli-rules"
+    if not parsed_args.dynamo_table:
+        parsed_args.dynamo_table = f"eligibility-signposting-api-{parsed_args.env}-eligibility_datastore"
 
     session = boto3.Session()
-    s3 = session.client("s3", region_name=args.region)
-    dynamo = session.client("dynamodb", region_name=args.region)
+    s3 = session.client("s3", region_name=parsed_args.region)
+    dynamo = session.client("dynamodb", region_name=parsed_args.region)
 
-    if args.upload_s3:
-        for filepath in args.upload_s3.glob("*.json"):
-            upload_to_s3(s3, args.s3_bucket, str(filepath), args.dry_run)
+    if parsed_args.upload_s3:
+        for filepath in parsed_args.upload_s3.glob("*.json"):
+            upload_to_s3(s3, parsed_args.s3_bucket, str(filepath), parsed_args.dry_run)
 
-    if args.upload_dynamo:
-        for filepath in args.upload_dynamo.glob("*.json"):
-            upload_to_dynamo(dynamo, args.dynamo_table, str(filepath))
+    if parsed_args.upload_dynamo:
+        for filepath in parsed_args.upload_dynamo.glob("*.json"):
+            upload_to_dynamo(dynamo, parsed_args.dynamo_table, str(filepath))
 
 
 if __name__ == "__main__":
-    main()
+    run_upload()
