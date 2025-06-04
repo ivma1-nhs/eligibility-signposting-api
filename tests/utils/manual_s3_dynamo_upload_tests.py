@@ -3,13 +3,13 @@ import json
 import boto3
 import pytest
 from moto import mock_aws
+from path import Path
 
 from scripts.manual_uploads.manual_s3_dynamo_upload import map_dynamo_type, run_upload
 
 
 @pytest.fixture
 def test_data_dir(tmp_path):
-    # {"NHS_NUMBER": "C456", "ATTRIBUTE_TYPE": "COHORTS", "COHORT_MEMBERSHIPS": [{"COHORT_LABEL": "under_75", "DATE_JOINED": "2025-01-01"},{"COHORT_LABEL": "over_75", "DATE_JOINED": "2025-01-01"}], "ACTION_FLAG": "ADD", "HASH": "fake_hash_delete_sim", "sync_time": "2025-05-01 12:00:00"}
     data = [
         {
             "NHS_NUMBER": "1234567890",
@@ -28,7 +28,7 @@ def test_data_dir(tmp_path):
         },
     ]
     file_path = tmp_path / "test.json"
-    with open(file_path, "w") as f:
+    with Path.open(file_path, "w") as f:
         for item in data:
             f.write(json.dumps(item) + "\n")
     return tmp_path, data

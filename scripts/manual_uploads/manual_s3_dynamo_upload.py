@@ -29,7 +29,7 @@ def map_dynamo_type(value: Any) -> Dict[str, Any]:
 
 
 def load_json_lines(filepath: Union[str, Path]) -> Generator[Dict[str, Any], None, None]:
-    with open(filepath) as f:
+    with Path.open(filepath) as f:
         for line in f:
             if line.strip():
                 yield json.loads(line)
