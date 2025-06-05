@@ -1,9 +1,8 @@
 import json
-
 import boto3
 import pytest
 from moto import mock_aws
-from path import Path
+from pathlib import Path
 
 from scripts.manual_uploads.manual_s3_dynamo_upload import map_dynamo_type, run_upload
 

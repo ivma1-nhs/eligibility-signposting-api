@@ -1,8 +1,8 @@
 import boto3
-import hashlib
 import json
 import os
 import argparse
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Generator
 from decimal import Decimal
@@ -21,11 +21,9 @@ def map_dynamo_type(value: Any) -> Dict[str, Any]:
         return {"L": [map_dynamo_type(item) for item in value]}
     elif isinstance(value, dict):
         return {"M": {k: map_dynamo_type(v) for k, v in value.items()}}
-    elif isinstance(value, Row):
-        return {"M": {k: map_dynamo_type(v) for k, v in value.asDict().items()}}
     else:
         logging.warning(f"Unsupported value type: {type(value)}", "Converting it to string")
-        return {"S": value}
+        return {"S": str(value)}
 
 
 def load_json_lines(filepath: Union[str, Path]) -> Generator[Dict[str, Any], None, None]:
@@ -61,16 +59,20 @@ def upload_to_dynamo(
     table_name: str,
     filepath: Union[str, Path],
 ) -> None:
-
+    uploaded_items = 0
     for item in load_json_lines(filepath):
         try:
             dynamo_client.put_item(
                 TableName=table_name, Item={key: map_dynamo_type(value) for key, value in item.items()}
             )
-            print(f"Uploaded {filepath} to DynamoDB table {table_name}")
+            uploaded_items += 1
         except Exception as e:
-            print(f"Failed to upload {filepath}: {e}")
+            partition_key = item.get("NHS_NUMBER", "Unknown")
+            sort_key = item.get("ATTRIBUTE_TYPE", "Unknown")
+            print(f"Failed to upload item (NHS_NUMBER: {partition_key}, ATTRIBUTE_TYPE: {sort_key}) from {filepath}: {e}")
 
+    if uploaded_items > 0:
+        print(f"Uploaded {uploaded_items} items from {filepath} to DynamoDB table {table_name}")
 
 def run_upload(args: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser()
@@ -87,6 +89,8 @@ def run_upload(args: Optional[List[str]] = None) -> None:
     else:
         parsed_args = parser.parse_args(args)
 
+    if not parsed_args.upload_s3 and not parsed_args.upload_dynamo:
+        logging.warning("Neither '--upload-s3' nor '--upload-dynamo' flags specified. No upload actions will be performed.")
     if not parsed_args.s3_bucket:
         parsed_args.s3_bucket = f"eligibility-signposting-api-{parsed_args.env}-eli-rules"
     if not parsed_args.dynamo_table:
