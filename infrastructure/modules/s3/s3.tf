@@ -109,6 +109,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage_bucket_access_logs_obj
     id     = "StorageBucketLogsMultipartUploadExpiration"
     status = "Enabled"
 
+    filter {
+      prefix = ""
+    }
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
     }
