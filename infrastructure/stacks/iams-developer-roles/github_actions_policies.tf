@@ -68,6 +68,11 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:GetKeyPolicy*",
           "kms:GetKeyRotationStatus",
           "kms:Decrypt*",
+          "kms:DeleteAlias",
+          "kms:UpdateKeyDescription",
+          "kms:CreateGrant",
+          "kms:CreateAlias",
+
 
           # Cloudwatch permissions
           "logs:Describe*",
@@ -85,6 +90,8 @@ resource "aws_iam_policy" "api_infrastructure" {
           "iam:Create*",
           "iam:Update*",
           "iam:Delete*",
+          "iam:PutRolePermissionsBoundary",
+          "iam:PutRolePolicy",
 
           # ssm
           "ssm:GetParameter",
