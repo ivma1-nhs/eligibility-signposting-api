@@ -114,7 +114,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate_s3_access
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm     = "aws:kms"
       kms_master_key_id = aws_kms_key.terraform_state_bucket_cmk.arn
     }
   }
@@ -140,7 +140,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate_s3_access_logs_object_
   rule {
     id     = "StateBucketLogsMultipartUploadExpiration"
     status = "Enabled"
-
+    filter {
+      prefix = ""
+    }
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
     }
