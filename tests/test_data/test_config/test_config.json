@@ -20,11 +20,11 @@
                     {
                         "CohortLabel": "cohort_1",
                         "Priority": 10
-					},
+                    },
                     {
                         "CohortLabel": "cohort_2",
                         "Priority": 20
-					}
+					          }
                 ],
                 "IterationRules": [
                     {
@@ -36,7 +36,7 @@
                         "AttributeName": "DATE_OF_BIRTH",
                         "Operator": ">",
                         "Comparator": "19000101"
-					}
+					          }
                 ],
                 "Version": 1,
                 "Name": "Test Config",

@@ -37,7 +37,7 @@ if ! jq empty "$FILE" >/dev/null 2>&1; then
   exit 1
 fi
 
- # === Prompt for AWS credentials if not set ===
+# === Prompt for AWS credentials if not set ===
 
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
   echo "AWS credentials not found in environment. Let's set them now:"
