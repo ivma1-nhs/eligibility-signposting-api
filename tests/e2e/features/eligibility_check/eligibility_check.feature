@@ -42,4 +42,3 @@ Feature: Eligibility Check API
       | nhs_number    | accept_header           | expected_content_type    |
       | 9876543210    | application/json        | application/json        |
       | 9876543210    | application/json        | application/json   |
-

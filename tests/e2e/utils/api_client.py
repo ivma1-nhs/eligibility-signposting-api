@@ -1,6 +1,11 @@
 """API client module for making HTTP requests to the Eligibility Signposting API."""
+
 import requests
-from utils.config import BASE_URL, API_KEY
+
+from utils.config import API_KEY, BASE_URL
+
+# Default timeout for API requests in seconds
+DEFAULT_TIMEOUT = 10
 
 
 class ApiClient:
@@ -15,10 +20,7 @@ class ApiClient:
         """
         self.base_url = base_url
         self.api_key = api_key
-        self.headers = {
-            "Accept": "application/json",
-            "apikey": self.api_key
-        }
+        self.headers = {"Accept": "application/json", "apikey": self.api_key}
 
     def get_eligibility_check(self, nhs_number):
         """Make a GET request to the eligibility-check endpoint.
@@ -31,9 +33,8 @@ class ApiClient:
         """
         url = f"{BASE_URL}/patient-check/{nhs_number}"
         params = {"patient": nhs_number}
-        
-        response = requests.get(url, headers=self.headers, params=params)
-        return response
+
+        return requests.get(url, headers=self.headers, params=params, timeout=DEFAULT_TIMEOUT)
 
     def get(self, endpoint, params=None):
         """Make a generic GET request to the API.
@@ -46,8 +47,7 @@ class ApiClient:
             requests.Response: Response object from the API.
         """
         url = f"{self.base_url}{endpoint}"
-        response = requests.get(url, headers=self.headers, params=params)
-        return response
+        return requests.get(url, headers=self.headers, params=params, timeout=DEFAULT_TIMEOUT)
 
     def post(self, endpoint, data=None, json=None):
         """Make a generic POST request to the API.
@@ -61,5 +61,4 @@ class ApiClient:
             requests.Response: Response object from the API.
         """
         url = f"{self.base_url}{endpoint}"
-        response = requests.post(url, headers=self.headers, data=data, json=json)
-        return response
+        return requests.post(url, headers=self.headers, data=data, json=json, timeout=DEFAULT_TIMEOUT)

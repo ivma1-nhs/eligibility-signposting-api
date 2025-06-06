@@ -4,7 +4,6 @@ from pathlib import Path
 
 import boto3
 import pytest
-import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env.local
@@ -21,13 +20,10 @@ AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
 BASE_DIR = Path(__file__).resolve().parent.parent
 DYNAMO_DATA_PATH = BASE_DIR / "data" / "dynamoDB" / "test_data.json"
 
+
 def pytest_addoption(parser):
-    parser.addoption(
-        "--keep-seed",
-        action="store_true",
-        default=False,
-        help="Keep DynamoDB seed data after tests"
-    )
+    parser.addoption("--keep-seed", action="store_true", default=False, help="Keep DynamoDB seed data after tests")
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_dynamodb_data(request):
@@ -47,7 +43,7 @@ def setup_dynamodb_data(request):
     else:
         print(f"[✓] Found test data file: {DYNAMO_DATA_PATH}")
 
-    with open(DYNAMO_DATA_PATH, "r") as f:
+    with open(DYNAMO_DATA_PATH) as f:
         items = json.load(f)
 
     print(f"[→] Inserting {len(items)} items into DynamoDB...")
