@@ -4,7 +4,7 @@ This repository contains a Python-based test automation framework for the Eligib
 
 ## Framework Structure
 
-```
+```bash
 qa-automation/
 ├── tests/
 │   └── eligibility_signposting/
@@ -28,49 +28,56 @@ qa-automation/
 ## Setup and Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/ivma1-nhs/qa-automation.git
    cd qa-automation
    ```
 
 2. Create a virtual environment (optional but recommended):
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-
 3. Install Poetry (if not already installed):
+
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
    # Or see https://python-poetry.org/docs/#installation for details
    ```
 
 4. Install dependencies:
+
    ```bash
    poetry install
    ```
 
-4. Configure environment variables:
+5. Configure environment variables:
    - Copy the `.env.example` file to `.env` (if not already present)
    - Update the values in `.env` with your sandbox credentials
 
 ## Running Tests
 
-
 ### Running API (pytest) tests
+
 Run all pytest-based tests:
+
 ```bash
 poetry run pytest
 ```
 
 Run a specific pytest test file:
+
 ```bash
 poetry run pytest tests/eligibility_signposting/test_eligibility_check.py
 ```
 
 ### Running BDD tests with Behave
+
 Run all Behave feature tests:
+
 ```bash
 poetry run behave
 ```
@@ -82,10 +89,11 @@ This will discover and run all feature files in the `features/` directory using 
 ### Adding New Test Files
 
 1. Create a new test file in the appropriate directory:
+
    ```python
    # tests/eligibility_signposting/test_new_feature.py
    import pytest
-   
+
    @pytest.mark.new_feature
    class TestNewFeature:
        def test_something(self, api_client):
@@ -94,15 +102,16 @@ This will discover and run all feature files in the `features/` directory using 
    ```
 
 2. Add the new marker to pytest.ini if needed:
+
    ```ini
    markers =
        new_feature: marks tests related to the new feature
    ```
 
-
 ### Adding New BDD Tests (Behave)
 
 1. Create a new feature file:
+
    ```gherkin
    # features/new_feature/new_feature.feature
    Feature: New Feature
@@ -117,6 +126,7 @@ This will discover and run all feature files in the `features/` directory using 
    ```
 
 2. Create step definitions:
+
    ```python
    # features/steps/new_feature_steps.py
    from behave import given, when, then
@@ -133,6 +143,7 @@ This will discover and run all feature files in the `features/` directory using 
    ```
 
 3. Run the BDD tests with:
+
    ```bash
    poetry run behave
    ```
@@ -140,12 +151,14 @@ This will discover and run all feature files in the `features/` directory using 
 ### Adding New API Endpoints
 
 1. Update the config.py file with the new endpoint:
+
    ```python
    # utils/config.py
    NEW_ENDPOINT = '/new-endpoint'
    ```
 
 2. Add a new method to the ApiClient class:
+
    ```python
    # utils/api_client.py
    def get_new_endpoint(self, param1, param2):
@@ -158,6 +171,7 @@ This will discover and run all feature files in the `features/` directory using 
 ### Adding New Response Schemas
 
 1. Add the new schema to config.py:
+
    ```python
    # utils/config.py
    NEW_ENDPOINT_SCHEMA = {
@@ -169,10 +183,11 @@ This will discover and run all feature files in the `features/` directory using 
    ```
 
 2. Use the schema in your tests:
+
    ```python
    from utils.config import NEW_ENDPOINT_SCHEMA
    import jsonschema
-   
+
    def test_new_endpoint_schema(self, api_client):
        response = api_client.get_new_endpoint("value1", "value2")
        response_json = response.json()
@@ -184,11 +199,12 @@ This will discover and run all feature files in the `features/` directory using 
 When the DynamoDB-backed API is ready, you can extend the framework by:
 
 1. Adding DynamoDB client configuration:
+
    ```python
    # utils/dynamo_client.py
    import boto3
    from utils.config import AWS_REGION, AWS_ACCESS_KEY, AWS_SECRET_KEY
-   
+
    class DynamoClient:
        def __init__(self):
            self.client = boto3.client(
@@ -197,7 +213,7 @@ When the DynamoDB-backed API is ready, you can extend the framework by:
                aws_access_key_id=AWS_ACCESS_KEY,
                aws_secret_access_key=AWS_SECRET_KEY
            )
-       
+
        def get_item(self, table_name, key):
            response = self.client.get_item(
                TableName=table_name,
@@ -207,16 +223,18 @@ When the DynamoDB-backed API is ready, you can extend the framework by:
    ```
 
 2. Adding fixtures in conftest.py:
+
    ```python
    # tests/eligibility_signposting/conftest.py
    from utils.dynamo_client import DynamoClient
-   
+
    @pytest.fixture
    def dynamo_client():
        return DynamoClient()
    ```
 
 3. Using the DynamoDB client in tests:
+
    ```python
    def test_with_dynamodb(self, api_client, dynamo_client):
        # Test implementation using both API and DynamoDB
@@ -237,16 +255,17 @@ When the DynamoDB-backed API is ready, you can extend the framework by:
 This framework can be integrated with CI/CD pipelines:
 
 1. Add a GitHub Actions workflow:
+
    ```yaml
    # .github/workflows/test.yml
    name: API Tests
-   
+
    on:
      push:
        branches: [ main ]
      pull_request:
        branches: [ main ]
-   
+
    jobs:
      test:
        runs-on: ubuntu-latest
