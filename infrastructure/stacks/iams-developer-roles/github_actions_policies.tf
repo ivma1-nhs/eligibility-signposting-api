@@ -72,15 +72,23 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:UpdateKeyDescription",
           "kms:CreateGrant",
           "kms:CreateAlias",
-
+          "kms:TagResource",
+          "kms:CreateKey",
+          "kms:EnableKeyRotation",
+          "kms:ScheduleKeyDeletion",
+          "kms:PutKeyPolicy",
+          "kms:Encrypt",
 
           # Cloudwatch permissions
           "logs:Describe*",
           "logs:ListTagsForResource",
+          "logs:PutRetentionPolicy",
+          "logs:AssociateKmsKey",
 
           #EC2 permissions
           "ec2:Describe*",
           "ec2:CreateTags",
+          "ec2:CreateNetworkAclEntry",
 
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
