@@ -244,8 +244,8 @@ When the DynamoDB-backed API is ready, you can extend the framework by:
 ## Best Practices
 
 1. **Test Independence**: Each test should be independent and not rely on the state from other tests.
-2. **Fixtures**: Use fixtures for common setup and teardown operations.
-3. **Parameterization**: Use pytest's parameterize feature for testing multiple scenarios.
+2. **Fixtures**: Use fixtures for common setup and clean-up operations.
+3. **Multiple Test Cases**: Use pytest's parameterize feature for testing multiple scenarios.
 4. **Assertions**: Use descriptive assertions to make test failures clear.
 5. **Documentation**: Document your tests with docstrings and comments.
 6. **Environment Variables**: Use environment variables for sensitive information and configuration.
