@@ -18,13 +18,30 @@ resource "aws_kms_key_policy" "lambda_cmk" {
 
 data "aws_iam_policy_document" "lambda_cmk" {
   statement {
-    sid    = "Enable IAM User Permissions for s3 buckets"
+    sid    = "Enable IAM User Permissions for Lambda CMK"
     effect = "Allow"
     principals {
       type        = "AWS"
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
     }
     actions   = ["kms:*"]
+    resources = [aws_kms_key.lambda_cmk.arn]
+  }
+
+  statement {
+    sid    = "AllowCloudWatchLogsUseOfTheKey"
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.region}.amazonaws.com"]
+    }
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
     resources = [aws_kms_key.lambda_cmk.arn]
   }
 }
