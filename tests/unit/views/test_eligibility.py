@@ -117,10 +117,22 @@ def test_build_eligibility_cohorts_results_consider_only_cohorts_with_best_statu
         cohort_results=[
             CohortResultFactory.build(
                 cohort_code="cohort_group1",
+                cohort_label="cohort_label1.1",
                 status=Status.not_actionable,
             ),
             CohortResultFactory.build(
+                cohort_code="cohort_group1",
+                cohort_label="cohort_label1.2",
+                status=Status.not_actionable,
+            ),
+            CohortResultFactory.build(
+                cohort_code="cohort_group1",
+                cohort_label="cohort_label1.3",
+                status=Status.not_eligible,
+            ),
+            CohortResultFactory.build(
                 cohort_code="cohort_group2",
+                cohort_label="cohort_label2",
                 status=Status.not_eligible,
             ),
         ],
@@ -162,6 +174,17 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_result=RuleResult("Age < 75"),
+                    )
+                ],
+            ),
+            CohortResultFactory.build(
+                cohort_code="cohort_group3",
+                status=Status.not_eligible,
+                reasons=[
+                    Reason(
+                        rule_type=RuleType.filter,
+                        rule_name=RuleName("Exclude is present in sw1"),
+                        rule_result=RuleResult("memberof sw1"),
                     )
                 ],
             ),
