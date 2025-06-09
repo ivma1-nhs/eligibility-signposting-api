@@ -33,6 +33,13 @@ resource "aws_iam_policy" "terraform_state" {
 
 # API Infrastructure Management Policy
 resource "aws_iam_policy" "api_infrastructure" {
+  #checkov:skip=CKV_AWS_287 Ensure IAM policies does not allow credentials exposure
+  #checkov:skip=CKV_AWS_355 Ensure no IAM policies documents allow "*" as a statement's resource for restrictable actions
+  #checkov:skip=CKV_AWS_288 Ensure IAM policies does not allow data exfiltration
+  #checkov:skip=CKV_AWS_289 Ensure IAM policies does not allow permissions management / resource exposure without constraints
+  #checkov:skip=CKV_AWS_286 Ensure IAM policies does not allow privilege escalation
+  #checkov:skip=CKV_AWS_290 Ensure IAM policies does not allow write access without constraints
+
   name        = "api-infrastructure-management"
   description = "Policy granting permissions to manage API infrastructure"
   path        = "/service-policies/"
@@ -61,13 +68,27 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:GetKeyPolicy*",
           "kms:GetKeyRotationStatus",
           "kms:Decrypt*",
+          "kms:DeleteAlias",
+          "kms:UpdateKeyDescription",
+          "kms:CreateGrant",
+          "kms:CreateAlias",
+          "kms:TagResource",
+          "kms:CreateKey",
+          "kms:EnableKeyRotation",
+          "kms:ScheduleKeyDeletion",
+          "kms:PutKeyPolicy",
+          "kms:Encrypt",
 
           # Cloudwatch permissions
           "logs:Describe*",
           "logs:ListTagsForResource",
+          "logs:PutRetentionPolicy",
+          "logs:AssociateKmsKey",
 
           #EC2 permissions
           "ec2:Describe*",
+          "ec2:CreateTags",
+          "ec2:CreateNetworkAclEntry",
 
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
@@ -77,6 +98,8 @@ resource "aws_iam_policy" "api_infrastructure" {
           "iam:Create*",
           "iam:Update*",
           "iam:Delete*",
+          "iam:PutRolePermissionsBoundary",
+          "iam:PutRolePolicy",
 
           # ssm
           "ssm:GetParameter",

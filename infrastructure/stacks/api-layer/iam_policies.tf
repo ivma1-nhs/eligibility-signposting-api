@@ -23,8 +23,9 @@ data "aws_iam_policy_document" "dynamodb_write_policy_doc" {
 
 # Attach dynamoDB write policy to external write role
 resource "aws_iam_role_policy" "external_dynamodb_write_policy" {
+  count  = length(aws_iam_role.write_access_role)
   name   = "DynamoDBWriteAccess"
-  role   = aws_iam_role.write_access_role.id
+  role   = aws_iam_role.write_access_role[count.index].id
   policy = data.aws_iam_policy_document.dynamodb_write_policy_doc.json
 }
 
@@ -135,10 +136,16 @@ data "aws_iam_policy_document" "kms_key_policy" {
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
     }
     actions   = ["kms:*"]
-    resources = ["*"]
+    resources = [
+      module.eligibility_status_table.dynamodb_kms_key_arn,
+      module.s3_rules_bucket.storage_bucket_kms_key_arn,
+      module.s3_audit_bucket.storage_bucket_kms_key_arn,
+      module.eligibility_signposting_api_gateway.kms_key_arn,
+
+    ]
   }
   statement {
-    sid    = "Allow lambda role"
+    sid    = "Allow lambda decrypt role"
     effect = "Allow"
     principals {
       type = "AWS"
@@ -150,7 +157,28 @@ data "aws_iam_policy_document" "kms_key_policy" {
       "kms:Decrypt"
     ]
     resources = [
-      module.eligibility_status_table.dynamodb_kms_key_arn
+      module.eligibility_status_table.dynamodb_kms_key_arn,
+      module.s3_rules_bucket.storage_bucket_kms_key_arn,
+    ]
+  }
+
+  statement {
+    sid    = "Allow lambda full write role"
+    effect = "Allow"
+    principals {
+      type = "AWS"
+      identifiers = [
+        aws_iam_role.eligibility_lambda_role.arn
+      ]
+    }
+    actions = [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey",
+      "kms:DescribeKey"
+    ]
+    resources = [
+      module.s3_audit_bucket.storage_bucket_kms_key_arn
     ]
   }
 }
@@ -160,5 +188,3 @@ resource "aws_kms_key_policy" "kms_key" {
   key_id = module.eligibility_status_table.dynamodb_kms_key_id
   policy = data.aws_iam_policy_document.kms_key_policy.json
 }
-
-
