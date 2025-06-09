@@ -105,21 +105,10 @@ class EligibilityCalculator:
                     # Check Base Eligibility
                     if cohort.cohort_label in self.person_cohorts or cohort.cohort_label == magic_cohort:
                         # Check Eligibility
-                        is_eligible: bool = True
-                        is_eligible = self.evaluate_filter_rules(
-                            cohort,
-                            cohort_results,
-                            rules_filter,
-                            is_eligible=is_eligible,
-                        )
-
-                        if is_eligible:
+                        if self.eligibility_check(cohort, cohort_results, rules_filter):
                             # Check Actionable
-                            is_actionable: bool = True
                             suppression_reasons, is_actionable = self.evaluate_suppression_rules(
-                                cohort,
-                                rules_suppression,
-                                is_actionable=is_actionable,
+                                cohort, rules_suppression
                             )
                             if cohort.cohort_label is not None:
                                 key = cohort.cohort_label
@@ -169,19 +158,20 @@ class EligibilityCalculator:
         ]
         return eligibility.EligibilityStatus(conditions=final_result)
 
-    def evaluate_filter_rules(
+    def eligibility_check(
         self,
         cohort: IterationCohort,
         cohort_results: dict[str, CohortResult],
         rules_filter: Iterable[rules.IterationRule],
-        *,
-        is_eligible: bool,
     ) -> bool:
+        is_eligible = True
         priority_getter = attrgetter("priority")
         sorted_rules_by_priority = sorted(self.get_exclusion_rules(cohort, rules_filter), key=priority_getter)
 
         for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
-            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(rule_group)
+            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(
+                rule_group
+            )
             if status.is_exclusion:
                 if cohort.cohort_label is not None:
                     cohort_results[str(cohort.cohort_label)] = CohortResult(
@@ -198,14 +188,15 @@ class EligibilityCalculator:
         self,
         cohort: IterationCohort,
         rules_suppression: Iterable[rules.IterationRule],
-        *,
-        is_actionable: bool,
     ) -> tuple[list, bool]:
+        is_actionable: bool = True
         priority_getter = attrgetter("priority")
         suppression_reasons = []
         sorted_rules_by_priority = sorted(self.get_exclusion_rules(cohort, rules_suppression), key=priority_getter)
         for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
-            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(rule_group)
+            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(
+                rule_group
+            )
             if status.is_exclusion:
                 is_actionable = False
                 suppression_reasons.extend(group_exclusion_reasons)
