@@ -5,7 +5,8 @@ from brunns.matchers.data import json_matching as is_json_that
 from brunns.matchers.werkzeug import is_werkzeug_response as is_response
 from flask import Flask
 from flask.testing import FlaskClient
-from hamcrest import assert_that, contains_exactly, has_entries, has_key, has_length
+from hamcrest import assert_that, contains_exactly, has_entries, has_key, has_length, has_entry, empty, not_
+import json
 from wireup.integration.flask import get_app_container
 
 from eligibility_signposting_api.model.eligibility import (
@@ -60,10 +61,11 @@ def test_nhs_number_given(app: Flask, client: FlaskClient):
         response = client.get("/patient-check/12345")
 
         # Then
-    assert_that(
-        response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_key("processedSuggestions"))),
-    )
+        assert_that(response, is_response().with_status_code(HTTPStatus.OK))
+        data = json.loads(response.get_data(as_text=True))
+
+        for suggestion in data["processedSuggestions"]:
+            assert_that(suggestion, has_entry("actions", empty()))
 
 
 def test_no_nhs_number_given(app: Flask, client: FlaskClient):
@@ -194,10 +196,12 @@ def test_nhs_number_and_include_actions_param_yes_given(app: Flask, client: Flas
         response = client.get("/patient-check/12345?includeActions=Y")
 
         # Then
-    assert_that(
-        response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_key("processedSuggestions"))),
-    )
+        assert_that(response, is_response().with_status_code(HTTPStatus.OK))
+        data = json.loads(response.get_data(as_text=True))
+
+        for suggestion in data["processedSuggestions"]:
+            assert_that(suggestion, has_entry("actions", empty()))
+
 
 def test_nhs_number_and_include_actions_param_no_given(app: Flask, client: FlaskClient):
     # Given
@@ -206,14 +210,9 @@ def test_nhs_number_and_include_actions_param_no_given(app: Flask, client: Flask
         response = client.get("/patient-check/12345?includeActions=N")
 
         # Then
-    assert_that(
-        response,
-        is_response().with_status_code(HTTPStatus.OK).and_text(
-            is_json_that(has_key("processedSuggestions")),
-            is_json_that(has_not_key("processedSuggestions"))
+        assert_that(response, is_response().with_status_code(HTTPStatus.OK))
+        data = json.loads(response.get_data(as_text=True))
+        for suggestion in data["processedSuggestions"]:
+            assert_that(suggestion, not_(has_key("actions")))
 
-            data["processedSuggestions"],
-            every_item(has_entry("actions", empty()))
 
-        ),
-    )
