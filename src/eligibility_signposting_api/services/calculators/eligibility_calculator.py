@@ -84,12 +84,10 @@ class EligibilityCalculator:
     def get_rules_by_type(
         active_iteration: Iteration,
     ) -> tuple[tuple[rules.IterationRule, ...], tuple[rules.IterationRule, ...]]:
-        rules_by_type = {
-            rule_type: tuple(rule for rule in active_iteration.iteration_rules if attrgetter("type")(rule) == rule_type)
-            for rule_type in (rules.RuleType.filter, rules.RuleType.suppression, rules.RuleType.redirect)
-        }
-        rules_filter = rules_by_type[rules.RuleType.filter]
-        rules_suppression = rules_by_type[rules.RuleType.suppression]
+        rules_filter, rules_suppression = (
+            tuple(rule for rule in active_iteration.iteration_rules if attrgetter("type")(rule) == rule_type)
+            for rule_type in (rules.RuleType.filter, rules.RuleType.suppression)
+        )
         return rules_filter, rules_suppression
 
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
@@ -106,6 +104,7 @@ class EligibilityCalculator:
                 for cohort in sorted(active_iteration.iteration_cohorts, key=attrgetter("priority")):
                     # Check Base Eligibility
                     if cohort.cohort_label in self.person_cohorts or cohort.cohort_label == magic_cohort:
+                        # Check Eligibility
                         is_eligible: bool = True
                         is_eligible = self.evaluate_filter_rules(
                             cohort,
@@ -115,6 +114,7 @@ class EligibilityCalculator:
                         )
 
                         if is_eligible:
+                            # Check Actionable
                             is_actionable: bool = True
                             suppression_reasons, is_actionable = self.evaluate_suppression_rules(
                                 cohort,
@@ -181,7 +181,7 @@ class EligibilityCalculator:
         sorted_rules_by_priority = sorted(self.get_exclusion_rules(cohort, rules_filter), key=priority_getter)
 
         for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
-            status, group_actionable, group_exclusions, rule_stop = self.evaluate_rules_priority_group(rule_group)
+            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(rule_group)
             if status.is_exclusion:
                 if cohort.cohort_label is not None:
                     cohort_results[str(cohort.cohort_label)] = CohortResult(
@@ -205,10 +205,10 @@ class EligibilityCalculator:
         suppression_reasons = []
         sorted_rules_by_priority = sorted(self.get_exclusion_rules(cohort, rules_suppression), key=priority_getter)
         for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
-            status, group_actionable, group_exclusions, rule_stop = self.evaluate_rules_priority_group(rule_group)
+            status, group_inclusion_reasons, group_exclusion_reasons, rule_stop = self.evaluate_rules_priority_group(rule_group)
             if status.is_exclusion:
                 is_actionable = False
-                suppression_reasons.extend(group_exclusions)
+                suppression_reasons.extend(group_exclusion_reasons)
                 if rule_stop:
                     break
         return suppression_reasons, is_actionable
@@ -217,7 +217,7 @@ class EligibilityCalculator:
         self, rules_group: Iterator[rules.IterationRule]
     ) -> tuple[eligibility.Status, list[eligibility.Reason], list[eligibility.Reason], bool]:
         is_rule_stop = False
-        actionable_reasons, exclusion_reasons = [], []
+        inclusion_reasons, exclusion_reasons = [], []
         best_status = eligibility.Status.not_eligible
 
         for rule in rules_group:
@@ -229,6 +229,6 @@ class EligibilityCalculator:
                 exclusion_reasons.append(reason)
             else:
                 best_status = eligibility.Status.actionable
-                actionable_reasons.append(reason)
+                inclusion_reasons.append(reason)
 
-        return best_status, actionable_reasons, exclusion_reasons, is_rule_stop
+        return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
