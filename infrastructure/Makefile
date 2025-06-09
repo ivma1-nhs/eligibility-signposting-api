@@ -35,7 +35,7 @@ terraform-workspace-delete: guard-env guard-stack
 
 # Runs a specified Terraform command (e.g., plan, apply) for the stack and environment.
 terraform: guard-env guard-stack guard-tf-command terraform-init terraform-workspace
-	terraform -chdir=./stacks/$(stack) $(tf-command) $(args) \
+	terraform -chdir=./stacks/$(stack) $(tf-command) $(args) -var="environment=$(env)" \
 		$(if $(filter init,$(tf-command)),,--parallelism=30) \
 		$(if $(filter apply,$(tf-command)),-auto-approve)
 	rm -f ./terraform_outputs_$(stack).json || true
@@ -53,4 +53,4 @@ bootstrap-terraform-init: guard-env
 
 # Runs a specified Terraform command (e.g., plan, apply) for the bootstrap stack.
 bootstrap-terraform: guard-env guard-tf-command bootstrap-terraform-init
-	terraform -chdir=./stacks/bootstrap $(tf-command) $(args)
+	terraform -chdir=./stacks/bootstrap $(tf-command) $(args) -var="environment=$(env)"
