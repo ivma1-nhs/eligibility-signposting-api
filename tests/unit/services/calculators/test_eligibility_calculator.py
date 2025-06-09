@@ -883,8 +883,8 @@ def test_rules_stop_behavior(
 ) -> None:
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
-    date_obj = datetime.datetime.strptime("19980309", "%Y%m%d").replace(tzinfo=datetime.UTC).date()
-    person_rows = person_rows_builder(nhs_number, date_of_birth=(DateOfBirth(date_obj)), cohorts=["cohort1"])
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
 
     # Build campaign configuration
     campaign_config = rule_builder.CampaignConfigFactory.build(
