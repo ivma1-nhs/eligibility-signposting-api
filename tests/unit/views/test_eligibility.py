@@ -216,3 +216,52 @@ def test_nhs_number_and_include_actions_param_no_given(app: Flask, client: Flask
             assert_that(suggestion, not_(has_key("actions")))
 
 
+def test_nhs_number_and_include_actions_param_incorrect_given(app: Flask, client: FlaskClient):
+    # Given
+    with get_app_container(app).override.service(EligibilityService, new=FakeEligibilityService()):
+        # When
+        response = client.get("/patient-check/12345?includeActions=abc")
+
+        # Then
+        assert_that(
+            response,
+            is_response()
+            .with_status_code(HTTPStatus.BAD_REQUEST)
+            .and_text(
+                is_json_that(
+                    has_entries(
+                        resourceType="OperationOutcome",
+                        issue=contains_exactly(
+                            has_entries(
+                                severity="error", code="invalid", diagnostics='Invalid query param key or value.'
+                            )
+                        ),
+                    )
+                )
+            ),
+        )
+
+def test_nhs_number_and_include_actions_param_incorrect_given_2(app: Flask, client: FlaskClient):
+    # Given
+    with get_app_container(app).override.service(EligibilityService, new=FakeEligibilityService()):
+        # When
+        response = client.get("/patient-check/12345?example-key=example-value")
+
+        # Then
+        assert_that(
+            response,
+            is_response()
+            .with_status_code(HTTPStatus.BAD_REQUEST)
+            .and_text(
+                is_json_that(
+                    has_entries(
+                        resourceType="OperationOutcome",
+                        issue=contains_exactly(
+                            has_entries(
+                                severity="error", code="invalid", diagnostics='Invalid query param key or value.'
+                            )
+                        ),
+                    )
+                )
+            ),
+        )

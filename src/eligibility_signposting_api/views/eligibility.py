@@ -31,10 +31,25 @@ eligibility_blueprint = Blueprint("eligibility", __name__)
 def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[EligibilityService]) -> ResponseReturnValue:
     logger.debug("checking nhs_number %r in %r", nhs_number, eligibility_service, extra={"nhs_number": nhs_number})
     try:
-        #if request.args.get("include_actions") not in ("Y", "N"):
-        #    raise InvalidQueryParam
+        if "includeActions" in request.args:
+            if request.args.get("includeActions") not in ("Y", "N", None) :
+                raise InvalidQueryParam
+        elif len(request.args) != 0  and "includeActions" not in request.args:
+            raise InvalidQueryParam
 
         eligibility_status = eligibility_service.get_eligibility_status(nhs_number)
+    except InvalidQueryParam:
+        logger.debug("Invalid query param", )
+        problem = OperationOutcome(
+            issue=[
+                OperationOutcomeIssue(
+                    severity="error",
+                    code="invalid",
+                    diagnostics=f'Invalid query param key or value.',
+                )  # pyright: ignore[reportCallIssue]
+            ]
+        )
+        return make_response(problem.model_dump(by_alias=True, mode="json"), HTTPStatus.BAD_REQUEST)
     except UnknownPersonError:
         logger.debug("nhs_number %r not found", nhs_number, extra={"nhs_number": nhs_number})
         problem = OperationOutcome(
