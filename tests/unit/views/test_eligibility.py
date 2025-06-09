@@ -185,3 +185,35 @@ def test_no_suitability_rules_for_actionable():
     results = build_suitability_results(condition)
 
     assert_that(results, has_length(0))
+
+
+def test_nhs_number_and_include_actions_param_yes_given(app: Flask, client: FlaskClient):
+    # Given
+    with get_app_container(app).override.service(EligibilityService, new=FakeEligibilityService()):
+        # When
+        response = client.get("/patient-check/12345?includeActions=Y")
+
+        # Then
+    assert_that(
+        response,
+        is_response().with_status_code(HTTPStatus.OK).and_text(is_json_that(has_key("processedSuggestions"))),
+    )
+
+def test_nhs_number_and_include_actions_param_no_given(app: Flask, client: FlaskClient):
+    # Given
+    with get_app_container(app).override.service(EligibilityService, new=FakeEligibilityService()):
+        # When
+        response = client.get("/patient-check/12345?includeActions=N")
+
+        # Then
+    assert_that(
+        response,
+        is_response().with_status_code(HTTPStatus.OK).and_text(
+            is_json_that(has_key("processedSuggestions")),
+            is_json_that(has_not_key("processedSuggestions"))
+
+            data["processedSuggestions"],
+            every_item(has_entry("actions", empty()))
+
+        ),
+    )
