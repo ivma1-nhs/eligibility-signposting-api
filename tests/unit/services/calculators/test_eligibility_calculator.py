@@ -811,15 +811,15 @@ def test_status_on_cohort_attribute_level(
 
 
 @pytest.mark.parametrize(
-    ("person_cohorts", "cohort_label", "expected_status", "test_comment"),
+    ("person_cohorts", "expected_status", "test_comment"),
     [
-        (["cohort1", "cohort2"], "cohort1", Status.actionable, "cohort1 is not actionable, cohort 2 is actionable"),
-        (["cohort2", "cohort3"], "cohort1", Status.actionable, "doesn't match the cohort label"),
-        (["cohort1"], "cohort1", Status.not_actionable, "cohort1 is not actionable"),
+        (["cohort1", "cohort2"], Status.actionable, "cohort1 is not actionable, cohort 2 is actionable"),
+        (["cohort3", "cohort2"], Status.actionable, "cohort3 is not eligible, cohort 2 is actionable"),
+        (["cohort1"], Status.not_actionable, "cohort1 is not actionable"),
     ],
 )
 def test_status_if_iteration_rules_contains_cohort_label_field(
-    person_cohorts, cohort_label: str, expected_status: Status, test_comment: str, faker: Faker
+    person_cohorts, expected_status: Status, test_comment: str, faker: Faker
 ):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
@@ -835,7 +835,7 @@ def test_status_if_iteration_rules_contains_cohort_label_field(
                         rule_builder.IterationCohortFactory.build(cohort_label="cohort1"),
                         rule_builder.IterationCohortFactory.build(cohort_label="cohort2"),
                     ],
-                    iteration_rules=[rule_builder.PersonAgeSuppressionRuleFactory.build(cohort_label=cohort_label)],
+                    iteration_rules=[rule_builder.PersonAgeSuppressionRuleFactory.build(cohort_label="cohort1")],
                 )
             ],
         )
@@ -883,8 +883,8 @@ def test_rules_stop_behavior(
 ) -> None:
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
-    date_obj = datetime.datetime.strptime("19980309", "%Y%m%d").replace(tzinfo=datetime.UTC).date()
-    person_rows = person_rows_builder(nhs_number, date_of_birth=(DateOfBirth(date_obj)), cohorts=["cohort1"])
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])
 
     # Build campaign configuration
     campaign_config = rule_builder.CampaignConfigFactory.build(
