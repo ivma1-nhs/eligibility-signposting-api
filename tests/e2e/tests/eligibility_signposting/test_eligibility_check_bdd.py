@@ -1,14 +1,12 @@
-import os
 import sys
+from pathlib import Path
 
 import pytest
 from behave import scenarios
+from features.steps.eligibility_check_steps import *
 
 # Add the features directory to the Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
-
-# Import the step definitions
-from features.steps.eligibility_check_steps import *
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Mark all tests as BDD tests
 pytestmark = [pytest.mark.bdd, pytest.mark.eligibility]

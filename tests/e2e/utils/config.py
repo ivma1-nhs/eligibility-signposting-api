@@ -43,11 +43,16 @@ ELIGIBILITY_CHECK_SCHEMA = {
                 "properties": {
                     "condition": {
                         "type": "string",
-                        "description": "String representing the vaccine target disease, screening target or other scenario requiring decision based suggestions, that this suggestion relates to",
+                        "description": (
+                            "String representing the vaccine target disease, screening target or other scenario "
+                            "requiring decision based suggestions, that this suggestion relates to"
+                        ),
                     },
                     "status": {
                         "type": "string",
-                        "description": "String representing an overall summary of the persons status for this processedSuggestion",
+                        "description": (
+                            "String representing an overall summary of the persons status for this processedSuggestion"
+                        ),
                         "enum": ["NotEligible", "NotActionable", "Actionable"],
                     },
                     "statusText": {"type": "string"},
@@ -59,15 +64,24 @@ ELIGIBILITY_CHECK_SCHEMA = {
                             "properties": {
                                 "cohortCode": {
                                     "type": "string",
-                                    "description": "Machine readable code signifying the cohort/cohort group that lead to a person's eligibility for this suggestion",
+                                    "description": (
+                                        "Machine readable code signifying the cohort/cohort group that lead to a "
+                                        "person's eligibility for this suggestion"
+                                    ),
                                 },
                                 "cohortText": {
                                     "type": "string",
-                                    "description": "Human readable (render-able) text describing the meaning of a cohort/cohort group that lead to a person's eligibility for this suggestion",
+                                    "description": (
+                                        "Human readable (render-able) text describing the meaning of a cohort/"
+                                        "cohort group that lead to a person's eligibility for this suggestion"
+                                    ),
                                 },
                                 "cohortStatus": {
                                     "type": "string",
-                                    "description": "String representing the persons status for this processedSuggestion in respect of this particular cohort or cohort group",
+                                    "description": (
+                                        "String representing the persons status for this processedSuggestion "
+                                        "in respect of this particular cohort or cohort group"
+                                    ),
                                     "enum": ["NotEligible", "NotActionable", "Actionable"],
                                 },
                             },
@@ -75,22 +89,33 @@ ELIGIBILITY_CHECK_SCHEMA = {
                     },
                     "suitablityRules": {
                         "type": "array",
-                        "description": "Reasons that the eligibility status was changed from the base eligibility to result in it's status to not be eligible or to be acted on",
+                        "description": (
+                            "Reasons that the eligibility status was changed from the base eligibility "
+                            "to result in its status to not be eligible or to be acted on"
+                        ),
                         "items": {
                             "type": "object",
                             "properties": {
                                 "ruleType": {
                                     "type": "string",
-                                    "description": "The type of a rule that triggered to amend the status of the suggestion",
+                                    "description": (
+                                        "The type of a rule that triggered to amend the status of the suggestion"
+                                    ),
                                     "enum": ["F", "S"],
                                 },
                                 "ruleCode": {
                                     "type": "string",
-                                    "description": "Machine readable code signifying a rule that amended the status of the suggestion",
+                                    "description": (
+                                        "Machine readable code signifying a rule that amended the status "
+                                        "of the suggestion"
+                                    ),
                                 },
                                 "ruleText": {
                                     "type": "string",
-                                    "description": "Human readable (render-able) text describing a rule that amended the status of the suggestion",
+                                    "description": (
+                                        "Human readable (render-able) text describing a rule that amended "
+                                        "the status of the suggestion"
+                                    ),
                                 },
                             },
                         },
