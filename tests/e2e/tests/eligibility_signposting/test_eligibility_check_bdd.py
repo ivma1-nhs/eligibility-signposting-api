@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from behave import scenarios
-from features.steps.eligibility_check_steps import *
 
 # Add the features directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
