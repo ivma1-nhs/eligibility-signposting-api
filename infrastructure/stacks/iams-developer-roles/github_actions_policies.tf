@@ -158,11 +158,9 @@ resource "aws_iam_policy" "s3_management" {
 
 # API Infrastructure Management Policy
 resource "aws_iam_policy" "api_infrastructure" {
-  #checkov:skip=CKV_AWS_355 Ensure no IAM policies documents allow "*" as a statement's resource for restrictable actions
-  #checkov:skip=CKV_AWS_288 Ensure IAM policies does not allow data exfiltration
-  #checkov:skip=CKV_AWS_289 Ensure IAM policies does not allow permissions management / resource exposure without constraints
-  #checkov:skip=CKV_AWS_286 Ensure IAM policies does not allow privilege escalation
-  #checkov:skip=CKV_AWS_290 Ensure IAM policies does not allow write access without constraints
+  #checkov:skip=CKV_AWS_355 EC2 permissions allow all actions on all resources
+  #checkov:skip=CKV_AWS_288 Role needs access to SSM and logs
+  #checkov:skip=CKV_AWS_290 Write access limited to tags and network ACL entries
 
   name        = "api-infrastructure-management"
   description = "Policy granting permissions to manage API infrastructure"
@@ -185,20 +183,6 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ec2:Describe*",
           "ec2:CreateTags",
           "ec2:CreateNetworkAclEntry",
-
-          # IAM permissions (scoped to resources with specific path prefix)
-          "iam:Get*",
-          "iam:GetPolicy*",
-          "iam:GetRole*",
-          "iam:List*",
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:UpdateRole",
-          "iam:PutRolePolicy",
-          "iam:PutRolePermissionsBoundary",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:CreatePolicyVersion",
 
           # ssm
           "ssm:GetParameter",
@@ -225,6 +209,48 @@ resource "aws_iam_policy" "api_infrastructure" {
       Name = "api-infrastructure-management"
     }
   )
+}
+
+# IAM Management Policy
+resource "aws_iam_policy" "iam_management" {
+  name        = "iam-management"
+  description = "Policy granting permissions to manage only project-specific IAM roles and policies"
+  path        = "/service-policies/"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:Get*",
+          "iam:GetPolicy*",
+          "iam:GetRole*",
+          "iam:List*",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:UpdateRole",
+          "iam:PutRolePolicy",
+          "iam:PutRolePermissionsBoundary",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:CreatePolicyVersion"
+        ],
+        Resource = [
+          # Lambda role
+          "arn:aws:iam::*:role/eligibility_lambda-role*",
+          # API Gateway role
+          "arn:aws:iam::*:role/*-api-gateway-*-role",
+          # External write role
+          "arn:aws:iam::*:role/eligibility-signposting-api-*-external-write-role",
+          # Project policies
+          "arn:aws:iam::*:policy/*api-gateway-logging-policy",
+          "arn:aws:iam::*:policy/*PermissionsBoundary"
+        ]
+      }
+    ]
+  })
+  tags = merge(local.tags, { Name = "iam-management" })
 }
 
 # Assume role policy document for GitHub Actions
@@ -279,6 +305,11 @@ resource "aws_iam_role_policy_attachment" "dynamodb_management" {
 resource "aws_iam_role_policy_attachment" "s3_management" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.s3_management.arn
+}
+
+resource "aws_iam_role_policy_attachment" "iam_management" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.iam_management.arn
 }
 
 data "aws_caller_identity" "current" {}
