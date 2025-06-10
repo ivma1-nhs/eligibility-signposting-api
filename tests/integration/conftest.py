@@ -218,7 +218,9 @@ def persisted_person(person_table: Any, faker: Faker) -> Generator[eligibility.N
     nhs_number = eligibility.NHSNumber(faker.nhs_number())
     date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(minimum_age=18, maximum_age=65))
 
-    for row in (rows := person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1"])):
+    for row in (
+        rows := person_rows_builder(nhs_number, date_of_birth=date_of_birth, postcode="hp1", cohorts=["cohort1"])
+    ):
         person_table.put_item(Item=row)
 
     yield nhs_number
@@ -232,7 +234,11 @@ def persisted_77yo_person(person_table: Any, faker: Faker) -> Generator[eligibil
     nhs_number = eligibility.NHSNumber(faker.nhs_number())
     date_of_birth = eligibility.DateOfBirth(faker.date_of_birth(minimum_age=77, maximum_age=77))
 
-    for row in (rows := person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=["cohort1", "cohort2"])):
+    for row in (
+        rows := person_rows_builder(
+            nhs_number, date_of_birth=date_of_birth, postcode="hp1", cohorts=["cohort1", "cohort2"]
+        )
+    ):
         person_table.put_item(Item=row)
 
     yield nhs_number
