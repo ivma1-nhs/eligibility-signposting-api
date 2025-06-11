@@ -26,13 +26,14 @@ from tests.fixtures.matchers.eligibility import (
     is_eligibility_status,
     is_reason,
 )
+from tests.fixtures.matchers.rules import is_iteration_rule
+
 
 class TestEligibilityCalculator:
 
     @staticmethod
     def test_get_redirect_rules(faker: Faker):
         #Given
-
         campaign_configs = [
             (
                 rule_builder.CampaignConfigFactory.build(
@@ -49,15 +50,18 @@ class TestEligibilityCalculator:
             )
         ]
         iteration = campaign_configs[0].iterations[0]
-        print(iteration)
 
         #when
         actual_rules, actual_action_mapper, actual_default_comms = EligibilityCalculator.get_redirect_rules(iteration)
-        for rule in actual_rules:
-            print(rule)
-        print(actual_default_comms)
-        print(actual_action_mapper)
-        pass
+
+        #then
+        assert_that(
+            actual_rules,
+            has_item(is_iteration_rule().with_name(campaign_configs[0].iterations[0].iteration_rules[0].name))
+        )
+        assert actual_action_mapper == campaign_configs[0].iterations[0].actions_mapper
+        assert actual_default_comms == campaign_configs[0].iterations[0].default_comms_routing
+
 
 def test_not_base_eligible(faker: Faker):
     # Given
