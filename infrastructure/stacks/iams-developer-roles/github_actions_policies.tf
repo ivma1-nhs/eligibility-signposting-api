@@ -311,5 +311,3 @@ resource "aws_iam_role_policy_attachment" "iam_management" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.iam_management.arn
 }
-
-data "aws_caller_identity" "current" {}
