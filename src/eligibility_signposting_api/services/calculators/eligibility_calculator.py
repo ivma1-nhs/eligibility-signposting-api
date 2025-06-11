@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from itertools import groupby
 from typing import TYPE_CHECKING, Any
 
+from pygments.lexer import default
+
 if TYPE_CHECKING:
     from eligibility_signposting_api.model.rules import Iteration, IterationCohort
 
@@ -93,12 +95,13 @@ class EligibilityCalculator:
     @staticmethod
     def get_redirect_rules(
         active_iteration: Iteration,
-    ) -> tuple[rules.IterationRule, ...]:
+    ) -> tuple[tuple[rules.IterationRule, ...], dict[str, dict[str, str]], str]:
         redirect_rules = tuple(
             rule for rule in active_iteration.iteration_rules if rule.type in rules.RuleType.redirect
         )
-
-        return redirect_rules
+        default_comms = active_iteration.default_comms_routing
+        action_mapper = active_iteration.actions_mapper
+        return redirect_rules, action_mapper, default_comms
 
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Iterates over campaign groups, evaluates eligibility, and returns a consolidated status."""

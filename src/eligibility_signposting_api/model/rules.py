@@ -117,6 +117,9 @@ class IterationRule(BaseModel):
 
     model_config = {"populate_by_name": True, "extra": "ignore"}
 
+    def __str__(self) -> str:
+        return json.dumps(self.model_dump(by_alias=True), indent=2)
+
 
 class Iteration(BaseModel):
     id: IterationID = Field(..., alias="ID")
@@ -145,6 +148,9 @@ class Iteration(BaseModel):
     @staticmethod
     def serialize_dates(v: date, _info: SerializationInfo) -> str:
         return v.strftime("%Y%m%d")
+
+    def __str__(self) -> str:
+        return json.dumps(self.model_dump(by_alias=True), indent=2)
 
 
 class CampaignConfig(BaseModel):

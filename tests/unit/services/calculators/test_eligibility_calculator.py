@@ -31,6 +31,8 @@ class TestEligibilityCalculator:
 
     @staticmethod
     def test_get_redirect_rules(faker: Faker):
+        #Given
+
         campaign_configs = [
             (
                 rule_builder.CampaignConfigFactory.build(
@@ -46,8 +48,15 @@ class TestEligibilityCalculator:
                 )
             )
         ]
-        for config in campaign_configs:
-            print(config)
+        iteration = campaign_configs[0].iterations[0]
+        print(iteration)
+
+        #when
+        actual_rules, actual_action_mapper, actual_default_comms = EligibilityCalculator.get_redirect_rules(iteration)
+        for rule in actual_rules:
+            print(rule)
+        print(actual_default_comms)
+        print(actual_action_mapper)
         pass
 
 def test_not_base_eligible(faker: Faker):
