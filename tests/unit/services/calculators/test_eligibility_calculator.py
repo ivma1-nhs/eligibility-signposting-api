@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Any
 
 import pytest
@@ -26,6 +27,28 @@ from tests.fixtures.matchers.eligibility import (
     is_reason,
 )
 
+class TestEligibilityCalculator:
+
+    @staticmethod
+    def test_get_redirect_rules(faker: Faker):
+        campaign_configs = [
+            (
+                rule_builder.CampaignConfigFactory.build(
+                    target="RSV",
+                    iterations=[
+                        rule_builder.IterationFactory.build(
+                            iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
+                            default_comms_routing= "defaultcomms",
+                            actions_mapper = {"A key": {"anotherkey": "anothervalue"}},
+                            iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
+                        )
+                    ],
+                )
+            )
+        ]
+        for config in campaign_configs:
+            print(config)
+        pass
 
 def test_not_base_eligible(faker: Faker):
     # Given

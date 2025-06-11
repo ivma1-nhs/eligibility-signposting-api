@@ -90,6 +90,16 @@ class EligibilityCalculator:
         )
         return filter_rules, suppression_rules
 
+    @staticmethod
+    def get_redirect_rules(
+        active_iteration: Iteration,
+    ) -> tuple[rules.IterationRule, ...]:
+        redirect_rules = tuple(
+            rule for rule in active_iteration.iteration_rules if rule.type in rules.RuleType.redirect
+        )
+
+        return redirect_rules
+
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Iterates over campaign groups, evaluates eligibility, and returns a consolidated status."""
         condition_results: dict[ConditionName, IterationResult] = {}
@@ -121,6 +131,7 @@ class EligibilityCalculator:
                 # Determine Result between cohorts - get the best
                 status, best_cohorts = self.get_best_cohort(cohort_results)
                 iteration_results[active_iteration.name] = IterationResult(status, best_cohorts)
+                #
 
             # Determine results between iterations - get the best
             if iteration_results:
@@ -128,6 +139,10 @@ class EligibilityCalculator:
             else:
                 best_candidate = IterationResult(eligibility.Status.not_eligible, [])
             condition_results[condition_name] = best_candidate
+
+
+        # Redirect Rules
+        #
 
         # Consolidate all the results and return
         final_result = [
