@@ -95,6 +95,17 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: "Build lambda artefact"
+        run: |
+          make dependencies install-python
+          make build
+
+      - name: "Upload lambda artefact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda
+          path: dist/lambda.zip
+
       - name: "Download Built Lambdas"
         uses: actions/download-artifact@v4
         with:
