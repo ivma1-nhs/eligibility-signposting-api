@@ -16,6 +16,11 @@
       {
         "ID": "id_1",
         "DefaultCommsRouting": "Default_Comms_1",
+        "ActionsMapper": {
+          "RoutingCode1": "Action Text 1",
+          "RoutingCode2": "Action Text 2",
+          "Default_Comms_1": "Default Action Text"
+        },
         "IterationCohorts": [
           {
             "CohortLabel": "cohort_1",

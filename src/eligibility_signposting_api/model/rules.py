@@ -128,6 +128,7 @@ class Iteration(BaseModel):
     default_comms_routing: str | None = Field(None, alias="DefualtCommsRouting")
     iteration_cohorts: list[IterationCohort] = Field(..., alias="IterationCohorts")
     iteration_rules: list[IterationRule] = Field(..., alias="IterationRules")
+    actions_mapper: dict[str, str] = Field(default_factory=dict, alias="ActionsMapper")
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True, "extra": "ignore"}
 
