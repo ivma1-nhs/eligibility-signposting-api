@@ -80,7 +80,7 @@ jobs:
     name: "Deploy to an environment"
     runs-on: ubuntu-latest
     needs: [metadata]
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ inputs.environment }}
     timeout-minutes: 10
     permissions:
       id-token: write
