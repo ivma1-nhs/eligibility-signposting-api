@@ -1071,7 +1071,11 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper={"A key": {"anotherkey": "anothervalue"}},
+                        actions_mapper={"A key": {"ActionCode": "ActionCode1",
+                                                  "ActionDescription": "Action description",
+                                                  "ActionType": "ActionType",
+                                                  "ActionLink": "ActionLink",
+                                                  }},
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                     )
                 ],
