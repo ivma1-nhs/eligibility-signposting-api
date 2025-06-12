@@ -1056,3 +1056,36 @@ def test_eligibility_results_when_multiple_cohorts(
             )
         ),
     )
+
+def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    dob_person_less_than_75 = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+
+    person_rows = person_rows_builder(nhs_number, date_of_birth=dob_person_less_than_75, cohorts="cohort1")
+    campaign_configs = [
+        (
+            rule_builder.CampaignConfigFactory.build(
+                target="RSV",
+                iterations=[
+                    rule_builder.IterationFactory.build(
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
+                        default_comms_routing="defaultcomms",
+                        actions_mapper={"A key": {"anotherkey": "anothervalue"}},
+                        iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
+                    )
+                ],
+            )
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    pass
+
+def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
+    pass
