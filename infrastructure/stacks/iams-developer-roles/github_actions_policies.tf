@@ -158,10 +158,6 @@ resource "aws_iam_policy" "s3_management" {
 
 # API Infrastructure Management Policy
 resource "aws_iam_policy" "api_infrastructure" {
-  #checkov:skip=CKV_AWS_355 EC2 permissions allow all actions on all resources
-  #checkov:skip=CKV_AWS_288 Role needs access to SSM and logs
-  #checkov:skip=CKV_AWS_290 Write access limited to tags and network ACL entries
-
   name        = "api-infrastructure-management"
   description = "Policy granting permissions to manage API infrastructure"
   path        = "/service-policies/"
@@ -172,33 +168,77 @@ resource "aws_iam_policy" "api_infrastructure" {
       {
         Effect = "Allow",
         Action = [
+          "logs:Describe*",
+          "ssm:DescribeParameters",
+          "ec2:Describe*",
+          "ec2:DescribeVpcs",
+        ],
+        Resource = "*"
+        #checkov:skip=CKV_AWS_289: Actions require wildcard resource
+      },
+      {
+        Effect = "Allow",
+        Action = [
 
           # Cloudwatch permissions
-          "logs:Describe*",
           "logs:ListTagsForResource",
           "logs:PutRetentionPolicy",
           "logs:AssociateKmsKey",
+          "logs:CreateLogGroup",
 
-          #EC2 permissions
-          "ec2:Describe*",
+          # EC2 permissions
           "ec2:CreateTags",
           "ec2:CreateNetworkAclEntry",
+          "ec2:CreateNetworkAcl",
+          "ec2:AssociateRouteTable",
+          "ec2:CreateVpc",
+          "ec2:ModifyVpcAttribute",
+          "ec2:DeleteVpc",
+          "ec2:CreateRouteTable",
+          "ec2:CreateSubnet",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:CreateSecurityGroup",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:CreateVpcEndpoint",
+          "ec2:CreateFlowLogs",
+          "ec2:ReplaceNetworkAclAssociation",
+          "ec2:DeleteSecurityGroup",
+          "ec2:DeleteNetworkAcl",
 
           # ssm
           "ssm:GetParameter",
           "ssm:GetParameters",
-          "ssm:DescribeParameters",
           "ssm:ListTagsForResource",
+          "ssm:PutParameter",
+          "ssm:AddTagsToResource",
 
           # acm
           "acm:ListCertificates",
           "acm:DescribeCertificate",
           "acm:GetCertificate",
           "acm:ListTagsForCertificate",
+          "acm:RequestCertificate",
+          "acm:AddTagsToCertificate",
+          "acm:ImportCertificate",
         ],
 
 
-        Resource = "*"
+        Resource = [
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:vpc-endpoint/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:vpc-flow-log/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:subnet/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:route-table/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:network-acl/*",
+          "arn:aws:ec2:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/*",
+          "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*",
+          "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/*",
+          "arn:aws:ssm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.environment}/*",
+          "arn:aws:acm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:certificate/*",
+        ]
       }
     ]
   })
@@ -210,6 +250,56 @@ resource "aws_iam_policy" "api_infrastructure" {
     }
   )
 }
+
+# Create KMS keys policy for GitHub Actions
+resource "aws_iam_policy" "kms_creation" {
+  name        = "github-actions-kms-creation"
+  description = "Policy allowing GitHub Actions to manage KMS keys"
+  path        = "/service-policies/"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:CreateKey",
+          "kms:CreateAlias",
+          "kms:List*",
+          "kms:ListAliases",
+        ],
+        Resource = "*"
+        #checkov:skip=CKV_AWS_289: Actions require wildcard resource
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Describe*",
+          "kms:GetKeyPolicy*",
+          "kms:GetKeyRotationStatus",
+          "kms:Decrypt*",
+          "kms:DeleteAlias",
+          "kms:UpdateKeyDescription",
+          "kms:CreateGrant",
+          "kms:TagResource",
+          "kms:EnableKeyRotation",
+          "kms:ScheduleKeyDeletion",
+          "kms:PutKeyPolicy",
+          "kms:Encrypt",
+          "kms:TagResource",
+          "kms:GenerateDataKey",
+        ],
+        Resource = [
+          "arn:aws:kms:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:key/*",
+          "arn:aws:kms:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:alias/*"
+        ]
+      }
+    ]
+  })
+
+  tags = merge(local.tags, { Name = "github-actions-kms-creation" })
+}
+
 
 # IAM Management Policy
 resource "aws_iam_policy" "iam_management" {
@@ -234,7 +324,9 @@ resource "aws_iam_policy" "iam_management" {
           "iam:PutRolePermissionsBoundary",
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
-          "iam:CreatePolicyVersion"
+          "iam:CreatePolicyVersion",
+          "iam:TagRole",
+          "iam:PassRole",
         ],
         Resource = [
           # Lambda role
@@ -245,7 +337,9 @@ resource "aws_iam_policy" "iam_management" {
           "arn:aws:iam::*:role/eligibility-signposting-api-*-external-write-role",
           # Project policies
           "arn:aws:iam::*:policy/*api-gateway-logging-policy",
-          "arn:aws:iam::*:policy/*PermissionsBoundary"
+          "arn:aws:iam::*:policy/*PermissionsBoundary",
+          # VPC flow logs role
+          "arn:aws:iam::*:role/vpc-flow-logs-role",
         ]
       }
     ]
@@ -305,6 +399,11 @@ resource "aws_iam_role_policy_attachment" "dynamodb_management" {
 resource "aws_iam_role_policy_attachment" "s3_management" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.s3_management.arn
+}
+
+resource "aws_iam_role_policy_attachment" "kms_creation" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.kms_creation.arn
 }
 
 resource "aws_iam_role_policy_attachment" "iam_management" {
