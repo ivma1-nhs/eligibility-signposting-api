@@ -10,36 +10,22 @@
 #   }
 # }
 #
-data "aws_ssm_parameter" "existing_ca_cert" {
-  name = "/${var.environment}/mtls/api_ca_cert"
-}
-
-data "aws_ssm_parameter" "existing_client_cert" {
-  name = "/${var.environment}/mtls/api_client_cert"
-}
-
-data "aws_ssm_parameter" "existing_private_key_cert" {
-  name = "/${var.environment}/mtls/api_private_key_cert"
-}
-
-
 resource "aws_ssm_parameter" "mtls_api_ca_cert" {
-  count  = can(data.aws_ssm_parameter.existing_ca_cert.id) ? 0 : 1
   name   = "/${var.environment}/mtls/api_ca_cert"
   type   = "SecureString"
   key_id = aws_kms_key.networking_ssm_key.id
   value  = var.API_CA_CERT
   tier   = "Advanced"
   tags = {
-    Stack = local.stack_name
+  Stack = local.stack_name
   }
+
   lifecycle {
     ignore_changes = [value]
   }
 }
 
 resource "aws_ssm_parameter" "mtls_api_client_cert" {
-  count  = can(data.aws_ssm_parameter.existing_client_cert.id) ? 0 : 1
   name   = "/${var.environment}/mtls/api_client_cert"
   type   = "SecureString"
   key_id = aws_kms_key.networking_ssm_key.id
@@ -48,13 +34,13 @@ resource "aws_ssm_parameter" "mtls_api_client_cert" {
   tags = {
     Stack = local.stack_name
   }
+
   lifecycle {
     ignore_changes = [value]
   }
 }
 
 resource "aws_ssm_parameter" "mtls_api_private_key_cert" {
-  count  = can(data.aws_ssm_parameter.existing_private_key_cert.id) ? 0 : 1
   name   = "/${var.environment}/mtls/api_private_key_cert"
   type   = "SecureString"
   key_id = aws_kms_key.networking_ssm_key.id
