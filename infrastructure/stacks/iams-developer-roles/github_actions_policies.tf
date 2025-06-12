@@ -172,6 +172,7 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ssm:DescribeParameters",
           "ec2:Describe*",
           "ec2:DescribeVpcs",
+          "acm:ListCertificates",
         ],
         Resource = "*"
         #checkov:skip=CKV_AWS_289: Actions require wildcard resource
@@ -215,7 +216,6 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ssm:AddTagsToResource",
 
           # acm
-          "acm:ListCertificates",
           "acm:DescribeCertificate",
           "acm:GetCertificate",
           "acm:ListTagsForCertificate",
