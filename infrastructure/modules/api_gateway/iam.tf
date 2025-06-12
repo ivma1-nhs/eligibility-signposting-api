@@ -19,7 +19,16 @@ data "aws_iam_policy_document" "api_gateway_logging" {
     sid    = "AllowCloudWatchLogging"
     effect = "Allow"
     actions = [
-      "logs:CreateLogGroup",
+      "logs:CreateLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+  statement {
+    sid    = "AllowCloudWatchLogStreamAndEvents"
+    effect = "Allow"
+    actions = [
       "logs:CreateLogStream",
       "logs:DescribeLogGroups",
       "logs:DescribeLogStreams",
