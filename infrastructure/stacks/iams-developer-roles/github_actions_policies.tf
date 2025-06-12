@@ -90,10 +90,12 @@ resource "aws_iam_policy" "dynamodb_management" {
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:ListTables",
           "dynamodb:DeleteTable",
-          "dynamodb:CreateTable"
+          "dynamodb:CreateTable",
+          "dynamodb:TagResource",
+          "dynamodb:ListTagsOfResource",
         ],
         Resource = [
-          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table:*eligibility_datastore"
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/*eligibility-signposting-api-${var.environment}-eligibility_datastore"
         ]
       }
     ]
@@ -137,17 +139,26 @@ resource "aws_iam_policy" "s3_management" {
           "s3:GetBucketPublicAccessBlock",
           "s3:PutBucketCORS",
           "s3:CreateBucket",
-          "s3:DeleteBucket"
+          "s3:DeleteBucket",
+          "s3:GetBucketTagging",
+          "s3:PutBucketPolicy",
+          "s3:PutBucketVersioning",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:PutBucketLogging",
         ],
         Resource = [
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-rules",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-rules/*",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-audit",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-audit/*",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-rules-access-logs",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-rules-access-logs/*",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-audit-access-logs",
-          "arn:aws:s3:::*eligibility-signposting-${var.environment}-eli-audit-access-logs/*"
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-rules",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-rules/*",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-audit",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-audit/*",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-rules-access-logs",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-rules-access-logs/*",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-audit-access-logs",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-audit-access-logs/*",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-truststore",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-truststore/*",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-truststore-access-logs",
+          "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-truststore-access-logs/*",
         ]
       }
     ]
@@ -173,6 +184,12 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ec2:Describe*",
           "ec2:DescribeVpcs",
           "acm:ListCertificates",
+          "apigateway:CreateRestApi",
+          "apigateway:PUT",
+          "apigateway:POST",
+          "apigateway:PATCH",
+          "apigateway:GET",
+          "apigateway:UpdateAccount",
         ],
         Resource = "*"
         #checkov:skip=CKV_AWS_289: Actions require wildcard resource
@@ -180,12 +197,12 @@ resource "aws_iam_policy" "api_infrastructure" {
       {
         Effect = "Allow",
         Action = [
-
           # Cloudwatch permissions
           "logs:ListTagsForResource",
           "logs:PutRetentionPolicy",
           "logs:AssociateKmsKey",
           "logs:CreateLogGroup",
+          "logs:PutMetricFilter",
 
           # EC2 permissions
           "ec2:CreateTags",
@@ -236,6 +253,7 @@ resource "aws_iam_policy" "api_infrastructure" {
           "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/*",
           "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*",
           "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/*",
+          "arn:aws:logs:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:log-group:NHSDAudit_trail_log_group*",
           "arn:aws:ssm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.environment}/*",
           "arn:aws:acm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:certificate/*",
         ]
@@ -324,9 +342,11 @@ resource "aws_iam_policy" "iam_management" {
           "iam:PutRolePermissionsBoundary",
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
+          "iam:CreatePolicy",
           "iam:CreatePolicyVersion",
           "iam:TagRole",
           "iam:PassRole",
+          "iam:TagPolicy",
         ],
         Resource = [
           # Lambda role
@@ -340,6 +360,8 @@ resource "aws_iam_policy" "iam_management" {
           "arn:aws:iam::*:policy/*PermissionsBoundary",
           # VPC flow logs role
           "arn:aws:iam::*:role/vpc-flow-logs-role",
+          # API role
+          "arn:aws:iam::*:role/*eligibility-signposting-api-role"
         ]
       }
     ]
