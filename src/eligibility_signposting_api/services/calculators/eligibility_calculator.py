@@ -7,8 +7,8 @@ from itertools import groupby
 from multiprocessing.connection import default_family
 from typing import TYPE_CHECKING, Any
 
-from localstack.utils.testutil import list_all_resources
-from pygments.lexer import default
+#from localstack.utils.testutil import list_all_resources
+#from pygments.lexer import default
 
 if TYPE_CHECKING:
     from eligibility_signposting_api.model.rules import Iteration, IterationCohort
@@ -153,16 +153,17 @@ class EligibilityCalculator:
                 priority_getter = attrgetter("priority")
                 sorted_rules_by_priority = sorted(redirect_rules, key=priority_getter)
 
-                actions: list[Action] = self.get_actions_from_comms(action_mapper, default_comms)
+                actions: list[Action] = self.get_actions_from_comms(self, action_mapper, default_comms)
                 for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
+                    rule_group_list = list(rule_group)
                     matcher_matched_list = [
                         getattr(RuleCalculator(person_data=self.person_data, rule=rule).evaluate_exclusion()[1],
                                 "matcher_matched")
-                        for rule in rule_group
+                        for rule in rule_group_list
                     ]
 
                     if all(matcher_matched_list):
-                        actions = self.get_actions_from_comms(action_mapper, rule_group[0].comms_routing)
+                        actions = self.get_actions_from_comms(self, action_mapper, rule_group_list[0].comms_routing)
                         break
 
         list_actions = [Action]
