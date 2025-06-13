@@ -78,23 +78,17 @@ resource "aws_iam_policy" "api_infrastructure" {
           "kms:ScheduleKeyDeletion",
           "kms:PutKeyPolicy",
           "kms:Encrypt",
-          "kms:ListAliases",
-          "kms:TagResource",
-          "kms:GenerateDataKey",
 
           # Cloudwatch permissions
           "logs:Describe*",
           "logs:ListTagsForResource",
           "logs:PutRetentionPolicy",
           "logs:AssociateKmsKey",
-          "logs:CreateLogGroup",
 
           #EC2 permissions
           "ec2:Describe*",
           "ec2:CreateTags",
           "ec2:CreateNetworkAclEntry",
-          "ec2:CreateNetworkAcl",
-          "ec2:AssociateRouteTable",
 
           # IAM permissions (scoped to resources with specific path prefix)
           "iam:Get*",
@@ -106,44 +100,20 @@ resource "aws_iam_policy" "api_infrastructure" {
           "iam:Delete*",
           "iam:PutRolePermissionsBoundary",
           "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:TagRole",
-          "iam:PassRole",
 
           # ssm
           "ssm:GetParameter",
           "ssm:GetParameters",
           "ssm:DescribeParameters",
           "ssm:ListTagsForResource",
-          "ssm:PutParameter",
-          "ssm:AddTagsToResource",
 
           # acm
           "acm:ListCertificates",
           "acm:DescribeCertificate",
           "acm:GetCertificate",
           "acm:ListTagsForCertificate",
-          "acm:RequestCertificate",
-          "acm:AddTagsToCertificate",
-          "acm:ImportCertificate",
-
-          # ec2 - VPC
-          "ec2:CreateVpc",
-          "ec2:ModifyVpcAttribute",
-          "ec2:DeleteVpc",
-          "ec2:CreateRouteTable",
-          "ec2:CreateSubnet",
-          "ec2:RevokeSecurityGroupIngress",
-          "ec2:CreateSecurityGroup",
-          "ec2:RevokeSecurityGroupEgress",
-          "ec2:AuthorizeSecurityGroupIngress",
-          "ec2:AuthorizeSecurityGroupEgress",
-          "ec2:CreateVpcEndpoint",
-          "ec2:CreateFlowLogs",
-          "ec2:ReplaceNetworkAclAssociation",
-          "ec2:DeleteSecurityGroup",
-          "ec2:DeleteNetworkAcl"
         ],
+
 
         Resource = "*"
       }
