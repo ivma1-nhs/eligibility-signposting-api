@@ -16,7 +16,7 @@ resource "aws_iam_role" "api_gateway" {
 
 data "aws_iam_policy_document" "api_gateway_logging" {
   statement {
-    sid    = "AllowCloudWatchLogging"
+    sid    = "AllowCreateLogGroup"
     effect = "Allow"
     actions = [
       "logs:CreateLogGroup"
@@ -26,17 +26,26 @@ data "aws_iam_policy_document" "api_gateway_logging" {
     ]
   }
   statement {
-    sid    = "AllowCloudWatchLogStreamAndEvents"
+    sid    = "AllowLogStreamAndEvents"
     effect = "Allow"
     actions = [
       "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/*"
+    ]
+  }
+  statement {
+    sid    = "AllowDescribeAndGet"
+    effect = "Allow"
+    actions = [
       "logs:DescribeLogGroups",
       "logs:DescribeLogStreams",
-      "logs:PutLogEvents",
       "logs:GetLogEvents",
       "logs:FilterLogEvents"
     ]
-    resources = [aws_cloudwatch_log_group.api_gateway.arn]
+    resources = ["*"]
   }
 }
 
