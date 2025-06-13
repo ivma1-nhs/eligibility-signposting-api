@@ -105,7 +105,7 @@ resource "aws_api_gateway_domain_name" "check_eligibility" {
     data.aws_acm_certificate.imported_cert,
     data.aws_acm_certificate.validation_cert,
     module.s3_truststore_bucket,
-    module.eligibility_signposting_api_gateway.aws_cloudwatch_log_group.api_gateway
+    module.eligibility_signposting_api_gateway
   ]
 }
 
