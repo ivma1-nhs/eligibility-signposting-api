@@ -145,6 +145,8 @@ resource "aws_iam_policy" "s3_management" {
           "s3:PutBucketVersioning",
           "s3:PutBucketPublicAccessBlock",
           "s3:PutBucketLogging",
+          "s3:GetObjectTagging",
+          "s3:PutObjectTagging",
         ],
         Resource = [
           "arn:aws:s3:::*eligibility-signposting-api-${var.environment}-eli-rules",
@@ -184,12 +186,8 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ec2:Describe*",
           "ec2:DescribeVpcs",
           "acm:ListCertificates",
-          "apigateway:CreateRestApi",
-          "apigateway:PUT",
-          "apigateway:POST",
-          "apigateway:PATCH",
-          "apigateway:GET",
-          "apigateway:UpdateAccount",
+          "apigateway:*",
+          "iam:PassRole",
         ],
         Resource = "*"
         #checkov:skip=CKV_AWS_289: Actions require wildcard resource
