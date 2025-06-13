@@ -15,12 +15,12 @@
     "Iterations": [
       {
         "ID": "id_1",
-        "DefaultCommsRouting": "Default_Comms_1|Default_Comms_2",
+        "DefaultCommsRouting": "INTERNALCONTACTGP1|INTERNALCONTACTGP2",
         "ActionsMapper": {
-          "routing_code_1": {"ExternalRoutingCode": "external_routing_code_1","ActionDescription":"Action Text 1", "ActionType":"link", "url_link": "link123"},
-          "routing_code_2": {"ExternalRoutingCode": "external_routing_code_2","ActionDescription":"Action Text 2", "ActionType":"link", "url_link": "link123"},
-          "Default_Comms_1": {"ExternalRoutingCode": "external_routing_default","ActionDescription":" Default action Text", "ActionType":"link", "url_link": "link123"},
-          "Default_Comms_2": {"ExternalRoutingCode": "external_routing_default","ActionDescription":" Default action Text", "ActionType":"link", "url_link": "link123"}
+          "INTERNALCONTACTGP1": {"ExternalRoutingCode": "CONTACTGP","ActionDescription":"Contact GP Text1 description", "ActionType":"text1"},
+          "INTERNALCONTACTGP2": {"ExternalRoutingCode": "CONTACTGP","ActionDescription":"Contact GP Link description", "ActionType":"link", "url_link": "link123"},
+          "INTERNALTESCO": {"ExternalRoutingCode": "TESCO","ActionDescription":"Tesco description", "ActionType":"link", "url_link": "tesco link"},
+          "INTERNALFINDWALKIN": {"ExternalRoutingCode": "FINDWALKIN","ActionDescription":"Find walkin description", "ActionType":"button"}
         },
         "IterationCohorts": [
           {
@@ -42,6 +42,27 @@
             "AttributeName": "DATE_OF_BIRTH",
             "Operator": ">",
             "Comparator": "19000101"
+          },
+          {
+            "Type": "F",
+            "Name": "Test Rule",
+            "Description": "Test Rule Desc",
+            "Priority": 30,
+            "AttributeLevel": "PERSON",
+            "AttributeName": "place of birth",
+            "Operator": "=",
+            "Comparator": "london"
+          },
+          {
+            "Type": "R",
+            "Name": "Test Redirect Rule",
+            "Description": "Test Redirect Rule Desc",
+            "Priority": 20,
+            "AttributeLevel": "PERSON",
+            "AttributeName": "DATE_OF_BIRTH",
+            "Operator": ">",
+            "Comparator": "19000101",
+            "CommsRouting": "INTERNALCONTACTGP1|INTERNALTESCO"
           }
         ],
         "Version": 1,

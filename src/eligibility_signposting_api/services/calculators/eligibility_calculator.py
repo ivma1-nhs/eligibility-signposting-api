@@ -4,8 +4,10 @@ from _operator import attrgetter
 from collections.abc import Collection, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from itertools import groupby
+from multiprocessing.connection import default_family
 from typing import TYPE_CHECKING, Any
 
+from localstack.utils.testutil import list_all_resources
 from pygments.lexer import default
 
 if TYPE_CHECKING:
@@ -19,7 +21,7 @@ from eligibility_signposting_api.model.eligibility import (
     Condition,
     ConditionName,
     IterationResult,
-    Status,
+    Status, Action,
 )
 from eligibility_signposting_api.services.calculators.rule_calculator import RuleCalculator
 
@@ -78,8 +80,8 @@ class EligibilityCalculator:
             ir
             for ir in filter_rules
             if ir.cohort_label is None
-            or cohort.cohort_label == ir.cohort_label
-            or (isinstance(ir.cohort_label, (list, set, tuple)) and cohort.cohort_label in ir.cohort_label)
+               or cohort.cohort_label == ir.cohort_label
+               or (isinstance(ir.cohort_label, (list, set, tuple)) and cohort.cohort_label in ir.cohort_label)
         )
 
     @staticmethod
@@ -106,9 +108,10 @@ class EligibilityCalculator:
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Iterates over campaign groups, evaluates eligibility, and returns a consolidated status."""
         condition_results: dict[ConditionName, IterationResult] = {}
+        actions: [Action] = []
 
         for condition_name, campaign_group in self.campaigns_grouped_by_condition_name:
-            iteration_results: dict[str, IterationResult] = {}
+            iteration_results: dict[str, tuple[Iteration, IterationResult]] = {}
 
             for active_iteration in [cc.current_iteration for cc in campaign_group]:
                 cohort_results: dict[str, CohortResult] = {}
@@ -133,19 +136,38 @@ class EligibilityCalculator:
 
                 # Determine Result between cohorts - get the best
                 status, best_cohorts = self.get_best_cohort(cohort_results)
-                iteration_results[active_iteration.name] = IterationResult(status, best_cohorts)
-                #
+                iteration_results[active_iteration.name] = (active_iteration, IterationResult(status, best_cohorts))
 
             # Determine results between iterations - get the best
             if iteration_results:
-                best_candidate = max(iteration_results.values(), key=lambda r: r.status.value)
+                best_iteration_name, (best_active_iteration, best_candidate) = max(
+                    iteration_results.items(), key=lambda item: item[1][1].status.value
+                )
             else:
                 best_candidate = IterationResult(eligibility.Status.not_eligible, [])
+                best_active_iteration = None
             condition_results[condition_name] = best_candidate
 
+            if best_candidate.status.actionable:
+                redirect_rules, action_mapper, default_comms = self.get_redirect_rules(best_active_iteration)
+                priority_getter = attrgetter("priority")
+                sorted_rules_by_priority = sorted(redirect_rules, key=priority_getter)
 
-        # Redirect Rules
-        #
+                actions: list[Action] = self.get_actions_from_comms(action_mapper, default_comms)
+                for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
+                    matcher_matched_list = [
+                        getattr(RuleCalculator(person_data=self.person_data, rule=rule).evaluate_exclusion()[1],
+                                "matcher_matched")
+                        for rule in rule_group
+                    ]
+
+                    if all(matcher_matched_list):
+                        actions = self.get_actions_from_comms(action_mapper, rule_group[0].comms_routing)
+                        break
+
+        list_actions = [Action]
+        for action in actions:
+            list_actions.append(Action(action.actionType, action.actionCode, action.actionDescription, action.urlLink))
 
         # Consolidate all the results and return
         final_result = [
@@ -153,6 +175,7 @@ class EligibilityCalculator:
                 condition_name=condition_name,
                 status=active_iteration_result.status,
                 cohort_results=active_iteration_result.cohort_results,
+                actions=list_actions
             )
             for condition_name, active_iteration_result in condition_results.items()
         ]
@@ -242,3 +265,10 @@ class EligibilityCalculator:
                 inclusion_reasons.append(reason)
 
         return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
+
+    @staticmethod
+    def get_actions_from_comms(self, action_mapper: dict[str, dict[str, str]], comms: str) -> [dict[str, str]]:
+        actions = [dict[str, str]]
+        for comm in comms.split("|"):
+            actions.append(action_mapper.get(comm))
+        return actions

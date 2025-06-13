@@ -6,6 +6,8 @@ from enum import Enum, StrEnum, auto
 from functools import total_ordering
 from typing import NewType, Self
 
+from moto.core.responses import ActionResult
+
 NHSNumber = NewType("NHSNumber", str)
 DateOfBirth = NewType("DateOfBirth", date)
 Postcode = NewType("Postcode", str)
@@ -61,14 +63,22 @@ class Reason:
     rule_type: RuleType
     rule_name: RuleName
     rule_result: RuleResult
+    matcher_matched: bool
 
+#TODO: create types
+@dataclass
+class Action:
+    actionType: str
+    actionCode: str
+    actionDescription: str
+    urlLink: str
 
 @dataclass
 class Condition:
     condition_name: ConditionName
     status: Status
     cohort_results: list[CohortResult]
-
+    actions: list[Action]
 
 @dataclass
 class CohortResult:

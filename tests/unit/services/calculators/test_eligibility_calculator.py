@@ -15,7 +15,7 @@ from eligibility_signposting_api.model.eligibility import (
     NHSNumber,
     Postcode,
     RuleResult,
-    Status,
+    Status, Action,
 )
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
@@ -34,6 +34,8 @@ class TestEligibilityCalculator:
     @staticmethod
     def test_get_redirect_rules(faker: Faker):
         #Given
+
+        #TODO: make this an iteration not a campaign as not needed
         campaign_configs = [
             (
                 rule_builder.CampaignConfigFactory.build(
@@ -1057,24 +1059,24 @@ def test_eligibility_results_when_multiple_cohorts(
         ),
     )
 
+
 def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
-    dob_person_less_than_75 = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
 
-    person_rows = person_rows_builder(nhs_number, date_of_birth=dob_person_less_than_75, cohorts="cohort1")
+    person_rows = person_rows_builder(nhs_number, cohorts=["cohort1"], icb="QE1")
     campaign_configs = [
         (
             rule_builder.CampaignConfigFactory.build(
                 target="RSV",
                 iterations=[
                     rule_builder.IterationFactory.build(
-                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper={"A key": {"ActionCode": "ActionCode1",
+                        actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
                                                   "ActionDescription": "Action description",
                                                   "ActionType": "ActionType",
-                                                  "ActionLink": "ActionLink",
+                                                  "url_link": "ActionLink",
                                                   }},
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                     )
@@ -1088,8 +1090,20 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
+    expected_actions = list[Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
+
     # Then
-    pass
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(equal_to(Status.actionable))
+                .and_actions(equal_to(expected_actions))
+            )
+        ),
+    )
 
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     pass

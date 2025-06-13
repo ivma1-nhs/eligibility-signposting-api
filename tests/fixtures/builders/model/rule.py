@@ -106,10 +106,10 @@ class ICBSuppressionRuleFactory(IterationRuleFactory):
 
 class ICBRedirectRuleFactory(IterationRuleFactory):
     type = rules.RuleType.redirect
-    name = rules.RuleName("Not in QE1")
-    description = rules.RuleDescription("Not in QE1")
+    name = rules.RuleName("In QE1")
+    description = rules.RuleDescription("In QE1")
     priority = rules.RulePriority(20)
-    operator = rules.RuleOperator.ne
+    operator = rules.RuleOperator.equals
     attribute_level = rules.RuleAttributeLevel.PERSON
     attribute_name = rules.RuleAttributeName("ICB")
     comparator = rules.RuleComparator("QE1")
