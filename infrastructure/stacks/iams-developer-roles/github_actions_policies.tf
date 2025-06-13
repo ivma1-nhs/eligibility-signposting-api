@@ -182,10 +182,15 @@ resource "aws_iam_policy" "api_infrastructure" {
         Effect = "Allow",
         Action = [
           "logs:Describe*",
+          "logs:PutLogEvents",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
           "ssm:DescribeParameters",
           "ec2:Describe*",
           "ec2:DescribeVpcs",
           "acm:ListCertificates",
+          "acm:DescribeCertificate",
+          "acm:GetCertificate",
           "apigateway:*",
           "iam:PassRole",
         ],
@@ -231,8 +236,6 @@ resource "aws_iam_policy" "api_infrastructure" {
           "ssm:AddTagsToResource",
 
           # acm
-          "acm:DescribeCertificate",
-          "acm:GetCertificate",
           "acm:ListTagsForCertificate",
           "acm:RequestCertificate",
           "acm:AddTagsToCertificate",
