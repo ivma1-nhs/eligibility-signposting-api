@@ -1444,6 +1444,13 @@ def test_cohort_group_descriptions_are_selected_based_on_priority_when_cohorts_h
             "if group has one cohort, with no description, expect no description",
         ),
         (
+            person_rows_builder("123", postcode="SW19", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
+            [rule_builder.Rsv75to79CohortFactory.build(negative_description=None, priority=2)],
+            [("rsv_age_range", "")],
+            Status.not_eligible,
+            "if group has one cohort, with no description, expect no description",
+        ),
+        (
             person_rows_builder("123", postcode="HP1", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=True),
             [rule_builder.Rsv75to79CohortFactory.build(positive_description=None, priority=2)],
             [("rsv_age_range", "")],
@@ -1459,6 +1466,19 @@ def test_cohort_group_descriptions_are_selected_based_on_priority_when_cohorts_h
         ),
         (
             person_rows_builder("123", postcode="SW19", cohorts=[], de=False),
+            [
+                rule_builder.Rsv75to79CohortFactory.build(priority=2, negative_description=None),
+                rule_builder.Rsv75RollingCohortFactory.build(priority=3, negative_description="rsv age range -ve 1"),
+                rule_builder.Rsv75RollingCohortFactory.build(
+                    cohort_label="rsv_75_rolling_2", priority=4, negative_description="rsv age range -ve 2"
+                ),
+            ],
+            [("rsv_age_range", "rsv age range -ve 1")],
+            Status.not_eligible,
+            "if group has more than one cohort, at least one has description, expect first non empty description",
+        ),
+        (
+            person_rows_builder("123", postcode="SW19", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
             [
                 rule_builder.Rsv75to79CohortFactory.build(priority=2, negative_description=None),
                 rule_builder.Rsv75RollingCohortFactory.build(priority=3, negative_description="rsv age range -ve 1"),
