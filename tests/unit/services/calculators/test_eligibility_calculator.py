@@ -1112,4 +1112,65 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     )
 
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
-    pass
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+
+    person_rows = person_rows_builder(nhs_number, cohorts=["cohort1"], icb="QE1")
+    campaign_configs = [
+        (
+            rule_builder.CampaignConfigFactory.build(
+                target="RSV",
+                iterations=[
+                    rule_builder.IterationFactory.build(
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                        default_comms_routing="defaultcomms",
+                        actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
+                                                        "ActionDescription": "Action description",
+                                                        "ActionType": "ActionType",
+                                                        "url_link": "ActionLink",
+                                                        },
+                                        "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
+                                                         "ActionDescription": "Action description",
+                                                         "ActionType": "ActionType",
+                                                         "url_link": "ActionLink",
+                                                         },
+                                        },
+
+                        iteration_rules=[
+                            rule_builder.IterationRuleFactory.build(
+                                type=rules.RuleType.redirect,
+                                name=rules.RuleName("Example redirect rule with cohort label"),
+                                description=rules.RuleDescription("Example rule"),
+                                priority=rules.RulePriority(20),
+                                cohort_label=rules.CohortLabel("cohort1"),
+                                operator=rules.RuleOperator.member_of,
+                                attribute_level=rules.RuleAttributeLevel.COHORT,
+                                attribute_name=rules.RuleAttributeName("ICB"),
+                                comparator=rules.RuleComparator("covid_eligibility_complaint_list"),
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(equal_to(Status.actionable))
+                .and_actions(equal_to(expected_actions))
+            )
+        ),
+    )
