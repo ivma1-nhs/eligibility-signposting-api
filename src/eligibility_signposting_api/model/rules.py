@@ -11,6 +11,8 @@ from typing import Literal, NewType
 
 from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
+from eligibility_signposting_api.model.eligibility import Action
+
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
 
@@ -120,6 +122,12 @@ class IterationRule(BaseModel):
     def __str__(self) -> str:
         return json.dumps(self.model_dump(by_alias=True), indent=2)
 
+class AvailableAction(BaseModel):
+    actionType: str | None = Field(None, alias="ActionType")
+    actionCode: str | None = Field(None, alias="ExternalRoutingCode")
+    actionDescription: str | None = Field(None, alias="ActionDescription")
+    urlLink: str | None = Field(None, alias="UrlLink")
+    urlLabel: str | None = Field(None, alias="UrlLabel")
 
 class Iteration(BaseModel):
     id: IterationID = Field(..., alias="ID")
@@ -130,10 +138,10 @@ class Iteration(BaseModel):
     approval_minimum: int | None = Field(None, alias="ApprovalMinimum")
     approval_maximum: int | None = Field(None, alias="ApprovalMaximum")
     type: Literal["A", "M", "S"] = Field(..., alias="Type")
-    default_comms_routing: str | None = Field(None, alias="DefualtCommsRouting")
+    default_comms_routing: str | None = Field(None, alias="DefaultCommsRouting")
     iteration_cohorts: list[IterationCohort] = Field(..., alias="IterationCohorts")
     iteration_rules: list[IterationRule] = Field(..., alias="IterationRules")
-    actions_mapper: dict[str, dict[str, str]] | None = Field(default_factory=dict, alias="ActionsMapper")
+    actions_mapper: dict[str, AvailableAction] | None = Field(default_factory=dict, alias="ActionsMapper")
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True, "extra": "ignore"}
 

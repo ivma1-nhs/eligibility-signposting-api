@@ -18,8 +18,8 @@
         "DefaultCommsRouting": "INTERNALCONTACTGP1|INTERNALCONTACTGP2",
         "ActionsMapper": {
           "INTERNALCONTACTGP1": {"ExternalRoutingCode": "CONTACTGP","ActionDescription":"Contact GP Text1 description", "ActionType":"text1"},
-          "INTERNALCONTACTGP2": {"ExternalRoutingCode": "CONTACTGP","ActionDescription":"Contact GP Link description", "ActionType":"link", "url_link": "link123"},
-          "INTERNALTESCO": {"ExternalRoutingCode": "TESCO","ActionDescription":"Tesco description", "ActionType":"link", "url_link": "tesco link"},
+          "INTERNALCONTACTGP2": {"ExternalRoutingCode": "CONTACTGP","ActionDescription":"Contact GP Link description", "ActionType":"link", "UrlLink": "link123", "UrlLabel": "link label"},
+          "INTERNALTESCO": {"ExternalRoutingCode": "TESCO","ActionDescription":"Tesco description", "ActionType":"link", "UrlLink": "tesco link", "UrlLabel": "link label"},
           "INTERNALFINDWALKIN": {"ExternalRoutingCode": "FINDWALKIN","ActionDescription":"Find walkin description", "ActionType":"button"}
         },
         "IterationCohorts": [

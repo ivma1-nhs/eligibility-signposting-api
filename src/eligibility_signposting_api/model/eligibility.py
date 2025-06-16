@@ -70,6 +70,7 @@ class Action:
     actionCode: str
     actionDescription: str
     urlLink: str
+    urlLabel: str
 
 @dataclass
 class Condition:

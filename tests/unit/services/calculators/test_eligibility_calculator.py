@@ -1076,12 +1076,14 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                         actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
                                                         "ActionDescription": "Action description",
                                                         "ActionType": "ActionType",
-                                                        "url_link": "ActionLink",
+                                                        "UrlLink": "ActionLink",
+                                                        "UrlLabel": "Label",
                                                         },
                                         "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
                                                          "ActionDescription": "Action description",
                                                          "ActionType": "ActionType",
-                                                         "url_link": "ActionLink",
+                                                         "UrlLink": "ActionLink",
+                                                         "UrlLabel": "Label",
                                                          },
                                         },
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
@@ -1096,7 +1098,7 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
-    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
+    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink", "Label")]
 
     # Then
     assert_that(
@@ -1110,7 +1112,6 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
             )
         ),
     )
-
 
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # Given
