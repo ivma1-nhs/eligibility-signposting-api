@@ -33,9 +33,9 @@ class TestEligibilityCalculator:
 
     @staticmethod
     def test_get_redirect_rules(faker: Faker):
-        #Given
+        # Given
 
-        #TODO: make this an iteration not a campaign as not needed
+        # TODO: make this an iteration not a campaign as not needed
         campaign_configs = [
             (
                 rule_builder.CampaignConfigFactory.build(
@@ -43,8 +43,8 @@ class TestEligibilityCalculator:
                     iterations=[
                         rule_builder.IterationFactory.build(
                             iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
-                            default_comms_routing= "defaultcomms",
-                            actions_mapper = {"A key": {"anotherkey": "anothervalue"}},
+                            default_comms_routing="defaultcomms",
+                            actions_mapper={"A key": {"anotherkey": "anothervalue"}},
                             iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                         )
                     ],
@@ -53,10 +53,10 @@ class TestEligibilityCalculator:
         ]
         iteration = campaign_configs[0].iterations[0]
 
-        #when
+        # when
         actual_rules, actual_action_mapper, actual_default_comms = EligibilityCalculator.get_redirect_rules(iteration)
 
-        #then
+        # then
         assert_that(
             actual_rules,
             has_item(is_iteration_rule().with_name(campaign_configs[0].iterations[0].iteration_rules[0].name))
@@ -1074,15 +1074,15 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
                         actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
-                                                  "ActionDescription": "Action description",
-                                                  "ActionType": "ActionType",
-                                                  "url_link": "ActionLink",
-                                                  },
+                                                        "ActionDescription": "Action description",
+                                                        "ActionType": "ActionType",
+                                                        "url_link": "ActionLink",
+                                                        },
                                         "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
-                                                  "ActionDescription": "Action description",
-                                                  "ActionType": "ActionType",
-                                                  "url_link": "ActionLink",
-                                                    },
+                                                         "ActionDescription": "Action description",
+                                                         "ActionType": "ActionType",
+                                                         "url_link": "ActionLink",
+                                                         },
                                         },
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                     )
@@ -1111,6 +1111,7 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
         ),
     )
 
+
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
@@ -1135,20 +1136,9 @@ def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
                                                          "url_link": "ActionLink",
                                                          },
                                         },
-
                         iteration_rules=[
-                            rule_builder.IterationRuleFactory.build(
-                                type=rules.RuleType.redirect,
-                                name=rules.RuleName("Example redirect rule with cohort label"),
-                                description=rules.RuleDescription("Example rule"),
-                                priority=rules.RulePriority(20),
-                                cohort_label=rules.CohortLabel("cohort1"),
-                                operator=rules.RuleOperator.member_of,
-                                attribute_level=rules.RuleAttributeLevel.COHORT,
-                                attribute_name=rules.RuleAttributeName("ICB"),
-                                comparator=rules.RuleComparator("covid_eligibility_complaint_list"),
-                            )
-                        ],
+                            rule_builder.ICBRedirectRuleFactory.build(cohort_label=rules.CohortLabel("cohort1"))]
+
                     )
                 ],
             )
