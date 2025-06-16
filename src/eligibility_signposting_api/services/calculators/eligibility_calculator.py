@@ -166,9 +166,9 @@ class EligibilityCalculator:
                         actions = self.get_actions_from_comms(self, action_mapper, rule_group_list[0].comms_routing)
                         break
 
-        list_actions = [Action]
-        for action in actions:
-            list_actions.append(Action(action.actionType, action.actionCode, action.actionDescription, action.urlLink))
+        #list_actions = [Action]
+        #for action in actions:
+        #    list_actions.append(Action(action.actionType, action.actionCode, action.actionDescription, action.urlLink))
 
         # Consolidate all the results and return
         final_result = [
@@ -176,7 +176,7 @@ class EligibilityCalculator:
                 condition_name=condition_name,
                 status=active_iteration_result.status,
                 cohort_results=active_iteration_result.cohort_results,
-                actions=list_actions
+                actions=actions
             )
             for condition_name, active_iteration_result in condition_results.items()
         ]
@@ -268,8 +268,15 @@ class EligibilityCalculator:
         return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
 
     @staticmethod
-    def get_actions_from_comms(self, action_mapper: dict[str, dict[str, str]], comms: str) -> [dict[str, str]]:
-        actions = [dict[str, str]]
+    def get_actions_from_comms(self, action_mapper: dict[str, dict[str, str]], comms: str) -> list[Action]:
+        actions: list[Action] = []
         for comm in comms.split("|"):
-            actions.append(action_mapper.get(comm))
+            actions.append(Action(
+                actionType=action_mapper.get(comm)["ActionType"],
+                actionCode=action_mapper.get(comm)["ExternalRoutingCode"],
+                actionDescription=action_mapper.get(comm)["ActionDescription"],
+                urlLink=action_mapper.get(comm)["url_link"],
+                  )
+            )
+
         return actions

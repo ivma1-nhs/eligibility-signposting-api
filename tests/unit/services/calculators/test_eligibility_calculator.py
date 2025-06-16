@@ -1077,7 +1077,13 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                                                   "ActionDescription": "Action description",
                                                   "ActionType": "ActionType",
                                                   "url_link": "ActionLink",
-                                                  }},
+                                                  },
+                                        "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
+                                                  "ActionDescription": "Action description",
+                                                  "ActionType": "ActionType",
+                                                  "url_link": "ActionLink",
+                                                    },
+                                        },
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                     )
                 ],
@@ -1090,7 +1096,7 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
-    expected_actions = list[Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
+    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
 
     # Then
     assert_that(
