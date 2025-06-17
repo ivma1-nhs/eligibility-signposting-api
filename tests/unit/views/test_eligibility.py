@@ -198,16 +198,19 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_description=RuleDescription("your age is greater than 75"),
+                        matcher_matched=False,
                     ),
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_description=RuleDescription("your age is greater than 75"),
+                        matcher_matched=False,
                     ),
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude more than 100"),
                         rule_description=RuleDescription("your age is greater than 100"),
+                        matcher_matched=False,
                     ),
                 ],
             ),
@@ -219,6 +222,7 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_description=RuleDescription("your age is greater than 75"),
+                        matcher_matched=False,
                     )
                 ],
             ),
@@ -230,6 +234,7 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.filter,
                         rule_name=RuleName("Exclude is present in sw1"),
                         rule_description=RuleDescription("your a member of sw1"),
+                        matcher_matched=False,
                     )
                 ],
             ),
@@ -242,6 +247,7 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.filter,
                         rule_name=RuleName("Already vaccinated"),
                         rule_description=RuleDescription("you have already vaccinated"),
+                        matcher_matched=False,
                     )
                 ],
             ),

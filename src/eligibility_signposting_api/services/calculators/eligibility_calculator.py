@@ -8,7 +8,7 @@ from itertools import groupby
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from eligibility_signposting_api.model.rules import AvailableAction, Iteration, IterationCohort
+    from eligibility_signposting_api.model.rules import AvailableAction, Iteration, IterationCohort, ActionsMapper
 
 from wireup import service
 
@@ -117,7 +117,7 @@ class EligibilityCalculator:
     @staticmethod
     def get_redirect_rules(
         active_iteration: Iteration,
-    ) -> tuple[tuple[rules.IterationRule, ...], dict[str, AvailableAction], str]:
+    ) -> tuple[tuple[rules.IterationRule, ...], ActionsMapper, str]:
         redirect_rules = tuple(
             rule for rule in active_iteration.iteration_rules if rule.type in rules.RuleType.redirect
         )
@@ -155,7 +155,7 @@ class EligibilityCalculator:
                 actions = self.handle_redirect_rules(best_active_iteration)
 
         # Consolidate all the results and return
-        final_result = self.build_condition_results(condition_results)
+        final_result = self.build_condition_results(condition_results, actions)
         return eligibility.EligibilityStatus(conditions=final_result)
 
     def handle_redirect_rules(self, best_active_iteration: Iteration) -> list[SuggestedAction]:
@@ -200,6 +200,7 @@ class EligibilityCalculator:
     @staticmethod
     def build_condition_results(
         condition_results: dict[ConditionName, IterationResult],
+        actions: list[SuggestedAction],
     ) -> list[Condition]:
         conditions: list[Condition] = []
         # iterate over conditions
@@ -230,6 +231,7 @@ class EligibilityCalculator:
                     condition_name=condition_name,
                     status=active_iteration_result.status,
                     cohort_results=list(deduplicated_cohort_results),
+                    actions = actions
                 )
             )
         return conditions
@@ -320,7 +322,7 @@ class EligibilityCalculator:
         return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
 
     @staticmethod
-    def get_actions_from_comms(action_mapper: dict[str, AvailableAction], comms: str) -> list[SuggestedAction]:
+    def get_actions_from_comms(action_mapper: ActionsMapper, comms: str) -> list[SuggestedAction]:
         actions: list[SuggestedAction] = [
             SuggestedAction(
                 action_type=ActionType(action_mapper.get(comm).action_type),
