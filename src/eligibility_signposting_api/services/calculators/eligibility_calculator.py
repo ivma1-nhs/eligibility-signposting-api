@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 #from pygments.lexer import default
 
 if TYPE_CHECKING:
-    from eligibility_signposting_api.model.rules import Iteration, IterationCohort, AvailableAction, AvailableActionMap
+    from eligibility_signposting_api.model.rules import Iteration, IterationCohort, AvailableAction
 
 from wireup import service
 
@@ -97,7 +97,7 @@ class EligibilityCalculator:
     @staticmethod
     def get_redirect_rules(
         active_iteration: Iteration,
-    ) -> tuple[tuple[rules.IterationRule, ...], AvailableActionMap, str]:
+    ) -> tuple[tuple[rules.IterationRule, ...], dict[str, AvailableAction], str]:
         redirect_rules = tuple(
             rule for rule in active_iteration.iteration_rules if rule.type in rules.RuleType.redirect
         )
@@ -268,7 +268,7 @@ class EligibilityCalculator:
         return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
 
     @staticmethod
-    def get_actions_from_comms(self, action_mapper: AvailableActionMap, comms: str) -> list[Action]:
+    def get_actions_from_comms(self, action_mapper: dict[str, AvailableAction], comms: str) -> list[Action]:
         actions: list[Action] = []
         for comm in comms.split("|"):
             actions.append(Action(

@@ -17,7 +17,6 @@ from eligibility_signposting_api.model.eligibility import (
     RuleResult,
     Status, Action,
 )
-from eligibility_signposting_api.model.rules import AvailableActionMap, AvailableAction
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
@@ -1074,22 +1073,19 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper=AvailableActionMap({
-                            "ActionCode1": AvailableAction(
-                                actionCode="ActionCode1",
-                                actionDescription="Action description",
-                                actionType="ActionType",
-                                urlLink="ActionLink",
-                                urlLabel="Label"
-                            ),
-                            "defaultcomms": AvailableAction(
-                                actionCode="ActionCode1",
-                                actionDescription="Action description",
-                                actionType="ActionType",
-                                urlLink="ActionLink",
-                                urlLabel="Label"
-                            ),
-                        }),
+                        actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
+                                                        "ActionDescription": "Action description",
+                                                        "ActionType": "ActionType",
+                                                        "UrlLink": "ActionLink",
+                                                        "UrlLabel": "Label",
+                                                        },
+                                        "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
+                                                         "ActionDescription": "Action description",
+                                                         "ActionType": "ActionType",
+                                                         "UrlLink": "ActionLink",
+                                                         "UrlLabel": "Label",
+                                                         },
+                                        },
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
                     )
                 ],

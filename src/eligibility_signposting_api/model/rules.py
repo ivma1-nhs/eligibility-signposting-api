@@ -9,9 +9,9 @@ from functools import cached_property
 from operator import attrgetter
 from typing import Literal, NewType
 
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator, RootModel
+from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
-#from eligibility_signposting_api.model.eligibility import Action
+from eligibility_signposting_api.model.eligibility import Action
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
@@ -129,10 +129,6 @@ class AvailableAction(BaseModel):
     urlLink: str | None = Field(None, alias="UrlLink")
     urlLabel: str | None = Field(None, alias="UrlLabel")
 
-class AvailableActionMap(RootModel[dict[str, AvailableAction]]):
-    def get(self, key, default=None):
-        return self.root.get(key, default)
-
 class Iteration(BaseModel):
     id: IterationID = Field(..., alias="ID")
     version: IterationVersion = Field(..., alias="Version")
@@ -145,8 +141,7 @@ class Iteration(BaseModel):
     default_comms_routing: str | None = Field(None, alias="DefaultCommsRouting")
     iteration_cohorts: list[IterationCohort] = Field(..., alias="IterationCohorts")
     iteration_rules: list[IterationRule] = Field(..., alias="IterationRules")
-    #actions_mapper: dict[str, AvailableAction] | None = Field(default_factory=dict, alias="ActionsMapper")
-    actions_mapper: AvailableActionMap | None = Field(default_factory=lambda: AvailableActionMap({}), alias="ActionsMapper")
+    actions_mapper: dict[str, AvailableAction] | None = Field(default_factory=dict, alias="ActionsMapper")
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True, "extra": "ignore"}
 
