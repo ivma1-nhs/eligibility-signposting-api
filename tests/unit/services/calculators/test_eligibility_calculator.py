@@ -13,7 +13,7 @@ from eligibility_signposting_api.model.eligibility import (
     DateOfBirth,
     NHSNumber,
     Postcode,
-    RuleResult,
+    RuleDescription,
     Status,
 )
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
@@ -631,7 +631,7 @@ def test_base_eligible_and_icb_example(
             target="RSV",
             iterations=[
                 rule_builder.IterationFactory.build(
-                    iteration_rules=[rule_builder.ICBSuppressionRuleFactory.build(type=rule_type)],
+                    iteration_rules=[rule_builder.ICBFilterRuleFactory.build(type=rule_type)],
                     iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                 )
             ],
@@ -862,24 +862,24 @@ def test_status_if_iteration_rules_contains_cohort_label_field(
         (
             rules.RuleStop(True),  # noqa: FBT003
             [
-                RuleResult("reason 1"),
-                RuleResult("reason 2"),
+                RuleDescription("reason 1"),
+                RuleDescription("reason 2"),
             ],
             "rule_stop is True, last rule should not run",
         ),
         (
             rules.RuleStop(False),  # noqa: FBT003
             [
-                RuleResult("reason 1"),
-                RuleResult("reason 2"),
-                RuleResult("reason 3"),
+                RuleDescription("reason 1"),
+                RuleDescription("reason 2"),
+                RuleDescription("reason 3"),
             ],
             "rule_stop is False, last rule should run",
         ),
     ],
 )
 def test_rules_stop_behavior(
-    rule_stop: rules.RuleStop, expected_reason_results: list[RuleResult], test_comment: str, faker: Faker
+    rule_stop: rules.RuleStop, expected_reason_results: list[RuleDescription], test_comment: str, faker: Faker
 ) -> None:
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
@@ -898,7 +898,9 @@ def test_rules_stop_behavior(
                     rule_builder.PersonAgeSuppressionRuleFactory.build(priority=10, description="reason 2"),
                     rule_builder.PersonAgeSuppressionRuleFactory.build(priority=15, description="reason 3"),
                 ],
-                iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
+                iteration_cohorts=[
+                    rule_builder.IterationCohortFactory.build(cohort_group="cohort_group1", cohort_label="cohort1")
+                ],
             )
         ],
     )
@@ -920,7 +922,10 @@ def test_rules_stop_behavior(
                     has_items(
                         is_cohort_result().with_reasons(
                             contains_inanyorder(
-                                *[is_reason().with_rule_result(equal_to(result)) for result in expected_reason_results]
+                                *[
+                                    is_reason().with_rule_description(equal_to(result))
+                                    for result in expected_reason_results
+                                ]
                             )
                         )
                     )
@@ -938,31 +943,31 @@ def test_rules_stop_behavior(
             ["covid_cohort", "flu_cohort"],
             ["rsv_clinical_cohort", "rsv_75_rolling"],
             Status.not_eligible,
-            ["rsv_clinical_cohort", "rsv_75_rolling"],
+            ["rsv_clinical_cohort_group", "rsv_75_rolling_group"],
         ),
         (
             ["rsv_clinical_cohort", "rsv_75_rolling"],
             ["rsv_clinical_cohort", "rsv_75_rolling"],
             Status.actionable,
-            ["rsv_clinical_cohort"],
+            ["rsv_clinical_cohort_group"],
         ),
         (
             ["covid_cohort", "rsv_75_rolling"],
             ["rsv_clinical_cohort", "rsv_75_rolling"],
             Status.not_actionable,
-            ["rsv_75_rolling"],
+            ["rsv_75_rolling_group"],
         ),
         (
             ["covid_cohort", "rsv_clinical_cohort"],
             ["rsv_clinical_cohort", "rsv_75_rolling"],
             Status.actionable,
-            ["rsv_clinical_cohort"],
+            ["rsv_clinical_cohort_group"],
         ),
         (
             ["rsv_75to79_2024", "rsv_75_rolling"],
             ["rsv_75to79_2024", "rsv_75_rolling"],
             Status.not_actionable,
-            ["rsv_75_rolling", "rsv_75to79_2024"],
+            ["rsv_75_rolling_group", "rsv_75to79_2024_group"],
         ),
     ],
 )
@@ -984,7 +989,12 @@ def test_eligibility_results_when_multiple_cohorts(
             iterations=[
                 rule_builder.IterationFactory.build(
                     iteration_cohorts=[
-                        rule_builder.IterationCohortFactory.build(cohort_group=None, cohort_label=cohorts)
+                        rule_builder.IterationCohortFactory.build(
+                            cohort_group=f"{cohorts}_group",
+                            cohort_label=cohorts,
+                            positive_description="positive description",
+                            negative_description="negative description",
+                        )
                         for cohorts in iteration_cohorts
                     ],
                     iteration_rules=[
@@ -1019,4 +1029,553 @@ def test_eligibility_results_when_multiple_cohorts(
                 )
             )
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_rows", "expected_status", "expected_cohort_group_and_description", "test_comment"),
+    [
+        (
+            person_rows_builder(nhs_number="123", cohorts=[], postcode="AC01", de=True, icb="QE1"),
+            Status.not_eligible,
+            [
+                ("magic cohort group", "magic negative description"),
+                ("rsv_age_range", "rsv_age_range negative description"),
+            ],
+            "rsv_75_rolling is not base-eligible & magic cohort group not eligible by F rules ",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling"], postcode="AC01", de=True, icb="QE1"),
+            Status.not_eligible,
+            [
+                ("magic cohort group", "magic negative description"),
+                ("rsv_age_range", "rsv_age_range negative description"),
+            ],
+            "all the cohorts are not-eligible by F rules",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling"], postcode="SW19", de=False, icb="QE1"),
+            Status.not_actionable,
+            [
+                ("magic cohort group", "magic positive description"),
+                ("rsv_age_range", "rsv_age_range positive description"),
+            ],
+            "all the cohorts are not-actionable",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling"], postcode="AC01", de=False, icb="QE1"),
+            Status.actionable,
+            [
+                ("magic cohort group", "magic positive description"),
+                ("rsv_age_range", "rsv_age_range positive description"),
+            ],
+            "all the cohorts are actionable",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling"], postcode="AC01", de=False, icb="NOT_QE1"),
+            Status.actionable,
+            [("magic cohort group", "magic positive description")],
+            "magic_cohort is actionable, but not others",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling"], postcode="SW19", de=False, icb="NOT_QE1"),
+            Status.not_actionable,
+            [("magic cohort group", "magic positive description")],
+            "magic_cohort is not-actionable, but others are not eligible",
+        ),
+    ],
+)
+def test_cohort_groups_and_their_descriptions_when_magic_cohort_is_present(
+    person_rows: list[dict[str, Any]],
+    expected_status: str,
+    expected_cohort_group_and_description: list[tuple[str, str]],
+    test_comment: str,
+):
+    # Given
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.Rsv75RollingCohortFactory.build(),
+                        rule_builder.MagicCohortFactory.build(),
+                    ],
+                    iteration_rules=[
+                        # F common rule
+                        rule_builder.DetainedEstateSuppressionRuleFactory.build(type=rules.RuleType.filter),
+                        # F rules for rsv_75_rolling
+                        rule_builder.ICBFilterRuleFactory.build(
+                            type=rules.RuleType.filter, cohort_label=rules.CohortLabel("rsv_75_rolling")
+                        ),
+                        # S common rule
+                        rule_builder.PostcodeSuppressionRuleFactory.build(
+                            comparator=rules.RuleComparator("SW19"),
+                        ),
+                    ],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_cohort_results(
+                    contains_exactly(
+                        *[
+                            is_cohort_result()
+                            .with_cohort_code(item[0])
+                            .with_description(item[1])
+                            .with_status(expected_status)
+                            for item in expected_cohort_group_and_description
+                        ]
+                    )
+                )
+            )
+        ),
+        test_comment,
+    )
+
+
+def test_cohort_groups_and_their_descriptions_when_best_status_is_not_eligible(
+    faker: Faker,
+):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=[])
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.Rsv75RollingCohortFactory.build(),
+                        rule_builder.Rsv75to79CohortFactory.build(),
+                        rule_builder.RsvPretendClinicalCohortFactory.build(),
+                    ],
+                    iteration_rules=[rule_builder.PostcodeSuppressionRuleFactory.build()],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(Status.not_eligible)
+                .and_cohort_results(
+                    contains_exactly(
+                        is_cohort_result()
+                        .with_cohort_code("rsv_age_range")
+                        .with_description("rsv_age_range negative description"),
+                        is_cohort_result()
+                        .with_cohort_code("rsv_clinical_cohort")
+                        .with_description("rsv_clinical_cohort negative description"),
+                    )
+                )
+            )
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_cohorts", "expected_cohort_group_and_description_and_s_rule_names", "test_comment"),
+    [
+        (
+            ["rsv_75_rolling"],
+            [("rsv_age_range", "rsv_age_range positive description", ["Excluded postcode In SW19"])],
+            "rsv_75_rolling is not-actionable, others are not-eligible",
+        ),
+        (
+            ["rsv_75_rolling", "rsv_75to79_2024"],
+            [
+                (
+                    "rsv_age_range",
+                    "rsv_age_range positive description",
+                    ["Excluded postcode In SW19", "Excluded postcode In SW19"],
+                )
+            ],
+            "rsv_75_rolling, rsv_75to79_2024 is not-actionable, rsv_pretend_clinical_cohort are not-eligible",
+        ),
+        (
+            ["rsv_75_rolling", "rsv_75to79_2024", "rsv_pretend_clinical_cohort"],
+            [
+                (
+                    "rsv_age_range",
+                    "rsv_age_range positive description",
+                    ["Excluded postcode In SW19", "Excluded postcode In SW19"],
+                ),
+                ("rsv_clinical_cohort", "rsv_clinical_cohort positive description", ["Excluded postcode In SW19"]),
+            ],
+            "all are not-actionable",
+        ),
+    ],
+)
+def test_cohort_groups_and_their_descriptions_and_the_collection_of_s_rules_when_best_status_is_not_actionable(
+    person_cohorts: list[str],
+    expected_cohort_group_and_description_and_s_rule_names: list[tuple[str, str, list[str]]],
+    test_comment: str,
+    faker: Faker,
+):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=person_cohorts, postcode="SW19")
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.Rsv75RollingCohortFactory.build(),
+                        rule_builder.Rsv75to79CohortFactory.build(),
+                        rule_builder.RsvPretendClinicalCohortFactory.build(),
+                    ],
+                    iteration_rules=[rule_builder.PostcodeSuppressionRuleFactory.build()],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(Status.not_actionable)
+                .and_cohort_results(
+                    contains_exactly(
+                        *[
+                            is_cohort_result()
+                            .with_cohort_code(item[0])
+                            .and_description(item[1])
+                            .and_reasons(
+                                contains_exactly(*[is_reason().with_rule_name(rule_name) for rule_name in item[2]])
+                            )
+                            for item in expected_cohort_group_and_description_and_s_rule_names
+                        ]
+                    )
+                ),
+            )
+        ),
+        test_comment,
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_cohorts", "expected_cohort_group_and_description", "test_comment"),
+    [
+        (
+            ["rsv_75_rolling"],
+            [("rsv_age_range", "rsv_age_range positive description")],
+            "rsv_75_rolling is actionable, others are not-eligible",
+        ),
+        (
+            ["rsv_75_rolling", "rsv_75to79_2024"],
+            [("rsv_age_range", "rsv_age_range positive description")],
+            "rsv_75_rolling, rsv_75to79_2024 is actionable, rsv_pretend_clinical_cohort are not-eligible",
+        ),
+        (
+            ["rsv_75_rolling", "rsv_75to79_2024", "rsv_pretend_clinical_cohort"],
+            [
+                ("rsv_age_range", "rsv_age_range positive description"),
+                ("rsv_clinical_cohort", "rsv_clinical_cohort positive description"),
+            ],
+            "all are actionable",
+        ),
+    ],
+)
+def test_cohort_group_and_descriptions_when_best_status_is_actionable(
+    person_cohorts: list[str],
+    expected_cohort_group_and_description: list[tuple[str, str]],
+    test_comment: str,
+    faker: Faker,
+):
+    # Given
+    nhs_number = NHSNumber(faker.nhs_number())
+    date_of_birth = DateOfBirth(faker.date_of_birth(minimum_age=66, maximum_age=74))
+
+    person_rows = person_rows_builder(nhs_number, date_of_birth=date_of_birth, cohorts=person_cohorts, postcode="hp")
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.Rsv75RollingCohortFactory.build(),
+                        rule_builder.Rsv75to79CohortFactory.build(),
+                        rule_builder.RsvPretendClinicalCohortFactory.build(),
+                    ],
+                    iteration_rules=[rule_builder.PostcodeSuppressionRuleFactory.build()],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(Status.actionable)
+                .and_cohort_results(
+                    contains_exactly(
+                        *[
+                            is_cohort_result().with_cohort_code(item[0]).with_description(item[1])
+                            for item in expected_cohort_group_and_description
+                        ]
+                    )
+                )
+            )
+        ),
+        test_comment,
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_rows", "expected_description", "test_comment"),
+    [
+        (
+            person_rows_builder(nhs_number="123", cohorts=[]),
+            "rsv_age_range negative description 1",
+            "status - not eligible",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling", "rsv_75to79_2024"], postcode="SW19"),
+            "rsv_age_range positive description 1",
+            "status - not actionable",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75_rolling", "rsv_75to79_2024"], postcode="hp"),
+            "rsv_age_range positive description 1",
+            "status - actionable",
+        ),
+        (
+            person_rows_builder(nhs_number="123", cohorts=["rsv_75to79_2024"], postcode="hp"),
+            "rsv_age_range positive description 2",
+            "rsv_75to79_2024 - actionable and rsv_75_rolling is not eligible",
+        ),
+    ],
+)
+def test_cohort_group_descriptions_are_selected_based_on_priority_when_cohorts_have_different_non_empty_descriptions(
+    person_rows: list[dict[str, Any]], expected_description: str, test_comment: str
+):
+    # Given
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=[
+                        rule_builder.Rsv75to79CohortFactory.build(
+                            positive_description=rules.Description("rsv_age_range positive description 2"),
+                            negative_description=rules.Description("rsv_age_range negative description 2"),
+                            priority=2,
+                        ),
+                        rule_builder.Rsv75RollingCohortFactory.build(
+                            positive_description=rules.Description("rsv_age_range positive description 1"),
+                            negative_description=rules.Description("rsv_age_range negative description 1"),
+                            priority=1,
+                        ),
+                    ],
+                    iteration_rules=[rule_builder.PostcodeSuppressionRuleFactory.build()],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_cohort_results(
+                    contains_exactly(
+                        is_cohort_result().with_cohort_code("rsv_age_range").with_description(expected_description)
+                    )
+                )
+            )
+        ),
+        test_comment,
+    )
+
+
+@pytest.mark.parametrize(
+    ("person_rows", "iteration_cohorts", "expected_cohort_group_and_description", "expected_status", "test_comment"),
+    [
+        (
+            person_rows_builder("123", postcode="SW19", cohorts=[], de=False),
+            [rule_builder.Rsv75to79CohortFactory.build(negative_description=None, priority=2)],
+            [("rsv_age_range", "")],
+            Status.not_eligible,
+            "if group has one cohort, with no description, expect no description",
+        ),
+        (
+            person_rows_builder("123", postcode="SW19", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
+            [rule_builder.Rsv75to79CohortFactory.build(negative_description=None, priority=2)],
+            [("rsv_age_range", "")],
+            Status.not_eligible,
+            "if group has one cohort, with no description, expect no description",
+        ),
+        (
+            person_rows_builder("123", postcode="HP1", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=True),
+            [rule_builder.Rsv75to79CohortFactory.build(positive_description=None, priority=2)],
+            [("rsv_age_range", "")],
+            Status.not_actionable,
+            "if group has one cohort, with no description, expect no description",
+        ),
+        (
+            person_rows_builder("123", postcode="HP1", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
+            [rule_builder.Rsv75to79CohortFactory.build(positive_description=None, priority=2)],
+            [("rsv_age_range", "")],
+            Status.actionable,
+            "if group has one cohort, with no description, expect no description",
+        ),
+        (
+            person_rows_builder("123", postcode="SW19", cohorts=[], de=False),
+            [
+                rule_builder.Rsv75to79CohortFactory.build(priority=2, negative_description=None),
+                rule_builder.Rsv75RollingCohortFactory.build(priority=3, negative_description="rsv age range -ve 1"),
+                rule_builder.Rsv75RollingCohortFactory.build(
+                    cohort_label="rsv_75_rolling_2", priority=4, negative_description="rsv age range -ve 2"
+                ),
+            ],
+            [("rsv_age_range", "rsv age range -ve 1")],
+            Status.not_eligible,
+            "if group has more than one cohort, at least one has description, expect first non empty description",
+        ),
+        (
+            person_rows_builder("123", postcode="SW19", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
+            [
+                rule_builder.Rsv75to79CohortFactory.build(priority=2, negative_description=None),
+                rule_builder.Rsv75RollingCohortFactory.build(priority=3, negative_description="rsv age range -ve 1"),
+                rule_builder.Rsv75RollingCohortFactory.build(
+                    cohort_label="rsv_75_rolling_2", priority=4, negative_description="rsv age range -ve 2"
+                ),
+            ],
+            [("rsv_age_range", "rsv age range -ve 1")],
+            Status.not_eligible,
+            "if group has more than one cohort, at least one has description, expect first non empty description",
+        ),
+        (
+            person_rows_builder("123", postcode="HP1", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=True),
+            [
+                rule_builder.Rsv75to79CohortFactory.build(priority=2, positive_description=None),
+                rule_builder.Rsv75RollingCohortFactory.build(priority=3, positive_description="rsv age range +ve 1"),
+                rule_builder.Rsv75RollingCohortFactory.build(
+                    cohort_label="rsv_75_rolling_2", priority=4, positive_description="rsv age range +ve 2"
+                ),
+            ],
+            [("rsv_age_range", "rsv age range +ve 1")],
+            Status.not_actionable,
+            "if group has more than one cohort, at least one has description, expect first non empty description",
+        ),
+        (
+            person_rows_builder("123", postcode="HP1", cohorts=["rsv_75to79_2024", "rsv_75_rolling"], de=False),
+            [
+                rule_builder.Rsv75to79CohortFactory.build(priority=2, positive_description=None),
+                rule_builder.Rsv75RollingCohortFactory.build(priority=3, positive_description="rsv age range +ve 1"),
+                rule_builder.Rsv75RollingCohortFactory.build(
+                    cohort_label="rsv_75_rolling_2", priority=4, positive_description="rsv age range +ve 2"
+                ),
+            ],
+            [("rsv_age_range", "rsv age range +ve 1")],
+            Status.actionable,
+            "if group has more than one cohort, at least one has description, expect first non empty description",
+        ),
+    ],
+)
+def test_cohort_group_descriptions_pick_first_non_empty_if_available(
+    person_rows: list[dict[str, Any]],
+    iteration_cohorts: list[rules.IterationCohort],
+    expected_cohort_group_and_description: list[tuple[str, str]],
+    expected_status: Status,
+    test_comment: str,
+):
+    # Given
+    campaign_configs = [
+        rule_builder.CampaignConfigFactory.build(
+            target="RSV",
+            iterations=[
+                rule_builder.IterationFactory.build(
+                    iteration_cohorts=iteration_cohorts,
+                    iteration_rules=[
+                        rule_builder.PostcodeSuppressionRuleFactory.build(type=rules.RuleType.filter),
+                        rule_builder.DetainedEstateSuppressionRuleFactory.build(),
+                    ],
+                )
+            ],
+        )
+    ]
+
+    calculator = EligibilityCalculator(person_rows, campaign_configs)
+
+    # When
+    actual = calculator.evaluate_eligibility()
+
+    # Then
+    assert_that(
+        actual,
+        is_eligibility_status().with_conditions(
+            has_items(
+                is_condition()
+                .with_condition_name(ConditionName("RSV"))
+                .and_status(expected_status)
+                .and_cohort_results(
+                    contains_exactly(
+                        *[
+                            is_cohort_result()
+                            .with_cohort_code(item[0])
+                            .with_description(item[1])
+                            .with_status(expected_status)
+                            for item in expected_cohort_group_and_description
+                        ]
+                    )
+                )
+            )
+        ),
+        test_comment,
     )
