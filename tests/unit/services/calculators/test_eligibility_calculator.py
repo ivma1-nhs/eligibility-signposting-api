@@ -22,7 +22,7 @@ from eligibility_signposting_api.model.eligibility import (
     UrlLabel,
     UrlLink,
 )
-from eligibility_signposting_api.model.rules import ActionsMapper, AvailableAction
+from eligibility_signposting_api.model.rules import AvailableAction
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
@@ -40,11 +40,27 @@ class TestEligibilityCalculator:
     def test_get_redirect_rules():
         # Given
 
-        # TODO: use the actionsmapperfactory
         iteration = rule_builder.IterationFactory.build(
             iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
             default_comms_routing="defaultcomms",
-            actions_mapper=ActionsMapper(root={"ActionCode1": AvailableAction()}),
+            actions_mapper=rule_builder.ActionsMapperFactory.build(
+                root={
+                    "ActionCode1": AvailableAction(
+                        ActionType="ActionType1",
+                        ExternalRoutingCode="ActionCode1",
+                        ActionDescription="ActionDescription1",
+                        UrlLink="ActionUrl1",
+                        UrlLabel="ActionLabel1",
+                    ),
+                    "defaultcomms": AvailableAction(
+                        ActionType="ActionType2",
+                        ExternalRoutingCode="defaultcomms",
+                        ActionDescription="ActionDescription2",
+                        UrlLink="ActionUrl2",
+                        UrlLabel="ActionLabel2",
+                    ),
+                }
+            ),
             iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()],
         )
 
@@ -1053,6 +1069,7 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     nhs_number = NHSNumber(faker.nhs_number())
 
     person_rows = person_rows_builder(nhs_number, cohorts=["cohort1"], icb="QE1")
+
     campaign_configs = [
         (
             rule_builder.CampaignConfigFactory.build(
@@ -1061,21 +1078,21 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper=ActionsMapper(
+                        actions_mapper=rule_builder.ActionsMapperFactory.build(
                             root={
                                 "ActionCode1": AvailableAction(
-                                    action_type="ActionType",
-                                    action_code="ActionCode1",
-                                    action_description="Action description",
-                                    url_link="ActionLink",
-                                    url_label="Label",
+                                    ActionType="ActionType",
+                                    ExternalRoutingCode="ActionCode1",
+                                    ActionDescription="Action description",
+                                    UrlLink="ActionLink",
+                                    UrlLabel="Label",
                                 ),
                                 "defaultcomms": AvailableAction(
-                                    action_code="ActionCode1",
-                                    action_description="Action description",
-                                    action_type="ActionType",
-                                    url_link="ActionLink",
-                                    url_label="Label",
+                                    ActionType="ActionType",
+                                    ExternalRoutingCode="defaultcomms",
+                                    ActionDescription="Action description",
+                                    UrlLink="ActionLink",
+                                    UrlLabel="Label",
                                 ),
                             }
                         ),
@@ -1128,21 +1145,21 @@ def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper=ActionsMapper(
+                        actions_mapper=rule_builder.ActionsMapperFactory.build(
                             root={
                                 "ActionCode1": AvailableAction(
-                                    action_type="ActionType",
-                                    action_code="ActionCode1",
-                                    action_description="Action description",
-                                    url_link="ActionLink",
-                                    url_label="Label",
+                                    ActionType="ActionType",
+                                    ExternalRoutingCode="ActionCode1",
+                                    ActionDescription="Action description",
+                                    UrlLink="ActionLink",
+                                    UrlLabel="Label",
                                 ),
                                 "defaultcomms": AvailableAction(
-                                    action_code="ActionCode1",
-                                    action_description="Action description",
-                                    action_type="ActionType",
-                                    url_link="ActionLink",
-                                    url_label="Label",
+                                    ActionType="ActionType",
+                                    ExternalRoutingCode="defaultcomms",
+                                    ActionDescription="Action description",
+                                    UrlLink="ActionLink",
+                                    UrlLabel="Label",
                                 ),
                             }
                         ),
@@ -1160,7 +1177,15 @@ def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
-    expected_actions = [SuggestedAction("ActionType", "ActionCode1", "Action description", "ActionLink", "Label")]
+    expected_actions = [
+        SuggestedAction(
+            action_type=ActionType("ActionType"),
+            action_code=ActionCode("ActionCode1"),
+            action_description=ActionDescription("Action description"),
+            url_link=UrlLink("ActionLink"),
+            url_label=UrlLabel("Label"),
+        )
+    ]
 
     # Then
     assert_that(

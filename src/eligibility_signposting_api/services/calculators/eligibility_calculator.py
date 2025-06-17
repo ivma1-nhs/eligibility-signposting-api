@@ -151,7 +151,7 @@ class EligibilityCalculator:
             condition_results[condition_name] = best_candidate
 
             if best_candidate.status.actionable:
-                actions = self.handle_redirect_rules(actions, best_active_iteration, best_candidate)
+                actions = self.handle_redirect_rules(best_active_iteration)
 
         # Consolidate all the results and return
         final_result = [
@@ -165,7 +165,7 @@ class EligibilityCalculator:
         ]
         return eligibility.EligibilityStatus(conditions=final_result)
 
-    def handle_redirect_rules(self, actions, best_active_iteration, best_candidate):
+    def handle_redirect_rules(self, best_active_iteration: Iteration) -> list[SuggestedAction]:
         redirect_rules, action_mapper, default_comms = self.get_redirect_rules(best_active_iteration)
         priority_getter = attrgetter("priority")
         sorted_rules_by_priority = sorted(redirect_rules, key=priority_getter)
