@@ -182,17 +182,23 @@ resource "aws_iam_policy" "api_infrastructure" {
         Effect = "Allow",
         Action = [
           "logs:Describe*",
-          "logs:PutLogEvents",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
           "ssm:DescribeParameters",
           "ec2:Describe*",
           "ec2:DescribeVpcs",
-          "acm:ListCertificates",
+          # API Gateway domain and deployment
+          "apigateway:*",
+          # ACM for certs
           "acm:DescribeCertificate",
           "acm:GetCertificate",
-          "apigateway:*",
-          "iam:PassRole",
+          "acm:ListCertificates",
+          # S3 for mTLS truststore
+          "s3:GetObject",
+          # CloudWatch Logs for logging
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          # IAM PassRole for logging role association (if needed)
+          "iam:PassRole"
         ],
         Resource = "*"
         #checkov:skip=CKV_AWS_289: Actions require wildcard resource
@@ -258,7 +264,7 @@ resource "aws_iam_policy" "api_infrastructure" {
           "arn:aws:ssm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.environment}/*",
           "arn:aws:acm:${var.default_aws_region}:${data.aws_caller_identity.current.account_id}:certificate/*",
         ]
-      }
+      },
     ]
   })
 
