@@ -2,6 +2,7 @@ import json
 import logging
 from http import HTTPStatus
 
+import pytest
 from brunns.matchers.data import json_matching as is_json_that
 from brunns.matchers.werkzeug import is_werkzeug_response as is_response
 from flask import Flask
@@ -10,12 +11,13 @@ from hamcrest import assert_that, contains_exactly, empty, has_entries, has_entr
 from wireup.integration.flask import get_app_container
 
 from eligibility_signposting_api.model.eligibility import (
+    CohortGroupResult,
     Condition,
     EligibilityStatus,
     NHSNumber,
     Reason,
+    RuleDescription,
     RuleName,
-    RuleResult,
     RuleType,
     Status,
 )
@@ -24,7 +26,11 @@ from eligibility_signposting_api.views.eligibility import (
     build_eligibility_cohorts,
     build_suitability_results,
 )
-from tests.fixtures.builders.model.eligibility import CohortResultFactory, ConditionFactory, EligibilityStatusFactory
+from tests.fixtures.builders.model.eligibility import (
+    CohortResultFactory,
+    ConditionFactory,
+    EligibilityStatusFactory,
+)
 from tests.fixtures.matchers.eligibility import is_eligibility_cohort, is_suitability_rule
 
 logger = logging.getLogger(__name__)
@@ -113,30 +119,70 @@ def test_unexpected_error(app: Flask, client: FlaskClient):
         )
 
 
-def test_build_eligibility_cohorts_results_consider_only_cohorts_with_best_status():
+@pytest.mark.parametrize(
+    ("cohort_results", "expected_eligibility_cohorts", "test_comment"),
+    [
+        (
+            [
+                CohortResultFactory.build(
+                    cohort_code="CohortCode1", status=Status.not_actionable, description="+ve des 1"
+                ),
+                CohortResultFactory.build(
+                    cohort_code="CohortCode2", status=Status.not_actionable, description="+ve des 2"
+                ),
+            ],
+            [
+                ("CohortCode1", "NotActionable", "+ve des 1"),
+                ("CohortCode2", "NotActionable", "+ve des 2"),
+            ],
+            "two cohort group codes with same status, nothing is ignored",
+        ),
+        (
+            [
+                CohortResultFactory.build(
+                    cohort_code="CohortCode1", status=Status.not_actionable, description="+ve des 1"
+                ),
+                CohortResultFactory.build(cohort_code="CohortCode2", status=Status.not_actionable, description=None),
+                CohortResultFactory.build(cohort_code="CohortCode3", status=Status.not_actionable, description=""),
+            ],
+            [("CohortCode1", "NotActionable", "+ve des 1")],
+            "only one cohort has description",
+        ),
+        (
+            [
+                CohortResultFactory.build(cohort_code="some_cohort", status=Status.not_actionable, description=""),
+            ],
+            [],
+            "only one cohort but no description, so it is ignored",
+        ),
+        (
+            [
+                CohortResultFactory.build(cohort_code="some_cohort", status=Status.not_actionable, description=None),
+            ],
+            [],
+            "only one cohort but no description, so it is ignored",
+        ),
+    ],
+)
+def test_build_eligibility_cohorts_results_consider_only_cohorts_groups_that_has_description(
+    cohort_results: list[CohortGroupResult], expected_eligibility_cohorts: list[tuple[str, str, str]], test_comment
+):
     condition: Condition = ConditionFactory.build(
         status=Status.not_actionable,
-        cohort_results=[
-            CohortResultFactory.build(
-                cohort_code="cohort_group1",
-                status=Status.not_actionable,
-            ),
-            CohortResultFactory.build(
-                cohort_code="cohort_group1",
-                status=Status.not_actionable,
-            ),
-            CohortResultFactory.build(
-                cohort_code="cohort_group2",
-                status=Status.not_eligible,
-            ),
-        ],
+        cohort_results=cohort_results,
     )
 
     results = build_eligibility_cohorts(condition)
 
     assert_that(
         results,
-        contains_exactly(is_eligibility_cohort().with_cohort_code("cohort_group1").and_cohort_status("NotActionable")),
+        contains_exactly(
+            *[
+                is_eligibility_cohort().with_cohort_code(item[0]).and_cohort_status(item[1]).and_cohort_text(item[2])
+                for item in expected_eligibility_cohorts
+            ]
+        ),
+        test_comment,
     )
 
 
@@ -151,14 +197,17 @@ def test_build_suitability_results_with_deduplication():
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
-                        rule_result=RuleResult("Age < 75"),
-                        matcher_matched=False,
+                        rule_description=RuleDescription("your age is greater than 75"),
+                    ),
+                    Reason(
+                        rule_type=RuleType.suppression,
+                        rule_name=RuleName("Exclude too young less than 75"),
+                        rule_description=RuleDescription("your age is greater than 75"),
                     ),
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude more than 100"),
-                        rule_result=RuleResult("Age > 100"),
-                        matcher_matched=False,
+                        rule_description=RuleDescription("your age is greater than 100"),
                     ),
                 ],
             ),
@@ -169,8 +218,7 @@ def test_build_suitability_results_with_deduplication():
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
-                        rule_result=RuleResult("Age < 75"),
-                        matcher_matched=False,
+                        rule_description=RuleDescription("your age is greater than 75"),
                     )
                 ],
             ),
@@ -181,7 +229,87 @@ def test_build_suitability_results_with_deduplication():
                     Reason(
                         rule_type=RuleType.filter,
                         rule_name=RuleName("Exclude is present in sw1"),
-                        rule_result=RuleResult("memberof sw1"),
+                        rule_description=RuleDescription("your a member of sw1"),
+                    )
+                ],
+            ),
+            CohortResultFactory.build(
+                cohort_code="cohort_group4",
+                description="",
+                status=Status.not_actionable,
+                reasons=[
+                    Reason(
+                        rule_type=RuleType.filter,
+                        rule_name=RuleName("Already vaccinated"),
+                        rule_description=RuleDescription("you have already vaccinated"),
+                    )
+                ],
+            ),
+        ],
+    )
+
+    results = build_suitability_results(condition)
+
+    assert_that(
+        results,
+        contains_exactly(
+            is_suitability_rule()
+            .with_rule_code("Exclude too young less than 75")
+            .and_rule_text("your age is greater than 75"),
+            is_suitability_rule().with_rule_code("Exclude more than 100").and_rule_text("your age is greater than 100"),
+            is_suitability_rule().with_rule_code("Already vaccinated").and_rule_text("you have already vaccinated"),
+        ),
+    )
+
+
+def test_build_suitability_results_when_rule_text_is_empty_or_null():
+    condition: Condition = ConditionFactory.build(
+        status=Status.not_actionable,
+        cohort_results=[
+            CohortResultFactory.build(
+                cohort_code="cohort_group1",
+                status=Status.not_actionable,
+                reasons=[
+                    Reason(
+                        rule_type=RuleType.suppression,
+                        rule_name=RuleName("Exclude too young less than 75"),
+                        rule_description=RuleDescription("your age is greater than 75"),
+                        matcher_matched=False,
+                    ),
+                    Reason(
+                        rule_type=RuleType.suppression,
+                        rule_name=RuleName("Exclude more than 100"),
+                        rule_description=RuleDescription(""),
+                        matcher_matched=False,
+                    ),
+                    Reason(
+                        rule_type=RuleType.suppression,
+                        rule_name=RuleName("Exclude more than 100"),
+                        matcher_matched=False,
+                        rule_description=None,
+                    ),
+                ],
+            ),
+            CohortResultFactory.build(
+                cohort_code="cohort_group2",
+                status=Status.not_actionable,
+                reasons=[
+                    Reason(
+                        rule_type=RuleType.filter,
+                        rule_name=RuleName("Exclude is present in sw1"),
+                        rule_description=RuleDescription(""),
+                        matcher_matched=False,
+                    )
+                ],
+            ),
+            CohortResultFactory.build(
+                cohort_code="cohort_group3",
+                status=Status.not_actionable,
+                reasons=[
+                    Reason(
+                        rule_type=RuleType.filter,
+                        rule_name=RuleName("Exclude is present in sw1"),
+                        rule_description=None,
                         matcher_matched=False,
                     )
                 ],
@@ -194,8 +322,9 @@ def test_build_suitability_results_with_deduplication():
     assert_that(
         results,
         contains_exactly(
-            is_suitability_rule().with_rule_code("Exclude too young less than 75").and_rule_text("Age < 75"),
-            is_suitability_rule().with_rule_code("Exclude more than 100").and_rule_text("Age > 100"),
+            is_suitability_rule()
+            .with_rule_code("Exclude too young less than 75")
+            .and_rule_text("your age is greater than 75")
         ),
     )
 

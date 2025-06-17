@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 from collections import Counter
 from datetime import UTC, date, datetime
@@ -10,6 +9,8 @@ from operator import attrgetter
 from typing import Literal, NewType
 
 from pydantic import BaseModel, Field, RootModel, field_serializer, field_validator, model_validator
+
+from eligibility_signposting_api.config.contants import MAGIC_COHORT_LABEL
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
@@ -87,13 +88,17 @@ class RuleAttributeLevel(StrEnum):
 
 
 class IterationCohort(BaseModel):
-    cohort_label: CohortLabel | None = Field(None, alias="CohortLabel")
-    cohort_group: CohortGroup | None = Field(None, alias="CohortGroup")
+    cohort_label: CohortLabel = Field(alias="CohortLabel")
+    cohort_group: CohortGroup = Field(alias="CohortGroup")
     positive_description: Description | None = Field(None, alias="PositiveDescription")
     negative_description: Description | None = Field(None, alias="NegativeDescription")
     priority: int | None = Field(None, alias="Priority")
 
     model_config = {"populate_by_name": True, "extra": "ignore"}
+
+    @cached_property
+    def is_magic_cohort(self) -> bool:
+        return self.cohort_label.upper() == MAGIC_COHORT_LABEL.upper()
 
 
 class IterationRule(BaseModel):
@@ -110,13 +115,13 @@ class IterationRule(BaseModel):
     rule_stop: RuleStop = Field(RuleStop(False), alias="RuleStop")
     comms_routing: CommsRouting | None = Field(None, alias="CommsRouting")
 
+    model_config = {"populate_by_name": True, "extra": "ignore"}
+
     @field_validator("rule_stop", mode="before")
     def parse_yn_to_bool(cls, v: str | bool) -> bool:  # noqa: N805
         if isinstance(v, str):
             return v.upper() == "Y"
         return v
-
-    model_config = {"populate_by_name": True, "extra": "ignore"}
 
     def __str__(self) -> str:
         return json.dumps(self.model_dump(by_alias=True), indent=2)

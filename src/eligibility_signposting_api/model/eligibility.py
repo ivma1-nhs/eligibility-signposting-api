@@ -12,7 +12,7 @@ Postcode = NewType("Postcode", str)
 ConditionName = NewType("ConditionName", str)
 
 RuleName = NewType("RuleName", str)
-RuleResult = NewType("RuleResult", str)
+RuleDescription = NewType("RuleDescription", str)
 
 ActionType = NewType("ActionType", str)
 ActionCode = NewType("ActionCode", str)
@@ -66,7 +66,7 @@ class Status(Enum):
 class Reason:
     rule_type: RuleType
     rule_name: RuleName
-    rule_result: RuleResult
+    rule_description: RuleDescription | None
     matcher_matched: bool
 
 
@@ -83,22 +83,22 @@ class SuggestedAction:
 class Condition:
     condition_name: ConditionName
     status: Status
-    cohort_results: list[CohortResult]
+    cohort_results: list[CohortGroupResult]
     actions: list[SuggestedAction]
 
 
 @dataclass
-class CohortResult:
+class CohortGroupResult:
     cohort_code: str
     status: Status
     reasons: list[Reason]
-    description: str
+    description: str | None
 
 
 @dataclass
 class IterationResult:
     status: Status
-    cohort_results: list[CohortResult]
+    cohort_results: list[CohortGroupResult]
 
 
 @dataclass

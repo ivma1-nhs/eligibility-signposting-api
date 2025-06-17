@@ -17,7 +17,6 @@ def future_date(days_ahead: int = 365) -> date:
 
 
 class IterationCohortFactory(ModelFactory[rules.IterationCohort]):
-    cohort_group = None
     priority = rules.RulePriority(0)
 
 
@@ -86,6 +85,40 @@ class CampaignConfigFactory(RawCampaignConfigFactory):
             previous = current
 
 
+# Iteration cohort factories
+class MagicCohortFactory(IterationCohortFactory):
+    cohort_label = rules.CohortLabel("elid_all_people")
+    cohort_group = rules.CohortGroup("magic cohort group")
+    positive_description = rules.Description("magic positive description")
+    negative_description = rules.Description("magic negative description")
+    priority = 1
+
+
+class Rsv75RollingCohortFactory(IterationCohortFactory):
+    cohort_label = rules.CohortLabel("rsv_75_rolling")
+    cohort_group = rules.CohortGroup("rsv_age_range")
+    positive_description = rules.Description("rsv_age_range positive description")
+    negative_description = rules.Description("rsv_age_range negative description")
+    priority = 2
+
+
+class Rsv75to79CohortFactory(IterationCohortFactory):
+    cohort_label = rules.CohortLabel("rsv_75to79_2024")
+    cohort_group = rules.CohortGroup("rsv_age_range")
+    positive_description = rules.Description("rsv_age_range positive description")
+    negative_description = rules.Description("rsv_age_range negative description")
+    priority = 3
+
+
+class RsvPretendClinicalCohortFactory(IterationCohortFactory):
+    cohort_label = rules.CohortLabel("rsv_pretend_clinical_cohort")
+    cohort_group = rules.CohortGroup("rsv_clinical_cohort")
+    positive_description = rules.Description("rsv_clinical_cohort positive description")
+    negative_description = rules.Description("rsv_clinical_cohort negative description")
+    priority = 4
+
+
+# Iteration rule factories
 class PersonAgeSuppressionRuleFactory(IterationRuleFactory):
     type = rules.RuleType.suppression
     name = rules.RuleName("Exclude too young less than 75")
@@ -99,7 +132,7 @@ class PersonAgeSuppressionRuleFactory(IterationRuleFactory):
 
 class PostcodeSuppressionRuleFactory(IterationRuleFactory):
     type = rules.RuleType.suppression
-    name = rules.RuleName("In SW19")
+    name = rules.RuleName("Excluded postcode In SW19")
     description = rules.RuleDescription("In SW19")
     priority = rules.RulePriority(10)
     operator = rules.RuleOperator.starts_with
@@ -108,7 +141,18 @@ class PostcodeSuppressionRuleFactory(IterationRuleFactory):
     comparator = rules.RuleComparator("SW19")
 
 
-class ICBSuppressionRuleFactory(IterationRuleFactory):
+class DetainedEstateSuppressionRuleFactory(IterationRuleFactory):
+    type = rules.RuleType.suppression
+    name = rules.RuleName("Detained - Suppress Individuals In Detained Estates")
+    description = rules.RuleDescription("Suppress where individual is identified as being in a Detained Estate")
+    priority = rules.RulePriority(160)
+    attribute_level = rules.RuleAttributeLevel.PERSON
+    attribute_name = rules.RuleAttributeName("DE_FLAG")
+    operator = rules.RuleOperator.equals
+    comparator = rules.RuleComparator("Y")
+
+
+class ICBFilterRuleFactory(IterationRuleFactory):
     type = rules.RuleType.filter
     name = rules.RuleName("Not in QE1")
     description = rules.RuleDescription("Not in QE1")

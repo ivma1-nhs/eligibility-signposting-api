@@ -1,6 +1,5 @@
 import logging
 import uuid
-from collections import defaultdict
 from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Never
@@ -116,24 +115,19 @@ def build_eligibility_response(
 def build_eligibility_cohorts(condition: Condition) -> list[eligibility.EligibilityCohort]:
     """Group Iteration cohorts and make only one entry per cohort group"""
 
-    grouped_cohort_results = defaultdict(list)
-
-    for cohort_result in condition.cohort_results:
-        if condition.status == cohort_result.status:
-            grouped_cohort_results[cohort_result.cohort_code].append(cohort_result)
-
     return [
         eligibility.EligibilityCohort(
-            cohortCode=cohort_group_code,
-            cohortText=cohort_group[0].description,
-            cohortStatus=STATUS_MAPPING[cohort_group[0].status],
+            cohortCode=eligibility.CohortCode(cohort_result.cohort_code),
+            cohortText=eligibility.CohortText(cohort_result.description),
+            cohortStatus=STATUS_MAPPING[cohort_result.status],
         )
-        for cohort_group_code, cohort_group in grouped_cohort_results.items()
-        if cohort_group
+        for cohort_result in condition.cohort_results
+        if cohort_result and condition.status == cohort_result.status and cohort_result.description
     ]
 
 
 def build_suitability_results(condition: Condition) -> list[eligibility.SuitabilityRule]:
+    """Make only one entry if there are duplicate rules"""
     if condition.status != Status.not_actionable:
         return []
 
@@ -143,13 +137,13 @@ def build_suitability_results(condition: Condition) -> list[eligibility.Suitabil
     for cohort_result in condition.cohort_results:
         if cohort_result.status == Status.not_actionable:
             for reason in cohort_result.reasons:
-                if reason.rule_name not in unique_rule_codes:
+                if reason.rule_name not in unique_rule_codes and reason.rule_description:
                     unique_rule_codes.add(reason.rule_name)
                     suitability_results.append(
                         eligibility.SuitabilityRule(
                             ruleType=eligibility.RuleType(reason.rule_type.value),
                             ruleCode=eligibility.RuleCode(reason.rule_name),
-                            ruleText=eligibility.RuleText(reason.rule_result),
+                            ruleText=eligibility.RuleText(reason.rule_description),
                         )
                     )
 
