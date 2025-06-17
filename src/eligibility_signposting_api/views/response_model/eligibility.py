@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import NewType, Optional, List
+from typing import NewType
 
 from pydantic import UUID4, BaseModel, Field, HttpUrl, field_serializer
 from pydantic_core.core_schema import SerializationInfo
@@ -60,7 +60,7 @@ class ProcessedSuggestion(BaseModel):
     status_text: StatusText = Field(..., alias="statusText")
     eligibility_cohorts: list[EligibilityCohort] = Field(..., alias="eligibilityCohorts")
     suitability_rules: list[SuitabilityRule] = Field(..., alias="suitabilityRules")
-    actions: Optional[list[Action]]
+    actions: list[Action] | None
 
     model_config = {"populate_by_name": True}
 

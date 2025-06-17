@@ -4,24 +4,26 @@ from _operator import attrgetter
 from collections.abc import Collection, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from itertools import groupby
-from multiprocessing.connection import default_family
 from typing import TYPE_CHECKING, Any
 
-#from localstack.utils.testutil import list_all_resources
-#from pygments.lexer import default
-
 if TYPE_CHECKING:
-    from eligibility_signposting_api.model.rules import Iteration, IterationCohort, AvailableAction
+    from eligibility_signposting_api.model.rules import AvailableAction, Iteration, IterationCohort
 
 from wireup import service
 
 from eligibility_signposting_api.model import eligibility, rules
 from eligibility_signposting_api.model.eligibility import (
+    ActionCode,
+    ActionDescription,
+    ActionType,
     CohortResult,
     Condition,
     ConditionName,
     IterationResult,
-    Status, Action,
+    Status,
+    SuggestedAction,
+    UrlLabel,
+    UrlLink,
 )
 from eligibility_signposting_api.services.calculators.rule_calculator import RuleCalculator
 
@@ -80,8 +82,8 @@ class EligibilityCalculator:
             ir
             for ir in filter_rules
             if ir.cohort_label is None
-               or cohort.cohort_label == ir.cohort_label
-               or (isinstance(ir.cohort_label, (list, set, tuple)) and cohort.cohort_label in ir.cohort_label)
+            or cohort.cohort_label == ir.cohort_label
+            or (isinstance(ir.cohort_label, (list, set, tuple)) and cohort.cohort_label in ir.cohort_label)
         )
 
     @staticmethod
@@ -108,7 +110,7 @@ class EligibilityCalculator:
     def evaluate_eligibility(self) -> eligibility.EligibilityStatus:
         """Iterates over campaign groups, evaluates eligibility, and returns a consolidated status."""
         condition_results: dict[ConditionName, IterationResult] = {}
-        actions: [Action] = []
+        actions: list[SuggestedAction] = []
 
         for condition_name, campaign_group in self.campaigns_grouped_by_condition_name:
             iteration_results: dict[str, tuple[Iteration, IterationResult]] = {}
@@ -149,26 +151,7 @@ class EligibilityCalculator:
             condition_results[condition_name] = best_candidate
 
             if best_candidate.status.actionable:
-                redirect_rules, action_mapper, default_comms = self.get_redirect_rules(best_active_iteration)
-                priority_getter = attrgetter("priority")
-                sorted_rules_by_priority = sorted(redirect_rules, key=priority_getter)
-
-                actions: list[Action] = self.get_actions_from_comms(self, action_mapper, default_comms)
-                for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
-                    rule_group_list = list(rule_group)
-                    matcher_matched_list = [
-                        getattr(RuleCalculator(person_data=self.person_data, rule=rule).evaluate_exclusion()[1],
-                                "matcher_matched")
-                        for rule in rule_group_list
-                    ]
-
-                    if all(matcher_matched_list):
-                        actions = self.get_actions_from_comms(self, action_mapper, rule_group_list[0].comms_routing)
-                        break
-
-        #list_actions = [Action]
-        #for action in actions:
-        #    list_actions.append(Action(action.actionType, action.actionCode, action.actionDescription, action.urlLink))
+                actions = self.handle_redirect_rules(actions, best_active_iteration, best_candidate)
 
         # Consolidate all the results and return
         final_result = [
@@ -176,11 +159,29 @@ class EligibilityCalculator:
                 condition_name=condition_name,
                 status=active_iteration_result.status,
                 cohort_results=active_iteration_result.cohort_results,
-                actions=actions
+                actions=actions,
             )
             for condition_name, active_iteration_result in condition_results.items()
         ]
         return eligibility.EligibilityStatus(conditions=final_result)
+
+    def handle_redirect_rules(self, actions, best_active_iteration, best_candidate):
+        redirect_rules, action_mapper, default_comms = self.get_redirect_rules(best_active_iteration)
+        priority_getter = attrgetter("priority")
+        sorted_rules_by_priority = sorted(redirect_rules, key=priority_getter)
+
+        actions: list[SuggestedAction] = self.get_actions_from_comms(action_mapper, default_comms)
+        for _, rule_group in groupby(sorted_rules_by_priority, key=priority_getter):
+            rule_group_list = list(rule_group)
+            matcher_matched_list = [
+                RuleCalculator(person_data=self.person_data, rule=rule).evaluate_exclusion()[1].matcher_matched
+                for rule in rule_group_list
+            ]
+
+            if all(matcher_matched_list):
+                actions = self.get_actions_from_comms(action_mapper, rule_group_list[0].comms_routing)
+                break
+        return actions
 
     def is_eligible_by_filter_rules(
         self,
@@ -268,16 +269,15 @@ class EligibilityCalculator:
         return best_status, inclusion_reasons, exclusion_reasons, is_rule_stop
 
     @staticmethod
-    def get_actions_from_comms(self, action_mapper: dict[str, AvailableAction], comms: str) -> list[Action]:
-        actions: list[Action] = []
-        for comm in comms.split("|"):
-            actions.append(Action(
-                actionType=action_mapper.get(comm).actionType,
-                actionCode=action_mapper.get(comm).actionCode,
-                actionDescription=action_mapper.get(comm).actionDescription,
-                urlLink=action_mapper.get(comm).urlLink,
-                urlLabel=action_mapper.get(comm).urlLabel,
-                  )
+    def get_actions_from_comms(action_mapper: dict[str, AvailableAction], comms: str) -> list[SuggestedAction]:
+        actions: list[SuggestedAction] = [
+            SuggestedAction(
+                action_type=ActionType(action_mapper.get(comm).action_type),
+                action_code=ActionCode(action_mapper.get(comm).action_code),
+                action_description=ActionDescription(action_mapper.get(comm).action_description),
+                url_link=UrlLink(action_mapper.get(comm).url_link),
+                url_label=UrlLabel(action_mapper.get(comm).url_label),
             )
-
+            for comm in comms.split("|")
+        ]
         return actions

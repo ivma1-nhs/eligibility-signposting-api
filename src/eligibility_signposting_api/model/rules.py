@@ -9,9 +9,7 @@ from functools import cached_property
 from operator import attrgetter
 from typing import Literal, NewType
 
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
-
-from eligibility_signposting_api.model.eligibility import Action
+from pydantic import BaseModel, Field, RootModel, field_serializer, field_validator, model_validator
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from pydantic import SerializationInfo
@@ -36,6 +34,7 @@ CohortGroup = NewType("CohortGroup", str)
 Description = NewType("Description", str)
 RuleStop = NewType("RuleStop", bool)
 CommsRouting = NewType("CommsRouting", str)
+
 
 class RuleType(StrEnum):
     filter = "F"
@@ -109,7 +108,7 @@ class IterationRule(BaseModel):
     comparator: RuleComparator = Field(..., alias="Comparator")
     attribute_target: RuleAttributeTarget | None = Field(None, alias="AttributeTarget")
     rule_stop: RuleStop = Field(RuleStop(False), alias="RuleStop")
-    comms_routing: CommsRouting | None = Field(None, alias="CommsRouting")# noqa: FBT003
+    comms_routing: CommsRouting | None = Field(None, alias="CommsRouting")
 
     @field_validator("rule_stop", mode="before")
     def parse_yn_to_bool(cls, v: str | bool) -> bool:  # noqa: N805
@@ -122,12 +121,21 @@ class IterationRule(BaseModel):
     def __str__(self) -> str:
         return json.dumps(self.model_dump(by_alias=True), indent=2)
 
+
 class AvailableAction(BaseModel):
-    actionType: str | None = Field(None, alias="ActionType")
-    actionCode: str | None = Field(None, alias="ExternalRoutingCode")
-    actionDescription: str | None = Field(None, alias="ActionDescription")
-    urlLink: str | None = Field(None, alias="UrlLink")
-    urlLabel: str | None = Field(None, alias="UrlLabel")
+    action_type: str | None = Field(None, alias="ActionType")
+    action_code: str | None = Field(None, alias="ExternalRoutingCode")
+    action_description: str | None = Field(None, alias="ActionDescription")
+    url_link: str | None = Field(None, alias="UrlLink")
+    url_label: str | None = Field(None, alias="UrlLabel")
+
+    model_config = {"populate_by_name": True}
+
+
+class ActionsMapper(RootModel[dict[str, AvailableAction]]):
+    def get(self, key: str, default: AvailableAction | None = None) -> AvailableAction | None:
+        return self.root.get(key, default)
+
 
 class Iteration(BaseModel):
     id: IterationID = Field(..., alias="ID")
@@ -141,7 +149,7 @@ class Iteration(BaseModel):
     default_comms_routing: str | None = Field(None, alias="DefaultCommsRouting")
     iteration_cohorts: list[IterationCohort] = Field(..., alias="IterationCohorts")
     iteration_rules: list[IterationRule] = Field(..., alias="IterationRules")
-    actions_mapper: dict[str, AvailableAction] | None = Field(default_factory=dict, alias="ActionsMapper")
+    actions_mapper: ActionsMapper | None = Field(..., alias="ActionsMapper")
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True, "extra": "ignore"}
 
@@ -238,7 +246,6 @@ class CampaignConfig(BaseModel):
 
     def __str__(self) -> str:
         return json.dumps(self.model_dump(by_alias=True), indent=2)
-
 
 
 class Rules(BaseModel):

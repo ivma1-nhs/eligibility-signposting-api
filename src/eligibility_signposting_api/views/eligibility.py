@@ -3,6 +3,7 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
 from http import HTTPStatus
+from typing import Never
 
 from fhir.resources.R4B.operationoutcome import OperationOutcome, OperationOutcomeIssue
 from flask import Blueprint, make_response, request
@@ -11,7 +12,7 @@ from wireup import Injected
 
 from eligibility_signposting_api.model.eligibility import Condition, EligibilityStatus, NHSNumber, Status
 from eligibility_signposting_api.services import EligibilityService, UnknownPersonError
-from eligibility_signposting_api.services.eligibility_services import InvalidQueryParam
+from eligibility_signposting_api.services.eligibility_services import InvalidQueryParamError
 from eligibility_signposting_api.views.response_model import eligibility
 from eligibility_signposting_api.views.response_model.eligibility import ProcessedSuggestion
 
@@ -32,20 +33,22 @@ def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[Eligi
     logger.debug("checking nhs_number %r in %r", nhs_number, eligibility_service, extra={"nhs_number": nhs_number})
     try:
         if "includeActions" in request.args:
-            if request.args.get("includeActions") not in ("Y", "N", None) :
-                raise InvalidQueryParam
-        elif len(request.args) != 0  and "includeActions" not in request.args:
-            raise InvalidQueryParam
+            if request.args.get("includeActions") not in ("Y", "N", None):
+                raise_invalid_query_param_error()
+        elif len(request.args) != 0 and "includeActions" not in request.args:
+            raise_invalid_query_param_error()
 
         eligibility_status = eligibility_service.get_eligibility_status(nhs_number)
-    except InvalidQueryParam:
-        logger.debug("Invalid query param", )
+    except InvalidQueryParamError:
+        logger.debug(
+            "Invalid query param",
+        )
         problem = OperationOutcome(
             issue=[
                 OperationOutcomeIssue(
                     severity="error",
                     code="invalid",
-                    diagnostics=f'Invalid query param key or value.',
+                    diagnostics="Invalid query param key or value.",
                 )  # pyright: ignore[reportCallIssue]
             ]
         )
@@ -68,12 +71,19 @@ def check_eligibility(nhs_number: NHSNumber, eligibility_service: Injected[Eligi
             include_actions_flag = False
         else:
             include_actions_flag = True
-        eligibility_response = build_eligibility_response(eligibility_status, include_actions_flag)
-        return make_response(eligibility_response.model_dump(by_alias=True, mode="json", exclude_none=True), HTTPStatus.OK)
+        eligibility_response = build_eligibility_response(eligibility_status, include_actions_flag=include_actions_flag)
+        return make_response(
+            eligibility_response.model_dump(by_alias=True, mode="json", exclude_none=True), HTTPStatus.OK
+        )
 
 
-def build_eligibility_response(eligibility_status: EligibilityStatus,
-                               include_actions_flag: bool) -> eligibility.EligibilityResponse:
+def raise_invalid_query_param_error() -> Never:
+    raise InvalidQueryParamError
+
+
+def build_eligibility_response(
+    eligibility_status: EligibilityStatus, *, include_actions_flag: bool
+) -> eligibility.EligibilityResponse:
     """Return an object representing the API response we are going to send, given an evaluation of the person's
     eligibility."""
 
@@ -84,13 +94,13 @@ def build_eligibility_response(eligibility_status: EligibilityStatus,
         if not include_actions_flag:
             actions = None
 
-        suggestions = ProcessedSuggestion( # pyright: ignore[reportCallIssue]
+        suggestions = ProcessedSuggestion(  # pyright: ignore[reportCallIssue]
             condition=eligibility.ConditionName(condition.condition_name),  # pyright: ignore[reportCallIssue]
             status=STATUS_MAPPING[condition.status],
             statusText=eligibility.StatusText(f"{condition.status}"),  # pyright: ignore[reportCallIssue]
             eligibilityCohorts=build_eligibility_cohorts(condition),  # pyright: ignore[reportCallIssue]
             suitabilityRules=build_suitability_results(condition),  # pyright: ignore[reportCallIssue]
-            actions= actions
+            actions=actions,
         )
 
         processed_suggestions.append(suggestions)
@@ -99,9 +109,8 @@ def build_eligibility_response(eligibility_status: EligibilityStatus,
         responseId=uuid.uuid4(),  # pyright: ignore[reportCallIssue]
         meta=eligibility.Meta(lastUpdated=eligibility.LastUpdated(datetime.now(tz=UTC))),
         # pyright: ignore[reportCallIssue]
-        processedSuggestions=processed_suggestions
+        processedSuggestions=processed_suggestions,
     )
-
 
 
 def build_eligibility_cohorts(condition: Condition) -> list[eligibility.EligibilityCohort]:

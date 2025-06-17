@@ -14,6 +14,12 @@ ConditionName = NewType("ConditionName", str)
 RuleName = NewType("RuleName", str)
 RuleResult = NewType("RuleResult", str)
 
+ActionType = NewType("ActionType", str)
+ActionCode = NewType("ActionCode", str)
+ActionDescription = NewType("ActionDescription", str)
+UrlLink = NewType("UrlLink", str)
+UrlLabel = NewType("UrlLabel", str)
+
 
 class RuleType(StrEnum):
     filter = "F"
@@ -63,21 +69,23 @@ class Reason:
     rule_result: RuleResult
     matcher_matched: bool
 
-#TODO: create types
+
 @dataclass
-class Action:
-    actionType: str
-    actionCode: str
-    actionDescription: str
-    urlLink: str
-    urlLabel: str
+class SuggestedAction:
+    action_type: ActionType
+    action_code: ActionCode
+    action_description: ActionDescription
+    url_link: UrlLink
+    url_label: UrlLabel
+
 
 @dataclass
 class Condition:
     condition_name: ConditionName
     status: Status
     cohort_results: list[CohortResult]
-    actions: list[Action]
+    actions: list[SuggestedAction]
+
 
 @dataclass
 class CohortResult:

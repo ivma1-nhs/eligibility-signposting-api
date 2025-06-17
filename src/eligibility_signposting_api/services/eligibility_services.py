@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 class UnknownPersonError(Exception):
     pass
 
-class InvalidQueryParam(Exception):
+
+class InvalidQueryParamError(Exception):
     pass
 
 

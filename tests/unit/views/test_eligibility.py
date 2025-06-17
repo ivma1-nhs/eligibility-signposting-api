@@ -1,3 +1,4 @@
+import json
 import logging
 from http import HTTPStatus
 
@@ -5,8 +6,7 @@ from brunns.matchers.data import json_matching as is_json_that
 from brunns.matchers.werkzeug import is_werkzeug_response as is_response
 from flask import Flask
 from flask.testing import FlaskClient
-from hamcrest import assert_that, contains_exactly, has_entries, has_key, has_length, has_entry, empty, not_
-import json
+from hamcrest import assert_that, contains_exactly, empty, has_entries, has_entry, has_key, has_length, not_
 from wireup.integration.flask import get_app_container
 
 from eligibility_signposting_api.model.eligibility import (
@@ -152,11 +152,13 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_result=RuleResult("Age < 75"),
+                        matcher_matched=False,
                     ),
                     Reason(
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude more than 100"),
                         rule_result=RuleResult("Age > 100"),
+                        matcher_matched=False,
                     ),
                 ],
             ),
@@ -168,6 +170,7 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.suppression,
                         rule_name=RuleName("Exclude too young less than 75"),
                         rule_result=RuleResult("Age < 75"),
+                        matcher_matched=False,
                     )
                 ],
             ),
@@ -179,6 +182,7 @@ def test_build_suitability_results_with_deduplication():
                         rule_type=RuleType.filter,
                         rule_name=RuleName("Exclude is present in sw1"),
                         rule_result=RuleResult("memberof sw1"),
+                        matcher_matched=False,
                     )
                 ],
             ),
@@ -248,13 +252,14 @@ def test_nhs_number_and_include_actions_param_incorrect_given(app: Flask, client
                         resourceType="OperationOutcome",
                         issue=contains_exactly(
                             has_entries(
-                                severity="error", code="invalid", diagnostics='Invalid query param key or value.'
+                                severity="error", code="invalid", diagnostics="Invalid query param key or value."
                             )
                         ),
                     )
                 )
             ),
         )
+
 
 def test_nhs_number_and_include_actions_param_incorrect_given_2(app: Flask, client: FlaskClient):
     # Given
@@ -273,7 +278,7 @@ def test_nhs_number_and_include_actions_param_incorrect_given_2(app: Flask, clie
                         resourceType="OperationOutcome",
                         issue=contains_exactly(
                             has_entries(
-                                severity="error", code="invalid", diagnostics='Invalid query param key or value.'
+                                severity="error", code="invalid", diagnostics="Invalid query param key or value."
                             )
                         ),
                     )

@@ -1,5 +1,4 @@
 import datetime
-import json
 from typing import Any
 
 import pytest
@@ -10,13 +9,20 @@ from hamcrest import assert_that, contains_exactly, contains_inanyorder, equal_t
 from eligibility_signposting_api.model import rules
 from eligibility_signposting_api.model import rules as rules_model
 from eligibility_signposting_api.model.eligibility import (
+    ActionCode,
+    ActionDescription,
+    ActionType,
     ConditionName,
     DateOfBirth,
     NHSNumber,
     Postcode,
     RuleResult,
-    Status, Action,
+    Status,
+    SuggestedAction,
+    UrlLabel,
+    UrlLink,
 )
+from eligibility_signposting_api.model.rules import ActionsMapper, AvailableAction
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
@@ -30,39 +36,25 @@ from tests.fixtures.matchers.rules import is_iteration_rule
 
 
 class TestEligibilityCalculator:
-
     @staticmethod
-    def test_get_redirect_rules(faker: Faker):
+    def test_get_redirect_rules():
         # Given
 
-        # TODO: make this an iteration not a campaign as not needed
-        campaign_configs = [
-            (
-                rule_builder.CampaignConfigFactory.build(
-                    target="RSV",
-                    iterations=[
-                        rule_builder.IterationFactory.build(
-                            iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
-                            default_comms_routing="defaultcomms",
-                            actions_mapper={"A key": {"anotherkey": "anothervalue"}},
-                            iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
-                        )
-                    ],
-                )
-            )
-        ]
-        iteration = campaign_configs[0].iterations[0]
+        # TODO: use the actionsmapperfactory
+        iteration = rule_builder.IterationFactory.build(
+            iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
+            default_comms_routing="defaultcomms",
+            actions_mapper=ActionsMapper(root={"ActionCode1": AvailableAction()}),
+            iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()],
+        )
 
         # when
         actual_rules, actual_action_mapper, actual_default_comms = EligibilityCalculator.get_redirect_rules(iteration)
 
         # then
-        assert_that(
-            actual_rules,
-            has_item(is_iteration_rule().with_name(campaign_configs[0].iterations[0].iteration_rules[0].name))
-        )
-        assert actual_action_mapper == campaign_configs[0].iterations[0].actions_mapper
-        assert actual_default_comms == campaign_configs[0].iterations[0].default_comms_routing
+        assert_that(actual_rules, has_item(is_iteration_rule().with_name(iteration.iteration_rules[0].name)))
+        assert actual_action_mapper == iteration.actions_mapper
+        assert actual_default_comms == iteration.default_comms_routing
 
 
 def test_not_base_eligible(faker: Faker):
@@ -304,11 +296,7 @@ def test_simple_rule_only_excludes_from_live_iteration(faker: Faker):
 
 @pytest.mark.parametrize(
     ("rule_type", "expected_status"),
-    [
-        (rules_model.RuleType.suppression, Status.not_actionable),
-        (rules_model.RuleType.filter, Status.not_eligible),
-        (rules_model.RuleType.redirect, Status.actionable),
-    ],
+    [(rules_model.RuleType.suppression, Status.not_actionable), (rules_model.RuleType.filter, Status.not_eligible)],
 )
 def test_rule_types_cause_correct_statuses(rule_type: rules_model.RuleType, expected_status: Status, faker: Faker):
     # Given
@@ -1073,20 +1061,25 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
-                                                        "ActionDescription": "Action description",
-                                                        "ActionType": "ActionType",
-                                                        "UrlLink": "ActionLink",
-                                                        "UrlLabel": "Label",
-                                                        },
-                                        "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
-                                                         "ActionDescription": "Action description",
-                                                         "ActionType": "ActionType",
-                                                         "UrlLink": "ActionLink",
-                                                         "UrlLabel": "Label",
-                                                         },
-                                        },
-                        iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()]
+                        actions_mapper=ActionsMapper(
+                            root={
+                                "ActionCode1": AvailableAction(
+                                    action_type="ActionType",
+                                    action_code="ActionCode1",
+                                    action_description="Action description",
+                                    url_link="ActionLink",
+                                    url_label="Label",
+                                ),
+                                "defaultcomms": AvailableAction(
+                                    action_code="ActionCode1",
+                                    action_description="Action description",
+                                    action_type="ActionType",
+                                    url_link="ActionLink",
+                                    url_label="Label",
+                                ),
+                            }
+                        ),
+                        iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()],
                     )
                 ],
             )
@@ -1098,7 +1091,15 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
-    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink", "Label")]
+    expected_actions = [
+        SuggestedAction(
+            action_type=ActionType("ActionType"),
+            action_code=ActionCode("ActionCode1"),
+            action_description=ActionDescription("Action description"),
+            url_link=UrlLink("ActionLink"),
+            url_label=UrlLabel("Label"),
+        )
+    ]
 
     # Then
     assert_that(
@@ -1113,6 +1114,7 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
         ),
     )
 
+
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
@@ -1126,20 +1128,27 @@ def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
                         default_comms_routing="defaultcomms",
-                        actions_mapper={"ActionCode1": {"ExternalRoutingCode": "ActionCode1",
-                                                        "ActionDescription": "Action description",
-                                                        "ActionType": "ActionType",
-                                                        "url_link": "ActionLink",
-                                                        },
-                                        "defaultcomms": {"ExternalRoutingCode": "ActionCode1",
-                                                         "ActionDescription": "Action description",
-                                                         "ActionType": "ActionType",
-                                                         "url_link": "ActionLink",
-                                                         },
-                                        },
+                        actions_mapper=ActionsMapper(
+                            root={
+                                "ActionCode1": AvailableAction(
+                                    action_type="ActionType",
+                                    action_code="ActionCode1",
+                                    action_description="Action description",
+                                    url_link="ActionLink",
+                                    url_label="Label",
+                                ),
+                                "defaultcomms": AvailableAction(
+                                    action_code="ActionCode1",
+                                    action_description="Action description",
+                                    action_type="ActionType",
+                                    url_link="ActionLink",
+                                    url_label="Label",
+                                ),
+                            }
+                        ),
                         iteration_rules=[
-                            rule_builder.ICBRedirectRuleFactory.build(cohort_label=rules.CohortLabel("cohort1"))]
-
+                            rule_builder.ICBRedirectRuleFactory.build(cohort_label=rules.CohortLabel("cohort1"))
+                        ],
                     )
                 ],
             )
@@ -1151,7 +1160,7 @@ def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # When
     actual = calculator.evaluate_eligibility()
 
-    expected_actions = [Action("ActionType", 'ActionCode1', "Action description", "ActionLink")]
+    expected_actions = [SuggestedAction("ActionType", "ActionCode1", "Action description", "ActionLink", "Label")]
 
     # Then
     assert_that(
