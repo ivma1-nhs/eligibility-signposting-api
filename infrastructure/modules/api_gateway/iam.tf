@@ -15,6 +15,7 @@ resource "aws_iam_role" "api_gateway" {
 }
 
 data "aws_iam_policy_document" "api_gateway_logging" {
+  #checkov:skip=CKV_AWS_356: Wildcard permissions needed for global log event reads
   statement {
     sid    = "AllowCreateLogGroup"
     effect = "Allow"
