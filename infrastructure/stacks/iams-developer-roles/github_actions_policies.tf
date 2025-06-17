@@ -173,7 +173,7 @@ resource "aws_iam_policy" "s3_management" {
 resource "aws_iam_policy" "api_infrastructure" {
   #checkov:skip=CKV_AWS_288: Actions require read of wildcard resources to create VPCs, subnets, etc.
   #checkov:skip=CKV_AWS_290: Actions require write of wildcard resources to create VPCs, subnets, etc.
-  #checkov:skip=CKV_AWS_290: Actions require wildcard access for creation of resources.
+  #checkov:skip=CKV_AWS_355: Actions require wildcard access for creation of resources.
   name        = "api-infrastructure-management"
   description = "Policy granting permissions to manage API infrastructure"
   path        = "/service-policies/"
