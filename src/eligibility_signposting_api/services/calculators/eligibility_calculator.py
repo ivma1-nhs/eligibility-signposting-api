@@ -151,7 +151,7 @@ class EligibilityCalculator:
                 best_active_iteration = None
             condition_results[condition_name] = best_candidate
 
-            if best_candidate.status.actionable:
+            if best_candidate.status == Status.actionable:
                 actions = self.handle_redirect_rules(best_active_iteration)
 
         # Consolidate all the results and return

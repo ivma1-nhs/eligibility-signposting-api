@@ -84,11 +84,9 @@ def test_not_base_eligible(faker: Faker):
                 target="RSV",
                 iterations=[
                     rule_builder.IterationFactory.build(
-                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")],
-                        #default_comms_routing="defaultcomms",
+                        iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort2")]
                     )
                 ],
-
             )
         )
     ]
