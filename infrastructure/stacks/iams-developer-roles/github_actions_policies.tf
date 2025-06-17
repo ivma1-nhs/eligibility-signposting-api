@@ -171,6 +171,9 @@ resource "aws_iam_policy" "s3_management" {
 
 # API Infrastructure Management Policy
 resource "aws_iam_policy" "api_infrastructure" {
+  #checkov:skip=CKV_AWS_288: Actions require read of wildcard resources to create VPCs, subnets, etc.
+  #checkov:skip=CKV_AWS_290: Actions require write of wildcard resources to create VPCs, subnets, etc.
+  #checkov:skip=CKV_AWS_290: Actions require wildcard access for creation of resources.
   name        = "api-infrastructure-management"
   description = "Policy granting permissions to manage API infrastructure"
   path        = "/service-policies/"
@@ -278,6 +281,10 @@ resource "aws_iam_policy" "api_infrastructure" {
 
 # Create KMS keys policy for GitHub Actions
 resource "aws_iam_policy" "kms_creation" {
+  #checkov:skip=CKV_AWS_290: Actions require wildcard resource (Creation and listing of keys)
+  #checkov:skip=CKV_AWS_289: Actions require wildcard resource
+  #checkov:skip=CKV_AWS_355: Actions require wildcard resource
+
   name        = "github-actions-kms-creation"
   description = "Policy allowing GitHub Actions to manage KMS keys"
   path        = "/service-policies/"
@@ -294,7 +301,6 @@ resource "aws_iam_policy" "kms_creation" {
           "kms:ListAliases",
         ],
         Resource = "*"
-        #checkov:skip=CKV_AWS_289: Actions require wildcard resource
       },
       {
         Effect = "Allow",
