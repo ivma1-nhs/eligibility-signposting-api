@@ -22,7 +22,7 @@ from eligibility_signposting_api.model.eligibility import (
     UrlLabel,
     UrlLink,
 )
-from eligibility_signposting_api.model.rules import AvailableAction
+from eligibility_signposting_api.model.rules import AvailableAction, ActionsMapper
 from eligibility_signposting_api.services.calculators.eligibility_calculator import EligibilityCalculator
 from tests.fixtures.builders.model import rule as rule_builder
 from tests.fixtures.builders.repos.person import person_rows_builder
@@ -71,6 +71,9 @@ class TestEligibilityCalculator:
         assert_that(actual_rules, has_item(is_iteration_rule().with_name(iteration.iteration_rules[0].name)))
         assert actual_action_mapper == iteration.actions_mapper
         assert actual_default_comms == iteration.default_comms_routing
+
+    # todo
+    # unit test: function handle_redirect_rules() includeActions returns actions=none
 
 
 def test_not_base_eligible(faker: Faker):
@@ -1623,7 +1626,131 @@ def test_cohort_group_descriptions_pick_first_non_empty_if_available(
     )
 
 
-def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
+
+# todo
+# test without AvailableAction key for comms routing
+@pytest.mark.parametrize(
+    ("default_comms_routing", "actions_mapper", "test_comment"),
+    [
+        (
+            "defaultcomms",
+            {
+                "ActionCode1": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="ActionCode1",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+                "defaultcomms": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="defaultcomms",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+            },
+            "If actionable, then return action with ActionCode1 from redirect rule, default comms ignored",
+        ),
+
+        (
+            "",
+            {
+                "ActionCode1": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="ActionCode1",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                )
+            },
+            "If actionable, then ??",
+        ),
+
+        (
+            "defaultcommskeywithoutactionmapper",
+            {
+                "ActionCode1": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="ActionCode1",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                )
+                # Override redirect rule, to not match
+            },
+            "If actionable, then ??",
+        ),
+
+        (
+            "defaultcomms1|defaultcomms2",
+            {
+                "defaultcomms1": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="defaultcomms",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+                "defaultcomms2": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="defaultcomms",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+                # Override redirect rule, to not match
+            },
+            "If actionable, redirect rule not matched, return 2 default comms actions",
+        ),
+
+        (
+            "defaultcomms",
+            {
+                "defaultcomms": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="defaultcomms",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+                # Override redirect rule, to match, missing comms code
+            },
+            "If actionable, then use default comms, when redirect rule comms is missing",
+        ),
+
+        (
+            "defaultcomms",
+            {
+                "defaultcomms": AvailableAction(
+                    ActionType="ActionType",
+                    ExternalRoutingCode="defaultcomms",
+                    ActionDescription="Action description",
+                    UrlLink="ActionLink",
+                    UrlLabel="Label",
+                ),
+                # Override redirect rule, to match, incorrect comms code key
+            },
+            "If actionable, then use default comms, when redirect rule comms has incorrect key",
+        ),
+
+        (
+            "",
+            {
+                {}
+                # Override redirect rule, to match, missing comms code key, missing default comms
+            },
+            "If actionable, ??",
+        ),
+
+        #
+        # Override redirect rule, with action support optional url link and url label
+        #
+    ]
+)
+def test_correct_actions_determined_from_redirect_r_rules(
+    default_comms_routing: str, actions_mapper: ActionsMapper, test_comment: str,
+    faker: Faker):
     # Given
     nhs_number = NHSNumber(faker.nhs_number())
 
@@ -1636,24 +1763,9 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
                 iterations=[
                     rule_builder.IterationFactory.build(
                         iteration_cohorts=[rule_builder.IterationCohortFactory.build(cohort_label="cohort1")],
-                        default_comms_routing="defaultcomms",
+                        default_comms_routing=default_comms_routing,
                         actions_mapper=rule_builder.ActionsMapperFactory.build(
-                            root={
-                                "ActionCode1": AvailableAction(
-                                    ActionType="ActionType",
-                                    ExternalRoutingCode="ActionCode1",
-                                    ActionDescription="Action description",
-                                    UrlLink="ActionLink",
-                                    UrlLabel="Label",
-                                ),
-                                "defaultcomms": AvailableAction(
-                                    ActionType="ActionType",
-                                    ExternalRoutingCode="defaultcomms",
-                                    ActionDescription="Action description",
-                                    UrlLink="ActionLink",
-                                    UrlLabel="Label",
-                                ),
-                            }
+                            root=actions_mapper,
                         ),
                         iteration_rules=[rule_builder.ICBRedirectRuleFactory.build()],
                     )
@@ -1689,7 +1801,6 @@ def test_correct_actions_determined_from_redirect_r_rules(faker: Faker):
             )
         ),
     )
-
 
 def test_cohort_label_not_supported_used_in_r_rules(faker: Faker):
     # Given

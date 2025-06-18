@@ -184,6 +184,9 @@ class TestStandardResponse:
             ),
         )
 
+    # todo
+    # integration test: if includeActions flag, then include actions in response
+    #   test_eligibility_endpoint.py def test_actionable()
     def test_actionable(
         self,
         client: FlaskClient,
