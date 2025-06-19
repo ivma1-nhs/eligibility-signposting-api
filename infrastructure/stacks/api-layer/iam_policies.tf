@@ -128,6 +128,9 @@ resource "aws_iam_role_policy" "external_s3_write_policy" {
 
 ## KMS
 data "aws_iam_policy_document" "dynamodb_kms_key_policy" {
+  #checkov:skip=CKV_AWS_111: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_356: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_109: Root user needs full KMS key management
   statement {
     sid    = "EnableIamUserPermissions"
     effect = "Allow"
@@ -157,6 +160,9 @@ resource "aws_kms_key_policy" "dynamodb_kms_key" {
 }
 
 data "aws_iam_policy_document" "s3_rules_kms_key_policy" {
+  #checkov:skip=CKV_AWS_111: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_356: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_109: Root user needs full KMS key management
   statement {
     sid    = "EnableIamUserPermissions"
     effect = "Allow"
@@ -186,6 +192,10 @@ resource "aws_kms_key_policy" "s3_rules_kms_key" {
 }
 
 data "aws_iam_policy_document" "s3_audit_kms_key_policy" {
+  #checkov:skip=CKV_AWS_111: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_356: Root user needs full KMS key management
+  #checkov:skip=CKV_AWS_109: Root user needs full KMS key management
+
   statement {
     sid    = "EnableIamUserPermissions"
     effect = "Allow"
