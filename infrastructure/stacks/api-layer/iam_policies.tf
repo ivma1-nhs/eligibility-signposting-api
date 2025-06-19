@@ -135,7 +135,7 @@ data "aws_iam_policy_document" "kms_key_policy" {
       type        = "AWS"
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
     }
-    actions   = ["kms:*"]
+    actions = ["kms:*"]
     resources = [
       module.eligibility_status_table.dynamodb_kms_key_arn,
       module.s3_rules_bucket.storage_bucket_kms_key_arn,
@@ -178,7 +178,7 @@ data "aws_iam_policy_document" "kms_key_policy" {
       "kms:DescribeKey"
     ]
     resources = [
-      module.s3_audit_bucket.storage_bucket_kms_key_arn
+      module.s3_audit_bucket.storage_bucket_kms_key_arn,
     ]
   }
 }
@@ -187,4 +187,11 @@ data "aws_iam_policy_document" "kms_key_policy" {
 resource "aws_kms_key_policy" "kms_key" {
   key_id = module.eligibility_status_table.dynamodb_kms_key_id
   policy = data.aws_iam_policy_document.kms_key_policy.json
+}
+
+resource "aws_kms_grant" "lambda_s3_decrypt" {
+  name              = "lambda-s3-decrypt"
+  key_id            = module.s3_rules_bucket.storage_bucket_kms_key_arn
+  grantee_principal = aws_iam_role.eligibility_lambda_role.arn
+  operations        = ["Decrypt"]
 }
