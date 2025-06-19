@@ -127,7 +127,7 @@ resource "aws_iam_role_policy" "external_s3_write_policy" {
 }
 
 ## KMS
-data "aws_iam_policy_document" "kms_key_policy" {
+data "aws_iam_policy_document" "dynamodb_kms_key_policy" {
   statement {
     sid    = "EnableIamUserPermissions"
     effect = "Allow"
@@ -135,63 +135,86 @@ data "aws_iam_policy_document" "kms_key_policy" {
       type        = "AWS"
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
     }
-    actions = ["kms:*"]
-    resources = [
-      module.eligibility_status_table.dynamodb_kms_key_arn,
-      module.s3_rules_bucket.storage_bucket_kms_key_arn,
-      module.s3_audit_bucket.storage_bucket_kms_key_arn,
-      module.eligibility_signposting_api_gateway.kms_key_arn,
-
-    ]
-  }
-  statement {
-    sid    = "Allow lambda decrypt role"
-    effect = "Allow"
-    principals {
-      type = "AWS"
-      identifiers = [
-        aws_iam_role.eligibility_lambda_role.arn
-      ]
-    }
-    actions = [
-      "kms:Decrypt"
-    ]
-    resources = [
-      module.eligibility_status_table.dynamodb_kms_key_arn,
-      module.s3_rules_bucket.storage_bucket_kms_key_arn,
-    ]
+    actions   = ["kms:*"]
+    resources = ["*"]
   }
 
   statement {
-    sid    = "Allow lambda full write role"
+    sid    = "AllowLambdaDecrypt"
     effect = "Allow"
     principals {
-      type = "AWS"
-      identifiers = [
-        aws_iam_role.eligibility_lambda_role.arn
-      ]
+      type        = "AWS"
+      identifiers = [aws_iam_role.eligibility_lambda_role.arn]
     }
-    actions = [
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key_policy" "dynamodb_kms_key" {
+  key_id = module.eligibility_status_table.dynamodb_kms_key_id
+  policy = data.aws_iam_policy_document.dynamodb_kms_key_policy.json
+}
+
+data "aws_iam_policy_document" "s3_rules_kms_key_policy" {
+  statement {
+    sid    = "EnableIamUserPermissions"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowLambdaDecrypt"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.eligibility_lambda_role.arn]
+    }
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key_policy" "s3_rules_kms_key" {
+  key_id = module.s3_rules_bucket.storage_bucket_kms_key_arn
+  policy = data.aws_iam_policy_document.s3_rules_kms_key_policy.json
+}
+
+data "aws_iam_policy_document" "s3_audit_kms_key_policy" {
+  statement {
+    sid    = "EnableIamUserPermissions"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowLambdaFullWrite"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.eligibility_lambda_role.arn]
+    }
+    actions   = [
       "kms:Decrypt",
       "kms:Encrypt",
       "kms:GenerateDataKey",
       "kms:DescribeKey"
     ]
-    resources = [
-      module.s3_audit_bucket.storage_bucket_kms_key_arn,
-    ]
+    resources = ["*"]
   }
 }
 
-# attach kms decrypt policy kms key
-resource "aws_kms_key_policy" "kms_key" {
-  key_id = module.eligibility_status_table.dynamodb_kms_key_id
-  policy = data.aws_iam_policy_document.kms_key_policy.json
-}
-
-resource "aws_kms_grant" "lambda_s3_decrypt" {
-  name              = "lambda-s3-decrypt"
-  key_id            = module.s3_rules_bucket.storage_bucket_kms_key_arn
-  grantee_principal = aws_iam_role.eligibility_lambda_role.arn
-  operations        = ["Decrypt"]
+resource "aws_kms_key_policy" "s3_audit_kms_key" {
+  key_id = module.s3_audit_bucket.storage_bucket_kms_key_arn
+  policy = data.aws_iam_policy_document.s3_audit_kms_key_policy.json
 }
