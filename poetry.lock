@@ -3242,14 +3242,14 @@ files = [
 
 [[package]]
 name = "wireup"
-version = "1.0.2"
+version = "2.0.0"
 description = "Python Dependency Injection Library"
 optional = false
 python-versions = "<4.0,>=3.8"
 groups = ["main"]
 files = [
-    {file = "wireup-1.0.2-py3-none-any.whl", hash = "sha256:cae3c2a8eaf98f7a224d4c5b9ec1dfca424b13d585290f5b3f0137a12f4695cd"},
-    {file = "wireup-1.0.2.tar.gz", hash = "sha256:8c7a7fdc2db02265b9a47b94c45a15229dcf9466f3fd043214b7691fbacf11a8"},
+    {file = "wireup-2.0.0-py3-none-any.whl", hash = "sha256:cef5408d3ae0eb612de46ee860e52f4d3afca7df3f28c3c2c75d229c5d52c9a0"},
+    {file = "wireup-2.0.0.tar.gz", hash = "sha256:57b49512356ca9fc9a2fa9a34a1057a8caeff7a28ea10f8fdcd1f9811cef7f39"},
 ]
 
 [package.dependencies]
@@ -3478,4 +3478,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "9aa119dce64ea9e619d3822f5f61711ecf4142de42e580c46173dc25c538b652"
+content-hash = "0ac8be9dfc1718f5a9b8f616d1baa5e82f5dbcbe2633b71bfadcf42ea3f4da11"
