@@ -34,7 +34,12 @@ def test_install_and_call_lambda_flask(
         "routeKey": "GET /",
         "rawPath": "/",
         "rawQueryString": "",
-        "headers": {"accept": "application/json", "content-type": "application/json"},
+        "headers": {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "nhs-login-nhs-number": str(persisted_person),
+        },
+        "pathParameters": {"id": str(persisted_person)},
         "requestContext": {
             "http": {
                 "sourceIp": "192.0.0.1",
@@ -68,15 +73,19 @@ def test_install_and_call_lambda_flask(
 
 
 def test_install_and_call_flask_lambda_over_http(
-    flask_function_url: URL,
     persisted_person: NHSNumber,
     campaign_config: CampaignConfig,  # noqa: ARG001
+    api_gateway_endpoint: URL,
 ):
-    """Given lambda installed into localstack, run it via http"""
+    """Given api-gateway and lambda installed into localstack, run it via http"""
     # Given
-
     # When
-    response = httpx.get(str(flask_function_url / "patient-check" / persisted_person))
+    invoke_url = f"{api_gateway_endpoint}/patient-check/{persisted_person}"
+    response = httpx.get(
+        invoke_url,
+        headers={"nhs-login-nhs-number": str(persisted_person)},
+        timeout=10,
+    )
 
     # Then
     assert_that(
@@ -86,10 +95,10 @@ def test_install_and_call_flask_lambda_over_http(
 
 
 def test_install_and_call_flask_lambda_with_unknown_nhs_number(
-    flask_function_url: URL,
     flask_function: str,
     campaign_config: CampaignConfig,  # noqa: ARG001
     logs_client: BaseClient,
+    api_gateway_endpoint: URL,
     faker: Faker,
 ):
     """Given lambda installed into localstack, run it via http, with a nonexistent NHS number specified"""
@@ -97,7 +106,12 @@ def test_install_and_call_flask_lambda_with_unknown_nhs_number(
     nhs_number = NHSNumber(faker.nhs_number())
 
     # When
-    response = httpx.get(str(flask_function_url / "patient-check" / nhs_number))
+    invoke_url = f"{api_gateway_endpoint}/patient-check/{nhs_number}"
+    response = httpx.get(
+        invoke_url,
+        headers={"nhs-login-nhs-number": str(nhs_number)},
+        timeout=10,
+    )
 
     # Then
     assert_that(
@@ -136,3 +150,47 @@ def get_log_messages(flask_function: str, logs_client: BaseClient) -> list[str]:
         logGroupName=f"/aws/lambda/{flask_function}", logStreamName=log_stream_name, limit=100
     )
     return [e["message"] for e in log_events["events"]]
+
+
+def test_given_nhs_number_in_path_matches_with_nhs_number_in_headers(
+    lambda_client: BaseClient,  # noqa:ARG001
+    persisted_person: NHSNumber,
+    campaign_config: CampaignConfig,  # noqa:ARG001
+    api_gateway_endpoint: URL,
+):
+    # Given
+    # When
+    invoke_url = f"{api_gateway_endpoint}/patient-check/{persisted_person}"
+    response = httpx.get(
+        invoke_url,
+        headers={"nhs-login-nhs-number": str(persisted_person)},
+        timeout=10,
+    )
+
+    # Then
+    assert_that(
+        response,
+        is_response().with_status_code(HTTPStatus.OK).and_body(is_json_that(has_key("processedSuggestions"))),
+    )
+
+
+def test_given_nhs_number_in_path_does_not_match_with_nhs_number_in_headers_results_in_error_response(
+    lambda_client: BaseClient,  # noqa:ARG001
+    persisted_person: NHSNumber,
+    campaign_config: CampaignConfig,  # noqa:ARG001
+    api_gateway_endpoint: URL,
+):
+    # Given
+    # When
+    invoke_url = f"{api_gateway_endpoint}/patient-check/{persisted_person}"
+    response = httpx.get(
+        invoke_url,
+        headers={"nhs-login-nhs-number": f"123{persisted_person!s}"},
+        timeout=10,
+    )
+
+    # Then
+    assert_that(
+        response,
+        is_response().with_status_code(HTTPStatus.FORBIDDEN).and_body("NHS number mismatch"),
+    )
