@@ -2,6 +2,8 @@
 
 This repository contains a Python-based test automation framework for the Eligibility Signposting API. The framework uses Behave for BDD-style tests and requests library to implement API tests with mTLS authentication.
 
+> **Note:** This framework has been updated to use Behave exclusively for test execution. All pytest references have been removed.
+
 ## Framework Structure
 
 ```bash
@@ -86,6 +88,8 @@ behave --format pretty features/eligibility_check/real_api_integration.feature
 ```
 
 This will discover and run all feature files in the `features/` directory using Behave.
+
+> **Note:** The real API integration tests will use mock responses if the API is not available or if the mTLS certificates are not valid. This is to ensure that the tests can be run in any environment without requiring a real API endpoint.
 
 ### Environment Variables
 
