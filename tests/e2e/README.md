@@ -1,23 +1,30 @@
 # Eligibility Signposting API Test Automation Framework
 
-This repository contains a Python-based test automation framework for the Eligibility Signposting API. The framework uses Behave for BDD-style tests and requests library to implement API tests that were previously executed manually using Postman.
+This repository contains a Python-based test automation framework for the Eligibility Signposting API. The framework uses Behave for BDD-style tests and requests library to implement API tests with mTLS authentication.
 
 ## Framework Structure
 
 ```bash
-qa-automation/
+tests/e2e/
+├── data/
+│   ├── out/                               # Generated test data and certificates
+│   │   ├── dynamoDB/                      # Generated DynamoDB data
+│   │   └── *.pem                          # mTLS certificates
+│   └── *.json                             # Test data templates
 ├── features/
 │   ├── eligibility_check/
-│   │   └── eligibility_check.feature      # Behave feature file
+│   │   ├── eligibility_check.feature      # Basic Behave feature file
+│   │   └── real_api_integration.feature   # mTLS integration feature file
 │   ├── steps/
-│   │   └── eligibility_check_steps.py     # Behave step definitions
-│   ├── environment.py                     # Behave environment hooks
-│   └── conftest.py                        # Behave configuration
+│   │   ├── eligibility_check_steps.py     # Basic step definitions
+│   │   └── mtls_steps.py                  # mTLS integration step definitions
+│   └── environment.py                     # Behave environment hooks
 ├── utils/
 │   ├── api_client.py                      # Reusable HTTP client
-│   └── config.py                          # Environment config and schemas
-├── .env                                   # Environment variables (not in version control)
-└── pyproject.toml                         # Poetry project file
+│   ├── config.py                          # Environment config and schemas
+│   ├── data_loader.py                     # Test data generation and loading
+│   └── mtls.py                            # mTLS certificate management
+└── .env                                   # Environment variables (not in version control)
 ```
 
 ## Setup and Installation
@@ -71,7 +78,34 @@ cd tests/e2e
 behave --format pretty eligibility_check/eligibility_check.feature
 ```
 
+Run the mTLS integration tests:
+
+```bash
+cd tests/e2e
+behave --format pretty eligibility_check/real_api_integration.feature
+```
+
 This will discover and run all feature files in the `features/` directory using Behave.
+
+### Environment Variables
+
+The following environment variables are required for the mTLS integration tests:
+
+```
+# AWS Credentials
+AWS_REGION=eu-west-2
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_SESSION_TOKEN=your-session-token  # Optional
+
+# API Configuration
+API_GATEWAY_URL=https://test.eligibility-signposting-api.nhs.uk
+
+# DynamoDB Configuration
+DYNAMODB_TABLE_NAME=eligibilty_data_store
+```
+
+These can be set in the `.env` file in the `tests/e2e` directory.
 
 ## Extending the Framework
 

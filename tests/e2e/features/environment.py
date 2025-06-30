@@ -17,18 +17,32 @@ HTTP_STATUS_SERVER_ERROR = 500
 
 def _load_environment_variables(context):
     load_dotenv(dotenv_path=".env")
+    # API configuration
     context.base_url = os.getenv("BASE_URL")
     context.api_key = os.getenv("API_KEY")
     context.valid_nhs_number = os.getenv("VALID_NHS_NUMBER", "50000000004")
+    
+    # AWS configuration
     context.aws_region = os.getenv("AWS_REGION", "eu-west-2")
+    context.aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    context.aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    context.aws_session_token = os.getenv("AWS_SESSION_TOKEN")
+    
+    # DynamoDB configuration
     context.inserted_items = []
     context.abort_on_aws_error = os.getenv("ABORT_ON_AWS_FAILURE", "false").lower() == "true"
     context.keep_seed = os.getenv("KEEP_SEED", "false").lower() == "true"
+    context.dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME", "eligibilty_data_store")
+    context.dynamo_data_path = Path(os.getenv("DYNAMO_JSON_SOURCE_DIR", "./data/out/dynamoDB")).resolve()
+    
+    # S3 configuration
     context.s3_bucket = os.getenv("S3_BUCKET_NAME")
     context.s3_upload_dir = os.getenv("S3_UPLOAD_DIR", "")
     context.s3_data_path = Path(os.getenv("S3_JSON_SOURCE_DIR", "./data/s3")).resolve()
-    context.dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME", "eligibilty_data_store")
-    context.dynamo_data_path = Path(os.getenv("DYNAMO_JSON_SOURCE_DIR", "./data/out/dynamoDB")).resolve()
+    
+    # mTLS configuration
+    context.api_gateway_url = os.getenv("API_GATEWAY_URL", "https://test.eligibility-signposting-api.nhs.uk")
+    
     logger.info("ABORT_ON_AWS_FAILURE=%s", context.abort_on_aws_error)
     logger.info("KEEP_SEED=%s", context.keep_seed)
 
