@@ -4,7 +4,9 @@
     {
       "NHS_NUMBER": "5000000012",
       "ATTRIBUTE_TYPE": "COHORTS",
-      "COHORT_MEMBERSHIPS": []
+      "COHORT_MAP": {
+        "cohorts": {}
+      }
     },
     {
       "NHS_NUMBER": "5000000012",
@@ -26,9 +28,8 @@
     },
     {
       "NHS_NUMBER": "5000000012",
-      "ATTRIBUTE_TYPE": "TARGET",
-      "TYPE": "RSV",
-      "LAST_SUCCESSFUL_DATE": "<<DATE_LAST_WEEK>>"
+      "ATTRIBUTE_TYPE": "RSV",
+      "LAST_SUCCESSFUL_DATE": "<<DATE_DAY_-7>>"
     }
   ]
 }
