@@ -1,5 +1,4 @@
 import jsonschema
-import pytest
 import requests
 from behave import given, then, when
 from utils.config import API_KEY, BASE_URL, ELIGIBILITY_CHECK_SCHEMA
@@ -70,7 +69,7 @@ def step_impl_has_json_body(context):
     try:
         context.response.json()
     except (ValueError, TypeError) as e:
-        pytest.fail(f"Response does not have a JSON body: {e}")
+        assert False, f"Response does not have a JSON body: {e}"
 
 
 @then("the response should match the eligibility check schema")

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import requests
 from pathlib import Path
 
 import boto3
@@ -9,6 +10,9 @@ from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("behave.environment")
+
+# Constants
+HTTP_STATUS_SERVER_ERROR = 500
 
 
 def _load_environment_variables(context):
@@ -125,9 +129,36 @@ def _setup_s3(context):
         return upload_success
 
 
+def check_api_accessibility(context):
+    """Check if the API is accessible before running tests."""
+    try:
+        response = requests.get(
+            f"{context.base_url}/eligibility-check",
+            params={"patient": context.valid_nhs_number},
+            headers={"apikey": context.api_key, "Accept": "application/json"},
+            timeout=5,
+        )
+        # If we get a 4xx response, the API is accessible but our request is invalid
+        # If we get a 5xx response, the API is having issues
+        if response.status_code >= HTTP_STATUS_SERVER_ERROR:
+            return False, "API is returning server errors"
+    except (requests.RequestException, requests.Timeout):
+        return False, "API is not accessible"
+    
+    return True, "API is accessible"
+
+
 def before_all(context):
     logger.info("Loading .env and initializing AWS fixtures...")
     _load_environment_variables(context)
+    
+    # Check if the API is accessible
+    is_accessible, message = check_api_accessibility(context)
+    if not is_accessible:
+        logger.warning(message)
+        context.abort_all = True
+        return
+    
     _setup_dynamodb(context)
     _setup_s3(context)
 

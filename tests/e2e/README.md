@@ -1,27 +1,22 @@
 # Eligibility Signposting API Test Automation Framework
 
-This repository contains a Python-based test automation framework for the Eligibility Signposting API. The framework uses pytest and requests to implement API tests that were previously executed manually using Postman. It also includes BDD-style tests using Behave (not pytest-bdd).
+This repository contains a Python-based test automation framework for the Eligibility Signposting API. The framework uses Behave for BDD-style tests and requests library to implement API tests that were previously executed manually using Postman.
 
 ## Framework Structure
 
 ```bash
 qa-automation/
-├── tests/
-│   └── eligibility_signposting/
-│       ├── test_eligibility_check.py      # Tests for eligibility check endpoint
-│       ├── test_eligibility_check_bdd.py  # BDD tests for eligibility check
-│       └── conftest.py                    # Pytest fixtures
 ├── features/
 │   ├── eligibility_check/
 │   │   └── eligibility_check.feature      # Behave feature file
 │   ├── steps/
 │   │   └── eligibility_check_steps.py     # Behave step definitions
-│   └── conftest.py                        # Behave fixtures (if needed)
+│   ├── environment.py                     # Behave environment hooks
+│   └── conftest.py                        # Behave configuration
 ├── utils/
 │   ├── api_client.py                      # Reusable HTTP client
 │   └── config.py                          # Environment config and schemas
 ├── .env                                   # Environment variables (not in version control)
-├── pytest.ini                             # Pytest configuration
 └── pyproject.toml                         # Poetry project file
 ```
 
@@ -60,53 +55,25 @@ qa-automation/
 
 ## Running Tests
 
-### Running API (pytest) tests
-
-Run all pytest-based tests:
-
-```bash
-poetry run pytest
-```
-
-Run a specific pytest test file:
-
-```bash
-poetry run pytest tests/eligibility_signposting/test_eligibility_check.py
-```
-
 ### Running BDD tests with Behave
 
 Run all Behave feature tests:
 
 ```bash
-poetry run behave
+cd tests/e2e
+behave
+```
+
+Run a specific feature file:
+
+```bash
+cd tests/e2e
+behave --format pretty eligibility_check/eligibility_check.feature
 ```
 
 This will discover and run all feature files in the `features/` directory using Behave.
 
 ## Extending the Framework
-
-### Adding New Test Files
-
-1. Create a new test file in the appropriate directory:
-
-   ```python
-   # tests/eligibility_signposting/test_new_feature.py
-   import pytest
-
-   @pytest.mark.new_feature
-   class TestNewFeature:
-       def test_something(self, api_client):
-           # Test implementation
-           pass
-   ```
-
-2. Add the new marker to pytest.ini if needed:
-
-   ```ini
-   markers =
-       new_feature: marks tests related to the new feature
-   ```
 
 ### Adding New BDD Tests (Behave)
 
@@ -145,7 +112,8 @@ This will discover and run all feature files in the `features/` directory using 
 3. Run the BDD tests with:
 
    ```bash
-   poetry run behave
+   cd tests/e2e
+   behave
    ```
 
 ### Adding New API Endpoints
@@ -188,9 +156,9 @@ This will discover and run all feature files in the `features/` directory using 
    from utils.config import NEW_ENDPOINT_SCHEMA
    import jsonschema
 
-   def test_new_endpoint_schema(self, api_client):
-       response = api_client.get_new_endpoint("value1", "value2")
-       response_json = response.json()
+   @then('the response should match the new endpoint schema')
+   def step_impl_check_schema(context):
+       response_json = context.response.json()
        jsonschema.validate(instance=response_json, schema=NEW_ENDPOINT_SCHEMA)
    ```
 
@@ -222,32 +190,31 @@ When the DynamoDB-backed API is ready, you can extend the framework by:
            return response
    ```
 
-2. Adding fixtures in conftest.py:
+2. Using the DynamoDB client in step definitions:
 
    ```python
-   # tests/eligibility_signposting/conftest.py
+   # features/steps/dynamo_steps.py
+   from behave import given, when, then
    from utils.dynamo_client import DynamoClient
 
-   @pytest.fixture
-   def dynamo_client():
-       return DynamoClient()
-   ```
+   @given('I have a DynamoDB client')
+   def step_impl_dynamo_client(context):
+       context.dynamo_client = DynamoClient()
 
-3. Using the DynamoDB client in tests:
-
-   ```python
-   def test_with_dynamodb(self, api_client, dynamo_client):
-       # Test implementation using both API and DynamoDB
-       pass
+   @when('I query DynamoDB for item with key "{key}"')
+   def step_impl_query_dynamo(context, key):
+       context.dynamo_response = context.dynamo_client.get_item(
+           "my_table", {"id": {"S": key}}
+       )
    ```
 
 ## Best Practices
 
 1. **Test Independence**: Each test should be independent and not rely on the state from other tests.
-2. **Fixtures**: Use fixtures for common setup and clean-up operations.
-3. **Multiple Test Cases**: Use pytest's parameterize feature for testing multiple scenarios.
+2. **Reusable Steps**: Create reusable step definitions that can be used across multiple feature files.
+3. **Multiple Test Cases**: Use Scenario Outlines for testing multiple scenarios with different data.
 4. **Assertions**: Use descriptive assertions to make test failures clear.
-5. **Documentation**: Document your tests with docstrings and comments.
+5. **Documentation**: Document your tests with clear feature descriptions and step definitions.
 6. **Environment Variables**: Use environment variables for sensitive information and configuration.
 
 ## Continuous Integration
@@ -280,7 +247,8 @@ This framework can be integrated with CI/CD pipelines:
            poetry install
        - name: Run tests
          run: |
-           poetry run pytest --html=report.html
+           cd tests/e2e
+           behave --format pretty --outfile behave-report.txt
          env:
            BASE_URL: ${{ secrets.BASE_URL }}
            API_KEY: ${{ secrets.API_KEY }}
@@ -288,5 +256,5 @@ This framework can be integrated with CI/CD pipelines:
          uses: actions/upload-artifact@v2
          with:
            name: test-report
-           path: report.html
+           path: tests/e2e/behave-report.txt
    ```
