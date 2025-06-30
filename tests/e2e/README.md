@@ -75,14 +75,14 @@ Run a specific feature file:
 
 ```bash
 cd tests/e2e
-behave --format pretty eligibility_check/eligibility_check.feature
+behave --format pretty features/eligibility_check/eligibility_check.feature
 ```
 
 Run the mTLS integration tests:
 
 ```bash
 cd tests/e2e
-behave --format pretty eligibility_check/real_api_integration.feature
+behave --format pretty features/eligibility_check/real_api_integration.feature
 ```
 
 This will discover and run all feature files in the `features/` directory using Behave.
