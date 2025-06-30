@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -28,7 +28,7 @@ class DateVariableResolver:
         Args:
             today: Date to use as "today". Defaults to current UTC date.
         """
-        self.today = today or datetime.now(tz=timezone.UTC)
+        self.today = today or datetime.now(tz=dt_timezone.utc)
 
     def resolve(self, token: str) -> str:
         """Resolve a date variable token to a date string.
