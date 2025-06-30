@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @given("AWS credentials are loaded from the environment")
 def step_impl_load_aws_credentials(context):
     """Load AWS credentials from environment variables."""
-    context.aws_region = os.getenv("AWS_REGION")
+    context.aws_region = os.getenv("AWS_REGION", "eu-west-2")
     context.aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
     context.aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
     context.aws_session_token = os.getenv("AWS_SESSION_TOKEN")
@@ -22,12 +22,12 @@ def step_impl_load_aws_credentials(context):
     
     # Validate credentials
     if not context.aws_region:
-        logger.error("AWS_REGION environment variable is not set")
-        assert False, "AWS_REGION environment variable is not set. Please update your .env file."
+        logger.warning("AWS_REGION environment variable is not set, using default")
     
     if not context.aws_access_key_id or not context.aws_secret_access_key:
-        logger.error("AWS credentials are not set")
-        assert False, "AWS credentials are not set. Please update your .env file."
+        logger.warning("AWS credentials are not set - tests requiring AWS will be skipped")
+        context.scenario.skip("AWS credentials are not set. Skipping this scenario.")
+        return
     
     logger.info("AWS credentials loaded successfully")
 
